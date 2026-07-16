@@ -190,15 +190,27 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       if (!st.session) return;
       // TEMPORARY DIAGNOSTIC — remove once the orgs-insert RLS issue is confirmed fixed.
       const { data: sessCheck, error: sessErr } = await supabase.auth.getSession();
+      let jwtClaims: unknown = null;
+      try {
+        const token = sessCheck.session?.access_token;
+        if (token) {
+          const payload = token.split('.')[1];
+          const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+          const parsed = JSON.parse(json);
+          jwtClaims = { role: parsed.role, sub: parsed.sub, aud: parsed.aud, iss: parsed.iss, exp: parsed.exp };
+        }
+      } catch (e) { jwtClaims = 'decode failed: ' + (e as Error).message; }
+      const probe = await supabase.from('orgs').insert({ name: '__probe__', created_by: st.session }).select('id').single();
       alert('[診断情報]\n' + JSON.stringify({
         appStateSession: st.session,
         hasSupabaseSession: !!sessCheck.session,
         supabaseUserId: sessCheck.session?.user?.id ?? null,
-        accessTokenPreview: sessCheck.session?.access_token ? sessCheck.session.access_token.slice(0, 20) + '...' : null,
-        expiresAt: sessCheck.session?.expires_at ?? null,
-        nowUnix: Math.floor(Date.now() / 1000),
+        jwtClaims,
         sessErr: sessErr?.message ?? null,
+        probeError: probe.error ? { message: probe.error.message, code: probe.error.code, details: probe.error.details, hint: probe.error.hint } : null,
+        probeData: probe.data ?? null,
       }, null, 2));
+      if (probe.data?.id) await supabase.from('orgs').delete().eq('id', probe.data.id);
       try {
         const orgId = await createOrgWithFirstTeam({
           userId: st.session, userName: st.ownerProfile.name, hqName: f.hqName.trim(), firstTeamName: f.firstTeamName.trim(),
