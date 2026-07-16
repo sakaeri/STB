@@ -231,6 +231,21 @@ returns boolean language sql security definer set search_path = public stable as
   );
 $$;
 
+-- bootstrap helpers for org_members' self-insert policy: plain subqueries
+-- against orgs/org_members here would themselves be filtered by THOSE
+-- tables' own SELECT policies (which require an existing org_members row —
+-- the very thing we're in the middle of creating), so they must run as
+-- security definer to bypass that circularity.
+create function public.is_org_creator(p_org_id uuid)
+returns boolean language sql security definer set search_path = public stable as $$
+  select exists (select 1 from public.orgs where id = p_org_id and created_by = auth.uid());
+$$;
+
+create function public.org_has_no_members(p_org_id uuid)
+returns boolean language sql security definer set search_path = public stable as $$
+  select not exists (select 1 from public.org_members where org_id = p_org_id);
+$$;
+
 -- ============================================================
 -- invite-by-email RPCs (the prototype's invite-URL was a UI mock only;
 -- this looks up an existing account by email and adds real membership —
@@ -299,8 +314,8 @@ create policy "org_members: insert by owner or self-bootstrap" on public.org_mem
     public.is_org_owner(org_id)
     or (
       user_id = auth.uid()
-      and exists (select 1 from public.orgs o where o.id = org_id and o.created_by = auth.uid())
-      and not exists (select 1 from public.org_members m where m.org_id = org_members.org_id)
+      and public.is_org_creator(org_id)
+      and public.org_has_no_members(org_id)
     )
   );
 create policy "org_members: update by owner" on public.org_members for update
