@@ -185,7 +185,7 @@ export default function SettingsPage() {
             </div>
             {canInviteHqMember && (
               <button
-                onClick={() => actions.inviteMember(state.companyInfo.name || state.brandName)}
+                onClick={() => actions.inviteHqMember(state.companyInfo.name || state.brandName)}
                 style={{ marginLeft: 'auto', height: 30, padding: '0 12px 0 9px', borderRadius: 8, background: accentSoft(accent), color: accent, fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', gap: 4, flex: 'none' }}
               >
                 <span style={{ fontSize: 15, fontWeight: 400 }}>＋</span>招待

@@ -5,13 +5,13 @@ import type {
 import { createInitialState } from './mockData';
 import { supabase } from '../lib/supabase';
 import { fetchMyOrgs, fetchOrgData, createOrgWithFirstTeam } from './dataLoader';
+import {
+  fetchAdminOrgs, fetchAuditLog, fetchAppSettings, addAuditLog,
+  saveAppSettingsBilling, saveAppSettingsTerms, fetchPublicTerms,
+} from './adminData';
 import { planForCount, type PlanTier } from '../tokens';
 
 type Patch = Partial<AppState> | ((s: AppState) => Partial<AppState>);
-
-function randToken(len = 8): string {
-  return Math.random().toString(36).slice(2, 2 + len);
-}
 
 function translateAuthError(err: { message?: string } | null | undefined): string {
   const msg = err?.message || '';
@@ -88,6 +88,21 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     } catch (e) {
       console.error('loadOrg failed', e);
       set({ authError: '本部データの読み込みに失敗しました' });
+    }
+  }
+
+  async function loadAdminOverview() {
+    try {
+      const [orgs, auditLog, settings] = await Promise.all([fetchAdminOrgs(), fetchAuditLog(), fetchAppSettings()]);
+      set((s) => ({
+        adminMockOrgs: orgs, auditLog,
+        billingProvider: settings.billingProvider, billingApiKeys: settings.billingApiKeys,
+        settingsPlanPrices: settings.settingsPlanPrices, settingsTerms: settings.settingsTerms,
+        paymentGraceDays: settings.paymentGraceDays,
+        logoMap: settings.logoUrl ? { ...s.logoMap, 'operator-logo': settings.logoUrl } : s.logoMap,
+      }));
+    } catch (e) {
+      console.error('loadAdminOverview failed', e);
     }
   }
 
@@ -174,6 +189,10 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     },
     openTermsModal: () => set({ showTermsModal: true }),
     closeTermsModal: () => set({ showTermsModal: false }),
+    loadPublicTerms: async () => {
+      const terms = await fetchPublicTerms();
+      if (terms) set({ termsModalText: terms });
+    },
 
     // ===== HQ setup =====
     onHqSetupField: (key: keyof AppState['hqSetupForm'], val: string | number) => set((s) => ({ hqSetupForm: { ...s.hqSetupForm, [key]: val } })),
@@ -361,7 +380,18 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     copyInvite: () => { flash('copied', 1600); },
     copyMemberInvite: () => { flash('memberInviteCopied', 1600); },
     closeMemberInvite: () => set({ showMemberInvite: false }),
-    inviteMember: (storeName: string) => set({ showMemberInvite: true, memberInviteToken: randToken(8), memberInviteStoreName: storeName, memberInviteCopied: false }),
+    inviteMember: async (storeName: string, teamId: string) => {
+      const { data, error } = await supabase.rpc('create_invite', { p_team_id: teamId, p_role: '閲覧者' });
+      if (error) { alert(error.message || '招待URLの発行に失敗しました'); return; }
+      set({ showMemberInvite: true, memberInviteToken: data as string, memberInviteStoreName: storeName, memberInviteCopied: false });
+    },
+    inviteHqMember: async (hqName: string) => {
+      const st = getState();
+      if (!st.activeOrgId) return;
+      const { data, error } = await supabase.rpc('create_org_invite', { p_org_id: st.activeOrgId, p_role: '閲覧者' });
+      if (error) { alert(error.message || '招待URLの発行に失敗しました'); return; }
+      set({ showMemberInvite: true, memberInviteToken: data as string, memberInviteStoreName: hqName, memberInviteCopied: false });
+    },
 
     toggleTeamSettingsEdit: (canEdit: boolean) => {
       if (!canEdit) return;
@@ -390,6 +420,8 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         set((s) => ({ logoMap: { ...s.logoMap, [id]: publicUrl } }));
         if (isTeam) {
           await supabase.from('teams').update({ logo_url: publicUrl }).eq('id', id);
+        } else if (id === 'operator-logo') {
+          await supabase.from('app_settings').update({ logo_url: publicUrl }).eq('id', 1);
         } else if (id === 'app-logo' && st.activeOrgId) {
           await supabase.from('orgs').update({ logo_url: publicUrl }).eq('id', st.activeOrgId);
         }
@@ -669,7 +701,9 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     toggleFabMenu: () => set((s) => ({ showFabMenu: !s.showFabMenu })),
     closeFabMenu: () => set({ showFabMenu: false }),
 
-    // ===== admin (still local/mock — see follow-up scope note) =====
+    // ===== admin (real Supabase data, gated by profiles.is_admin — see
+    // supabase/migrations/0002_invites_and_admin.sql and loadAdminOverview) =====
+    loadAdminOverview,
     adminPrevMonth: () => set((s) => ({ adminMonth: shiftMonthLocal(s.adminMonth, -1), adminPage: 1 })),
     adminNextMonth: () => set((s) => ({ adminMonth: shiftMonthLocal(s.adminMonth, 1), adminPage: 1 })),
     setAdminTabOrgs: () => set({ adminTab: 'orgs' }),
@@ -678,12 +712,15 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     onAdminPrefFilter: (v: string) => set({ adminPrefFilter: v, adminPage: 1 }),
     toggleAdminActionMenu: (id: string) => set((s) => ({ adminActionMenuOrgId: s.adminActionMenuOrgId === id ? null : id })),
     toggleAdminDetail: (id: string) => set((s) => ({ adminDetailOrgId: s.adminDetailOrgId === id ? null : id, adminActionMenuOrgId: null })),
-    toggleAdminFreeze: (id: string) => {
+    toggleAdminFreeze: async (id: string) => {
       const st = getState();
       const org = st.adminMockOrgs.find((o) => o.id === id);
       if (!org) return;
       const nextStatus = org.status === 'frozen' ? 'active' : 'frozen';
       const label = nextStatus === 'frozen' ? '凍結' : '凍結解除';
+      const { error } = await supabase.from('orgs').update({ status: nextStatus }).eq('id', id);
+      if (error) { alert(error.message || '更新に失敗しました'); return; }
+      await addAuditLog(`「${org.name}」を${label}しました`).catch((e) => console.error(e));
       set((s) => ({
         adminMockOrgs: s.adminMockOrgs.map((o) => (o.id === id ? { ...o, status: nextStatus } : o)),
         adminActionMenuOrgId: null,
@@ -695,7 +732,10 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       const org = st.adminMockOrgs.find((o) => o.id === id);
       if (!org) return;
       if (org.teams > 0) { alert('チーム数が0の本部のみ削除できます。'); return; }
-      openConfirm(`「${org.name}」を削除`, 'この本部を運営一覧から完全に削除します。この操作は取り消せません。', () => {
+      openConfirm(`「${org.name}」を削除`, 'この本部を運営一覧から完全に削除します。この操作は取り消せません。', async () => {
+        const { error } = await supabase.from('orgs').delete().eq('id', id);
+        if (error) { alert(error.message || '削除に失敗しました'); return; }
+        await addAuditLog(`「${org.name}」を削除しました`).catch((e) => console.error(e));
         set((s) => ({
           adminMockOrgs: s.adminMockOrgs.filter((o) => o.id !== id),
           adminActionMenuOrgId: null,
@@ -709,7 +749,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     adminOpenOwnHq: () => set({ adminOwnHqSetup: true }),
     goAdminDashboard: () => set({ adminOwnHqSetup: false, showProfileModal: false }),
 
-    // ===== app settings (admin, still local/mock) =====
+    // ===== app settings (admin, real Supabase data) =====
     setBillingProvider: (p: 'stripe' | 'square') => set({ billingProvider: p, billingDirty: true }),
     onProviderApiKeyChange: (v: string) => set((s) => ({ billingApiKeys: { ...s.billingApiKeys, [s.billingProvider]: v }, billingDirty: true })),
     copyWebhookUrl: () => flash('copiedWebhook', 1600),
@@ -720,9 +760,60 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     onPaymentGraceDaysChange: (v: number) => set({ paymentGraceDays: v, billingDirty: true }),
     onSettingsTermsChange: (v: string) => set({ settingsTerms: v, termsDirty: true }),
     saveLogo: () => { set({ logoDirty: false }); flash('showLogoSaved'); },
-    saveBilling: () => { set({ billingDirty: false }); flash('showBillingSaved'); },
-    saveTerms: () => { set({ termsDirty: false }); flash('showTermsSaved'); },
+    saveBilling: async () => {
+      const st = getState();
+      try {
+        await saveAppSettingsBilling({
+          billingProvider: st.billingProvider, billingApiKeys: st.billingApiKeys,
+          settingsPlanPrices: st.settingsPlanPrices, paymentGraceDays: st.paymentGraceDays,
+        });
+        set({ billingDirty: false });
+        flash('showBillingSaved');
+      } catch (e) {
+        alert((e as Error).message || '保存に失敗しました');
+      }
+    },
+    saveTerms: async () => {
+      const st = getState();
+      try {
+        await saveAppSettingsTerms(st.settingsTerms);
+        set({ termsDirty: false, termsModalText: st.settingsTerms });
+        flash('showTermsSaved');
+      } catch (e) {
+        alert((e as Error).message || '保存に失敗しました');
+      }
+    },
     markLogoDirty: () => set({ logoDirty: true }),
+
+    // ===== invite redemption =====
+    loadInvitePreview: async (id: string) => {
+      const { data, error } = await supabase.rpc('get_invite_info', { p_id: id });
+      if (error) { set({ inviteInfo: { valid: false, reason: 'error' } }); return; }
+      set({ inviteInfo: data as AppState['inviteInfo'] });
+    },
+    redeemPendingInvite: async () => {
+      const st = getState();
+      if (!st.pendingInviteId || !st.session) return;
+      set({ inviteRedeeming: true, inviteError: '' });
+      try {
+        const { data, error } = await supabase.rpc('redeem_invite', { p_id: st.pendingInviteId });
+        if (error) throw error;
+        const result = data as { orgId: string; teamId: string };
+        const myOrgs = await fetchMyOrgs(st.session);
+        set((s) => ({ accounts: s.accounts.map((a) => (a.id === s.session ? { ...a, hqCreated: true, orgs: myOrgs } : a)) }));
+        try { localStorage.removeItem('fc_pendingInvite'); } catch { /* noop */ }
+        window.history.replaceState({}, '', '/');
+        set({ pendingInviteId: null, inviteInfo: null, inviteRedeeming: false });
+        await loadOrg(result.orgId);
+      } catch (e) {
+        set({ inviteRedeeming: false, inviteError: (e as Error).message || '招待の処理に失敗しました' });
+      }
+    },
+    dismissInvite: () => {
+      try { localStorage.removeItem('fc_pendingInvite'); } catch { /* noop */ }
+      window.history.replaceState({}, '', '/');
+      set({ pendingInviteId: null, inviteInfo: null, inviteError: '', inviteRedeeming: false });
+    },
   };
 
   function actions_defaultDateForMonth(st: AppState, m: number) {
@@ -775,7 +866,6 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     const st = getState();
     const f = st.addForm;
     if (!f || !f.name.trim() || !st.activeOrgId) return;
-    const token = randToken(8);
     supabase.from('teams').insert({
       org_id: st.activeOrgId, name: f.name.trim(), owner_name: st.ownerProfile.name, bg_color: paletteColor(st.stores.length),
       use_royalty: f.useRoyalty !== false, royalty_mode: f.royaltyMode || 'rate', royalty_rate: Math.max(0, f.royaltyRate || 0),
@@ -783,7 +873,9 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       savings: f.savings, savings_rate: f.savingsRate || 0,
     }).select('id').single().then(async ({ data, error }) => {
       if (error || !data) { set({ authError: 'チームの作成に失敗しました' }); return; }
-      set({ addStep: 'done', createdToken: token, createdName: f.name.trim(), copied: false });
+      const { data: inviteId, error: inviteErr } = await supabase.rpc('create_invite', { p_team_id: data.id, p_role: '管理者' });
+      if (inviteErr) console.error('create_invite failed', inviteErr);
+      set({ addStep: 'done', createdToken: (inviteId as string) || '', createdName: f.name.trim(), copied: false });
       await reloadActiveOrg();
     });
   }
@@ -818,6 +910,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (cancelled) return;
       if (data.session) void handleAuthChange('INITIAL_SESSION', data.session);
     });
+    void actions.loadPublicTerms();
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (cancelled) return;
       void handleAuthChange(event, session);
@@ -854,6 +947,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           console.error('initial org load failed', e);
         }
       }
+      if (profile?.is_admin) void actions.loadAdminOverview();
     }
 
     return () => { cancelled = true; sub.subscription.unsubscribe(); };

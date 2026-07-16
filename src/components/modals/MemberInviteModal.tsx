@@ -5,7 +5,7 @@ export default function MemberInviteModal() {
   if (!state.showMemberInvite) return null;
 
   const accent = state.accent;
-  const inviteUrl = `https://example.com/join/${state.memberInviteToken}`;
+  const inviteUrl = state.memberInviteToken ? `${window.location.origin}/invite/${state.memberInviteToken}` : '';
 
   return (
     <div

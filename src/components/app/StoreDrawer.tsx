@@ -394,7 +394,7 @@ export default function StoreDrawer() {
               <span style={{ fontSize: 12.5, fontWeight: 700, color: '#3a4150' }}>権限・メンバー</span>
               {drawerCanDelete && (
                 <button
-                  onClick={() => actions.inviteMember(store.name)}
+                  onClick={() => actions.inviteMember(store.name, store.id)}
                   style={{
                     marginLeft: 'auto',
                     height: 30,

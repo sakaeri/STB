@@ -1,4 +1,5 @@
 import type { AdminMockOrg } from '../../types';
+import { currentPeriodKey } from '../../state/calc';
 
 // Small helpers shared between the admin orgs tab and app-settings tab.
 // Kept local to this task's directory per the contract (no edits to src/state/*).
@@ -13,7 +14,7 @@ export function monthDataFor(org: AdminMockOrg, month: string): { teams: number;
 }
 
 export function maxAdminMonth(orgs: AdminMockOrg[]): string {
-  let max = '2026-07'; // "now" — always considered available even with no history entry
+  let max = currentPeriodKey(); // "now" — always considered available even with no history entry
   for (const org of orgs) {
     for (const k of Object.keys(org.history)) {
       if (k > max) max = k;

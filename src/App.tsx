@@ -4,6 +4,7 @@ import AuthScreen from './components/auth/AuthScreen';
 import HqSetupScreen from './components/hqSetup/HqSetupScreen';
 import MainApp from './components/app/MainApp';
 import AdminDashboard from './components/admin/AdminDashboard';
+import InviteScreen from './components/invite/InviteScreen';
 import TermsModal from './components/modals/TermsModal';
 
 export default function App() {
@@ -26,6 +27,19 @@ export default function App() {
           return { session: savedSession, ownerProfile: { name: acc.name, email: acc.email, password: acc.password } };
         });
       }
+      // Invite links (/invite/<id>) are captured into state + localStorage
+      // immediately, then the URL is normalized — this lets the invite
+      // survive a signup's email-confirmation round trip (which lands back
+      // on "/", not the original link) in the same browser.
+      const m = window.location.pathname.match(/^\/invite\/([0-9a-fA-F-]{36})$/);
+      if (m) {
+        localStorage.setItem('fc_pendingInvite', m[1]);
+        set({ pendingInviteId: m[1] });
+        window.history.replaceState({}, '', '/');
+      } else {
+        const savedInvite = localStorage.getItem('fc_pendingInvite');
+        if (savedInvite) set({ pendingInviteId: savedInvite });
+      }
     } catch { /* noop */ }
     actions.purgeTrash();
     return () => window.removeEventListener('resize', onResize);
@@ -35,7 +49,9 @@ export default function App() {
   const account = useMemo(() => state.accounts.find((a) => a.id === state.session) || null, [state.accounts, state.session]);
 
   let screen: React.ReactNode;
-  if (!state.session || !account) {
+  if (state.pendingInviteId) {
+    screen = <InviteScreen />;
+  } else if (!state.session || !account) {
     screen = <AuthScreen />;
   } else if (account.isAdmin) {
     if (state.adminOwnHqSetup) {

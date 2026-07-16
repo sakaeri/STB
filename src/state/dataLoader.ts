@@ -22,18 +22,37 @@ export interface LoadedOrgData {
 }
 
 export async function fetchMyOrgs(userId: string): Promise<Org[]> {
-  const { data, error } = await supabase
-    .from('org_members')
-    .select('role, orgs(id, name)')
-    .eq('user_id', userId);
-  if (error) throw error;
-  return (data || [])
-    .map((row) => {
-      const org = (row as unknown as { role: string; orgs: { id: string; name: string } | null }).orgs;
-      const role = (row as unknown as { role: string }).role;
-      return org ? { id: org.id, name: org.name, role: role as Org['role'] } : null;
-    })
-    .filter((o): o is Org => !!o);
+  const [orgMembersRes, teamMembersRes] = await Promise.all([
+    supabase.from('org_members').select('role, orgs(id, name)').eq('user_id', userId),
+    supabase.from('team_members').select('role, teams(org_id)').eq('user_id', userId),
+  ]);
+  if (orgMembersRes.error) throw orgMembersRes.error;
+  if (teamMembersRes.error) throw teamMembersRes.error;
+
+  const byId = new Map<string, Org>();
+  (orgMembersRes.data || []).forEach((row) => {
+    const r = row as unknown as { role: string; orgs: { id: string; name: string } | null };
+    if (r.orgs) byId.set(r.orgs.id, { id: r.orgs.id, name: r.orgs.name, role: r.role as Org['role'] });
+  });
+
+  // team-only members (joined via an invite URL, never added to org_members
+  // directly) don't show up above — surface their org too, since they can
+  // still access it (see can_access_org in the RLS policies).
+  const teamOnlyRows = (teamMembersRes.data || [])
+    .map((row) => row as unknown as { role: string; teams: { org_id: string } | null })
+    .filter((r) => r.teams && !byId.has(r.teams.org_id));
+  if (teamOnlyRows.length) {
+    const orgIds = Array.from(new Set(teamOnlyRows.map((r) => r.teams!.org_id)));
+    const { data: orgRows, error } = await supabase.from('orgs').select('id, name').in('id', orgIds);
+    if (error) throw error;
+    const nameById = new Map((orgRows || []).map((o) => [o.id, o.name]));
+    teamOnlyRows.forEach((r) => {
+      const orgId = r.teams!.org_id;
+      if (!byId.has(orgId)) byId.set(orgId, { id: orgId, name: nameById.get(orgId) || '', role: r.role as Org['role'] });
+    });
+  }
+
+  return Array.from(byId.values());
 }
 
 export async function createOrgWithFirstTeam(params: {

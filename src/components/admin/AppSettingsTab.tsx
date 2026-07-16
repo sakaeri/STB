@@ -3,7 +3,7 @@ import type { ChangeEvent, DragEvent } from 'react';
 import { useStore } from '../../state/store.tsx';
 import { PLAN_TIERS, accentBorder, accentSoft } from '../../tokens';
 
-const LOGO_ID = 'app-logo';
+const LOGO_ID = 'operator-logo';
 
 function saveButtonStyle(accent: string, dirty: boolean) {
   return {

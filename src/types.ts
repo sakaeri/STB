@@ -367,4 +367,10 @@ export interface AppState {
 
   brandName: string;
   accent: string;
+
+  // invite redemption (real one-time-use URLs, see supabase/migrations/0002)
+  pendingInviteId: string | null;
+  inviteInfo: { valid: boolean; reason?: string; orgName?: string; teamName?: string | null; role?: Role; scope?: 'org' | 'team' } | null;
+  inviteRedeeming: boolean;
+  inviteError: string;
 }

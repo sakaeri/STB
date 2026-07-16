@@ -16,7 +16,7 @@ export interface Database {
           unit_label: string | null; unit_label_plural: string | null; logo_url: string | null;
           default_use_royalty: boolean; default_royalty_mode: string; default_royalty_rate: number; default_royalty_amount: number;
           default_use_savings: boolean; default_savings_mode: string; default_savings: number; default_savings_rate: number;
-          created_by: string | null; created_at: string;
+          created_by: string | null; created_at: string; status: 'active' | 'frozen'; reading: string;
         };
         Insert: Partial<Database['public']['Tables']['orgs']['Row']> & { name: string };
         Update: Partial<Database['public']['Tables']['orgs']['Row']>;
@@ -80,10 +80,35 @@ export interface Database {
         Insert: { team_id: string; period: string; confirmed_by?: string | null };
         Update: never;
       };
+      invites: {
+        Row: {
+          id: string; org_id: string; team_id: string; role: string; created_by: string | null;
+          used_by: string | null; used_at: string | null; created_at: string; expires_at: string;
+        };
+        Insert: never; // created only via the create_invite() RPC
+        Update: never;
+      };
+      admin_audit_log: {
+        Row: { id: string; ts: string; text: string; created_by: string | null };
+        Insert: { text: string; created_by?: string | null };
+        Update: never;
+      };
+      app_settings: {
+        Row: {
+          id: 1; logo_url: string | null; billing_provider: 'stripe' | 'square';
+          billing_api_key_stripe: string; billing_api_key_square: string; payment_grace_days: number;
+          terms: string; plan_prices: unknown; updated_at: string;
+        };
+        Insert: never;
+        Update: Partial<Omit<Database['public']['Tables']['app_settings']['Row'], 'id'>>;
+      };
     };
     Functions: {
-      invite_org_member: { Args: { p_org_id: string; p_email: string; p_role: string }; Returns: void };
-      invite_team_member: { Args: { p_team_id: string; p_email: string; p_role: string }; Returns: void };
+      create_invite: { Args: { p_team_id: string; p_role: string }; Returns: string };
+      create_org_invite: { Args: { p_org_id: string; p_role: string }; Returns: string };
+      get_invite_info: { Args: { p_id: string }; Returns: unknown };
+      redeem_invite: { Args: { p_id: string }; Returns: unknown };
+      get_public_terms: { Args: Record<string, never>; Returns: string };
     };
   };
 }

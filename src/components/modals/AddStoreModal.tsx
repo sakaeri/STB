@@ -46,7 +46,7 @@ export default function AddStoreModal() {
   const unitLabel = state.unitLabel || '店舗';
   const af = state.addForm;
 
-  const inviteUrl = `https://example.com/join/${state.createdToken}`;
+  const inviteUrl = state.createdToken ? `${window.location.origin}/invite/${state.createdToken}` : '';
 
   return (
     <div
