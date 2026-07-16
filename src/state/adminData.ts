@@ -118,3 +118,9 @@ export async function fetchPublicTerms(): Promise<string | null> {
   if (error) return null;
   return (data as string) || null;
 }
+
+export async function fetchPublicAppLogo(): Promise<string | null> {
+  const { data, error } = await supabase.rpc('get_public_app_logo');
+  if (error) return null;
+  return (data as string) || null;
+}

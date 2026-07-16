@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase';
 import { fetchMyOrgs, fetchOrgData, createOrgWithFirstTeam } from './dataLoader';
 import {
   fetchAdminOrgs, fetchAuditLog, fetchAppSettings, addAuditLog,
-  saveAppSettingsBilling, saveAppSettingsTerms, fetchPublicTerms,
+  saveAppSettingsBilling, saveAppSettingsTerms, fetchPublicTerms, fetchPublicAppLogo,
 } from './adminData';
 import { planForCount, type PlanTier } from '../tokens';
 
@@ -192,6 +192,10 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     loadPublicTerms: async () => {
       const terms = await fetchPublicTerms();
       if (terms) set({ termsModalText: terms });
+    },
+    loadPublicBranding: async () => {
+      const logoUrl = await fetchPublicAppLogo();
+      if (logoUrl) set((s) => ({ logoMap: { ...s.logoMap, 'operator-logo': logoUrl } }));
     },
 
     // ===== HQ setup =====
@@ -911,6 +915,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (data.session) void handleAuthChange('INITIAL_SESSION', data.session);
     });
     void actions.loadPublicTerms();
+    void actions.loadPublicBranding();
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (cancelled) return;
       void handleAuthChange(event, session);

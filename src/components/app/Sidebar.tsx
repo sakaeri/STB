@@ -13,6 +13,7 @@ export default function Sidebar() {
   const isHq = state.viewRole === 'hq';
   const viewStore = isHq ? null : state.stores.find((s) => s.id === state.viewRole) || null;
   const roleCaption = isHq ? `本部（全${unitLabelPlural}）` : viewStore ? `${viewStore.name}（${unitLabelPlural}）` : unitLabelPlural;
+  const brandLogoUrl = state.logoMap['app-logo'] || state.logoMap['operator-logo'] || null;
 
   const navStyle = (active: boolean): CSSProperties => ({
     display: 'flex',
@@ -48,13 +49,13 @@ export default function Sidebar() {
             height: 34,
             flex: 'none',
             borderRadius: 9,
-            background: accent,
+            background: brandLogoUrl ? `#fff url("${brandLogoUrl}") center/cover no-repeat` : accent,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <div style={{ width: 14, height: 14, border: '2.5px solid #fff', borderRadius: 3, borderBottomWidth: 5 }} />
+          {!brandLogoUrl && <div style={{ width: 14, height: 14, border: '2.5px solid #fff', borderRadius: 3, borderBottomWidth: 5 }} />}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15, minWidth: 0 }}>
           <span style={{ fontWeight: 700, fontSize: 15, letterSpacing: '.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

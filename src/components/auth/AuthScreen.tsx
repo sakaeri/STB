@@ -8,6 +8,7 @@ import VerifyView from './VerifyView';
 
 export default function AuthScreen() {
   const { state } = useStore();
+  const brandLogoUrl = state.logoMap['operator-logo'] || null;
 
   return (
     <div style={outerStyle}>
@@ -18,14 +19,14 @@ export default function AuthScreen() {
               width: 42,
               height: 42,
               borderRadius: 11,
-              background: state.accent,
+              background: brandLogoUrl ? `#fff url("${brandLogoUrl}") center/cover no-repeat` : state.accent,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 14px',
             }}
           >
-            <div style={{ width: 19, height: 19, border: '2.5px solid #fff', borderRadius: 3, borderBottomWidth: 5 }} />
+            {!brandLogoUrl && <div style={{ width: 19, height: 19, border: '2.5px solid #fff', borderRadius: 3, borderBottomWidth: 5 }} />}
           </div>
           <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>{state.brandName}</h1>
         </div>

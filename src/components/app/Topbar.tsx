@@ -21,6 +21,7 @@ export default function Topbar() {
 
   const label = periodLabel(state.aggUnit, state.month, state.year, state.periodDate, state.companyInfo.fiscalStartMonth || 4);
   const isAdmin = !!state.accounts.find((a) => a.id === state.session)?.isAdmin;
+  const brandLogoUrl = state.logoMap['app-logo'] || state.logoMap['operator-logo'] || null;
 
   return (
     <header
@@ -42,14 +43,14 @@ export default function Topbar() {
               width: 30,
               height: 30,
               borderRadius: 8,
-              background: state.accent,
+              background: brandLogoUrl ? `#fff url("${brandLogoUrl}") center/cover no-repeat` : state.accent,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               flex: 'none',
             }}
           >
-            <div style={{ width: 13, height: 13, border: '2.5px solid #fff', borderRadius: 3, borderBottomWidth: 5 }} />
+            {!brandLogoUrl && <div style={{ width: 13, height: 13, border: '2.5px solid #fff', borderRadius: 3, borderBottomWidth: 5 }} />}
           </div>
         )}
         <div style={{ minWidth: 0 }}>
