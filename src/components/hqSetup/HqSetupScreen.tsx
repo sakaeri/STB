@@ -50,19 +50,27 @@ export default function HqSetupScreen() {
   const isBasic = state.hqSetupStep === 'basic';
   const isOptional = state.hqSetupStep === 'optional';
   const canProceed = !!(f.hqName.trim() && f.firstTeamName.trim());
+  const isAdmin = !!state.accounts.find((a) => a.id === state.session)?.isAdmin;
 
   return (
     <div style={outerStyle}>
+      <div style={{ width: '100%', maxWidth: 420, margin: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {isAdmin && (
+          <button
+            onClick={actions.goAdminDashboard}
+            style={{ alignSelf: 'flex-start', height: 34, padding: '0 12px', borderRadius: 9, background: '#fff', border: '1px solid #e2e5ea', color: '#6b7280', fontWeight: 700, fontSize: 12 }}
+          >
+            ← 運営ダッシュボードに戻る
+          </button>
+        )}
       <div
         style={{
           width: '100%',
-          maxWidth: 420,
           background: '#fff',
           border: '1px solid #e7e9ed',
           borderRadius: 16,
           boxShadow: '0 8px 30px rgba(20,40,80,.08)',
           overflow: 'hidden',
-          margin: 'auto',
         }}
       >
         <div style={{ padding: '28px 28px 8px', textAlign: 'center' }}>
@@ -211,6 +219,7 @@ export default function HqSetupScreen() {
             </>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

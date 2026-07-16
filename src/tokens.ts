@@ -83,7 +83,7 @@ export const PLAN_TIERS: PlanTier[] = [
 ];
 
 export function planForCount(n: number): PlanTier {
-  return PLAN_TIERS.find((t) => n >= t.min && n <= t.max) || PLAN_TIERS[PLAN_TIERS.length - 1];
+  return PLAN_TIERS.find((t) => n <= t.max) || PLAN_TIERS[PLAN_TIERS.length - 1];
 }
 
 export const radius = {

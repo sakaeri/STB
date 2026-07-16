@@ -20,6 +20,7 @@ export default function Topbar() {
   };
 
   const label = periodLabel(state.aggUnit, state.month, state.year, state.periodDate, state.companyInfo.fiscalStartMonth || 4);
+  const isAdmin = !!state.accounts.find((a) => a.id === state.session)?.isAdmin;
 
   return (
     <header
@@ -62,6 +63,14 @@ export default function Topbar() {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto', flexWrap: 'wrap' }}>
+        {isAdmin && (
+          <button
+            onClick={actions.goAdminDashboard}
+            style={{ height: 36, padding: '0 14px', borderRadius: 9, background: '#f0f2f5', color: '#6b7280', fontWeight: 700, fontSize: 12.5, whiteSpace: 'nowrap' }}
+          >
+            ← 運営ダッシュボードに戻る
+          </button>
+        )}
         {state.isMobile && (
           <select
             value={state.viewRole}
