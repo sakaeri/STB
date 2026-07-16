@@ -41,24 +41,30 @@ export async function createOrgWithFirstTeam(params: {
   address: string; rep: string; closingDay: string; fiscalStartMonth: number;
 }): Promise<string> {
   const { userId, userName, hqName, firstTeamName, address, rep, closingDay, fiscalStartMonth } = params;
-  const { data: org, error: orgErr } = await supabase
+
+  // Generate the org id client-side and skip `.select()` on this insert:
+  // right after creating the org there's no org_members row yet, so the
+  // "orgs: select if accessible" policy can't see the new row — asking
+  // PostgREST to return it (which INSERT...RETURNING requires under RLS)
+  // fails with a misleading "violates row-level security policy" error.
+  // Knowing the id upfront avoids ever needing to read it back here.
+  const orgId = crypto.randomUUID();
+  const { error: orgErr } = await supabase
     .from('orgs')
-    .insert({ name: hqName, address, rep, closing_day: closingDay, fiscal_start_month: fiscalStartMonth, created_by: userId })
-    .select('id')
-    .single();
-  if (orgErr || !org) throw orgErr || new Error('org insert failed');
+    .insert({ id: orgId, name: hqName, address, rep, closing_day: closingDay, fiscal_start_month: fiscalStartMonth, created_by: userId });
+  if (orgErr) throw orgErr;
 
   const { error: memberErr } = await supabase
     .from('org_members')
-    .insert({ org_id: org.id, user_id: userId, role: 'オーナー' });
+    .insert({ org_id: orgId, user_id: userId, role: 'オーナー' });
   if (memberErr) throw memberErr;
 
   const { error: teamErr } = await supabase
     .from('teams')
-    .insert({ org_id: org.id, name: firstTeamName, owner_name: userName });
+    .insert({ org_id: orgId, name: firstTeamName, owner_name: userName });
   if (teamErr) throw teamErr;
 
-  return org.id;
+  return orgId;
 }
 
 export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
