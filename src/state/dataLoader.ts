@@ -1,0 +1,168 @@
+// Fetches & shapes Supabase data into the AppState pieces the UI already
+// knows how to render (see types.ts). Kept separate from store.tsx so the
+// large amount of query/mapping code doesn't crowd out the action logic.
+import { supabase } from '../lib/supabase';
+import type {
+  Store, Member, HqMember, Transaction, MemoTopic, TrashItem, CompanyInfo, Defaults, Org,
+} from '../types';
+
+export interface LoadedOrgData {
+  companyInfo: CompanyInfo;
+  defaults: Defaults;
+  unitLabel: string | null;
+  unitLabelPlural: string | null;
+  stores: Store[];
+  hqMembers: HqMember[];
+  members: Member[];
+  transactions: Record<string, Transaction[]>;
+  memoTopics: MemoTopic[];
+  trash: TrashItem[];
+  confirmedPeriods: Record<string, boolean>;
+  logoMap: Record<string, string>;
+}
+
+export async function fetchMyOrgs(userId: string): Promise<Org[]> {
+  const { data, error } = await supabase
+    .from('org_members')
+    .select('role, orgs(id, name)')
+    .eq('user_id', userId);
+  if (error) throw error;
+  return (data || [])
+    .map((row) => {
+      const org = (row as unknown as { role: string; orgs: { id: string; name: string } | null }).orgs;
+      const role = (row as unknown as { role: string }).role;
+      return org ? { id: org.id, name: org.name, role: role as Org['role'] } : null;
+    })
+    .filter((o): o is Org => !!o);
+}
+
+export async function createOrgWithFirstTeam(params: {
+  userId: string; userName: string; hqName: string; firstTeamName: string;
+  address: string; rep: string; closingDay: string; fiscalStartMonth: number;
+}): Promise<string> {
+  const { userId, userName, hqName, firstTeamName, address, rep, closingDay, fiscalStartMonth } = params;
+  const { data: org, error: orgErr } = await supabase
+    .from('orgs')
+    .insert({ name: hqName, address, rep, closing_day: closingDay, fiscal_start_month: fiscalStartMonth, created_by: userId })
+    .select('id')
+    .single();
+  if (orgErr || !org) throw orgErr || new Error('org insert failed');
+
+  const { error: memberErr } = await supabase
+    .from('org_members')
+    .insert({ org_id: org.id, user_id: userId, role: 'オーナー' });
+  if (memberErr) throw memberErr;
+
+  const { error: teamErr } = await supabase
+    .from('teams')
+    .insert({ org_id: org.id, name: firstTeamName, owner_name: userName });
+  if (teamErr) throw teamErr;
+
+  return org.id;
+}
+
+export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
+  const { data: orgRow, error: orgErr } = await supabase.from('orgs').select('*').eq('id', orgId).single();
+  if (orgErr || !orgRow) throw orgErr || new Error('org not found');
+
+  const { data: teamRows, error: teamErr } = await supabase
+    .from('teams').select('*').eq('org_id', orgId).order('created_at', { ascending: true });
+  if (teamErr) throw teamErr;
+  const teams = teamRows || [];
+  const teamIds = teams.map((t) => t.id);
+  const teamNameById = new Map(teams.map((t) => [t.id, t.name]));
+
+  const [orgMembersRes, teamMembersRes, txRes, topicsRes, trashRes, confirmedRes] = await Promise.all([
+    supabase.from('org_members').select('id, role, profiles(name)').eq('org_id', orgId),
+    teamIds.length
+      ? supabase.from('team_members').select('id, team_id, role, profiles(name)').in('team_id', teamIds)
+      : Promise.resolve({ data: [], error: null }),
+    teamIds.length
+      ? supabase.from('transactions').select('*').in('team_id', teamIds).order('date', { ascending: false })
+      : Promise.resolve({ data: [], error: null }),
+    supabase.from('memo_topics').select('*').eq('org_id', orgId),
+    supabase.from('trash_items').select('*').eq('org_id', orgId).order('deleted_at', { ascending: false }),
+    teamIds.length
+      ? supabase.from('confirmed_periods').select('*').in('team_id', teamIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (orgMembersRes.error) throw orgMembersRes.error;
+  if (teamMembersRes.error) throw teamMembersRes.error;
+  if (txRes.error) throw txRes.error;
+  if (topicsRes.error) throw topicsRes.error;
+  if (trashRes.error) throw trashRes.error;
+  if (confirmedRes.error) throw confirmedRes.error;
+
+  const topics = topicsRes.data || [];
+  const topicIds = topics.map((t) => t.id);
+  const [entriesRes] = await Promise.all([
+    topicIds.length
+      ? supabase.from('memo_entries').select('*').in('topic_id', topicIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (entriesRes.error) throw entriesRes.error;
+  const entries = entriesRes.data || [];
+  const entryIds = entries.map((e) => e.id);
+  const { data: recordRows, error: recordsErr } = entryIds.length
+    ? await supabase.from('memo_records').select('*').in('entry_id', entryIds)
+    : { data: [], error: null };
+  if (recordsErr) throw recordsErr;
+
+  const stores: Store[] = teams.map((t) => ({
+    id: t.id, name: t.name, owner: t.owner_name, seed: 0, base: 0, expRatio: 0, bg: t.bg_color,
+    royaltyRate: Number(t.royalty_rate), useRoyalty: t.use_royalty, royaltyMode: t.royalty_mode as 'rate' | 'amount',
+    royaltyAmount: Number(t.royalty_amount), useSavings: t.use_savings, savings: Number(t.savings),
+    savingsMode: t.savings_mode as 'amount' | 'rate', savingsRate: Number(t.savings_rate), createdPeriod: t.created_period,
+  }));
+
+  const logoMap: Record<string, string> = {};
+  teams.forEach((t) => { if (t.logo_url) logoMap[t.id] = t.logo_url; });
+  if (orgRow.logo_url) logoMap['app-logo'] = orgRow.logo_url;
+
+  const hqMembers: HqMember[] = (orgMembersRes.data || []).map((row) => {
+    const r = row as unknown as { id: string; role: string; profiles: { name: string } | null };
+    return { id: r.id, name: r.profiles?.name || '(不明)', role: r.role as HqMember['role'] };
+  });
+
+  const members: Member[] = (teamMembersRes.data || []).map((row) => {
+    const r = row as unknown as { id: string; role: string; team_id: string; profiles: { name: string } | null };
+    return { id: r.id, name: r.profiles?.name || '(不明)', role: r.role as Member['role'], store: teamNameById.get(r.team_id) || '' };
+  });
+
+  const transactions: Record<string, Transaction[]> = {};
+  (txRes.data || []).forEach((row) => {
+    const list = transactions[row.team_id] || (transactions[row.team_id] = []);
+    list.push({ id: row.id, type: row.type, title: row.title, amount: Number(row.amount), date: row.date, photo: row.photo_url });
+  });
+
+  const memoTopics: MemoTopic[] = topics.map((t) => ({
+    id: t.id, name: t.name, storeId: t.team_id,
+    entries: entries.filter((e) => e.topic_id === t.id).map((e) => ({
+      id: e.id, name: e.name,
+      records: (recordRows || []).filter((r) => r.entry_id === e.id).map((r) => ({ id: r.id, label: r.label, text: r.text, date: r.date })),
+    })),
+  }));
+
+  const trash: TrashItem[] = (trashRes.data || []).map((row) => ({
+    id: row.id, type: row.type as TrashItem['type'], label: row.label, deletedAt: new Date(row.deleted_at).getTime(),
+    data: row.data, storeId: row.team_id,
+  }));
+
+  const confirmedPeriods: Record<string, boolean> = {};
+  (confirmedRes.data || []).forEach((row) => { confirmedPeriods[`${row.team_id}|${row.period}`] = true; });
+
+  return {
+    companyInfo: {
+      name: orgRow.name, address: orgRow.address, rep: orgRow.rep,
+      closingDay: orgRow.closing_day, fiscalStartMonth: orgRow.fiscal_start_month,
+    },
+    defaults: {
+      royaltyRate: Number(orgRow.default_royalty_rate), useRoyalty: orgRow.default_use_royalty,
+      royaltyMode: orgRow.default_royalty_mode as 'rate' | 'amount', royaltyAmount: Number(orgRow.default_royalty_amount),
+      useSavings: orgRow.default_use_savings, savingsMode: orgRow.default_savings_mode as 'amount' | 'rate',
+      savings: Number(orgRow.default_savings), savingsRate: Number(orgRow.default_savings_rate),
+    },
+    unitLabel: orgRow.unit_label, unitLabelPlural: orgRow.unit_label_plural,
+    stores, hqMembers, members, transactions, memoTopics, trash, confirmedPeriods, logoMap,
+  };
+}

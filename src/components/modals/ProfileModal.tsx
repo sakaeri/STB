@@ -13,9 +13,8 @@ export default function ProfileModal() {
   const account = state.accounts.find((a) => a.id === state.session);
   const orgs = account?.orgs || [];
   const draft = state.profileDraft || { name: '', email: '', password: '' };
-  const showEditForm = state.profileEditing && state.emailChangeStep !== 'code' && !state.passwordConfirmStep;
+  const showEditForm = state.profileEditing && state.emailChangeStep !== 'code';
   const showEmailStep = state.emailChangeStep === 'code';
-  const showPasswordStep = state.passwordConfirmStep;
 
   return (
     <div
@@ -81,23 +80,9 @@ export default function ProfileModal() {
         {showEmailStep && (
           <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ fontSize: 12.5, fontWeight: 700, color: '#3a4150' }}>メールアドレスの確認</div>
-            <p style={{ margin: 0, fontSize: 11.5, color: '#9aa0a8', lineHeight: 1.6 }}>{draft.email} 宛に確認コードを送信しました。コードを入力して変更を確定してください。</p>
-            <input type="text" value={state.emailChangeCodeInput} onChange={(e) => actions.onEmailChangeCodeInput(e.target.value)} placeholder="確認コード（デモ：123456）" style={inputStyle} />
-            {state.emailChangeError && <div style={errorBannerStyle}>{state.emailChangeError}</div>}
+            <p style={{ margin: 0, fontSize: 11.5, color: '#9aa0a8', lineHeight: 1.6 }}>{draft.email} 宛に確認メールを送信しました。メール内のリンクを開くと変更が確定します。</p>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={actions.confirmEmailChange} style={{ height: 42, borderRadius: 10, background: accent, color: '#fff', fontWeight: 700, fontSize: 13.5, padding: '0 20px' }}>確認して変更</button>
-              <button onClick={actions.cancelEmailChange} style={{ height: 42, borderRadius: 10, background: '#f0f2f5', color: '#6b7280', fontWeight: 700, fontSize: 13.5, padding: '0 20px' }}>キャンセル</button>
-            </div>
-          </div>
-        )}
-
-        {showPasswordStep && (
-          <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ fontSize: 12.5, fontWeight: 700, color: '#3a4150' }}>パスワードの変更確認</div>
-            <p style={{ margin: 0, fontSize: 12.5, color: '#3a4150', lineHeight: 1.7 }}>新しいパスワードは「<b>{draft.password}</b>」です。よろしいですか？</p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={actions.confirmPasswordChange} style={{ height: 42, borderRadius: 10, background: accent, color: '#fff', fontWeight: 700, fontSize: 13.5, padding: '0 20px' }}>この内容で変更する</button>
-              <button onClick={actions.cancelPasswordChange} style={{ height: 42, borderRadius: 10, background: '#f0f2f5', color: '#6b7280', fontWeight: 700, fontSize: 13.5, padding: '0 20px' }}>キャンセル</button>
+              <button onClick={actions.confirmEmailChange} style={{ height: 42, borderRadius: 10, background: accent, color: '#fff', fontWeight: 700, fontSize: 13.5, padding: '0 20px' }}>閉じる</button>
             </div>
           </div>
         )}

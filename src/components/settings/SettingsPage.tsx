@@ -80,7 +80,7 @@ function trashDetail(item: TrashItem): string {
 }
 
 export default function SettingsPage() {
-  const { state, set, actions } = useStore();
+  const { state, actions } = useStore();
   const [dangerOpen, setDangerOpen] = useState(false);
 
   const accent = state.accent;
@@ -209,11 +209,7 @@ export default function SettingsPage() {
                         alert('オーナーは最低1人必要です。他のメンバーをオーナーにしてから変更してください。');
                         return;
                       }
-                      set((s) => {
-                        const hm = s.hqMembers.slice();
-                        hm[idx] = { ...hm[idx], role: v };
-                        return { hqMembers: hm };
-                      });
+                      actions.setHqMemberRole(m, v);
                     }}
                     style={{ border: '1.5px solid #e2e5ea', borderRadius: 8, padding: '6px 9px', fontSize: 12, fontWeight: 500, color: '#3a4150', background: '#fff', cursor: 'pointer', outline: 'none' }}
                   >

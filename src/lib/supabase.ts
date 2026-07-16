@@ -1,6 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from './database.types';
 
+// Note: not using the generated Database generic here — supabase-js's
+// strict table-typing needs a `Relationships`/`Views`/`Enums` shape we
+// don't hand-maintain (see database.types.ts for the informal row shapes
+// instead). Call sites cast query results to the shapes in types.ts.
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -10,4 +13,4 @@ if (!url || !anonKey) {
   );
 }
 
-export const supabase = createClient<Database>(url, anonKey);
+export const supabase = createClient(url, anonKey);

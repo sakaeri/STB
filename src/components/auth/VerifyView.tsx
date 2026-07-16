@@ -1,9 +1,9 @@
 import { useStore } from '../../state/store.tsx';
-import { bodyStyle, ErrorBanner, primaryButtonStyle } from './shared';
+import { bodyStyle, ErrorBanner } from './shared';
 
 export default function VerifyView() {
   const { state, actions } = useStore();
-  const pendingEmail = state.accounts.find((a) => a.id === state.pendingAccountId)?.email || '';
+  const pendingEmail = state.pendingAccountId || '';
 
   return (
     <div style={{ ...bodyStyle, textAlign: 'center' }}>
@@ -38,12 +38,6 @@ export default function VerifyView() {
         確認メールを再送信
       </button>
       <ErrorBanner error={state.authError} />
-      <div style={{ borderTop: '1px dashed #e2e5ea', paddingTop: 14, marginTop: 2 }}>
-        <p style={{ margin: '0 0 8px', fontSize: 11, color: '#c3c8d0' }}>デモ用（実際のメール送信は行われません）</p>
-        <button onClick={actions.doVerifyComplete} style={primaryButtonStyle(state.accent)}>
-          メール内のリンクを開いた（認証完了）
-        </button>
-      </div>
       <div style={{ textAlign: 'center', fontSize: 12.5, color: '#8a909a', marginTop: 2 }}>
         <button onClick={actions.goLogin} style={{ color: state.accent, fontWeight: 700, display: 'inline' }}>ログイン画面に戻る</button>
       </div>

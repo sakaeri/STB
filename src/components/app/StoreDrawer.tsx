@@ -14,7 +14,7 @@ import './app.css';
 import type { Role } from '../../types';
 
 export default function StoreDrawer() {
-  const { state, set, actions } = useStore();
+  const { state, actions } = useStore();
 
   if (!state.selectedStoreId) return null;
   const store = state.stores.find((s) => s.id === state.selectedStoreId);
@@ -73,11 +73,7 @@ export default function StoreDrawer() {
       alert(`${store.name}には管理者が最低1人必要です。他のメンバーを管理者にしてから変更してください。`);
       return;
     }
-    set((s) => {
-      const mm = s.members.slice();
-      mm[idx] = { ...mm[idx], role: v as Role };
-      return { members: mm };
-    });
+    actions.setMemberRole(cur, v as Role);
   };
 
   const roySwitch = switchStyles(store.useRoyalty !== false, state.accent);

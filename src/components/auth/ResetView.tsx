@@ -6,7 +6,7 @@ export default function ResetView() {
   return (
     <div style={bodyStyle}>
       <div style={{ background: '#eef6f1', borderRadius: 10, padding: '11px 13px', fontSize: 12, color: '#2f7a5c', lineHeight: 1.6 }}>
-        メール内のリンクからアクセスした想定の画面です（デモのため実際のメール送信は行われません）。新しいパスワードを設定してください。
+        新しいパスワードを設定してください。
       </div>
       <Field
         label="新しいパスワード"

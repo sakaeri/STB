@@ -28,24 +28,6 @@ export default function LoginView() {
         アカウントをお持ちでない方は
         <button onClick={actions.goSignup} style={{ color: state.accent, fontWeight: 700, display: 'inline' }}>新規作成</button>
       </div>
-      <div style={{ textAlign: 'center', fontSize: 11, color: '#c3c8d0', marginTop: 2 }}>
-        デモ用: owner@example.com / demo1234（空欄のままログインも可）
-      </div>
-      <button
-        onClick={actions.quickAdminLogin}
-        style={{
-          height: 38,
-          borderRadius: 10,
-          background: '#f3f4f7',
-          border: '1.5px dashed #c7cbd3',
-          color: '#5b6270',
-          fontWeight: 700,
-          fontSize: 12,
-          marginTop: 2,
-        }}
-      >
-        🛠 運営管理画面をお試しログイン
-      </button>
     </div>
   );
 }

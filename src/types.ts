@@ -33,12 +33,14 @@ export interface Transaction {
 }
 
 export interface Member {
+  id: string; // team_members row id
   name: string;
   role: Role;
   store: string;
 }
 
 export interface HqMember {
+  id: string; // org_members row id
   name: string;
   role: Role;
 }

@@ -213,6 +213,24 @@ returns boolean language sql security definer set search_path = public stable as
       );
 $$;
 
+-- can the caller see p_target's profile (name)? true for: fellow HQ
+-- members of a shared org, HQ members looking at their org's team
+-- members, and team members looking at their own teammates.
+create function public.shares_org_with(p_target uuid)
+returns boolean language sql security definer set search_path = public stable as $$
+  select exists (
+    select 1 from public.org_members om1 join public.org_members om2 on om2.org_id = om1.org_id
+    where om1.user_id = auth.uid() and om2.user_id = p_target
+  ) or exists (
+    select 1 from public.org_members om join public.teams t on t.org_id = om.org_id
+    join public.team_members tm on tm.team_id = t.id
+    where om.user_id = auth.uid() and tm.user_id = p_target
+  ) or exists (
+    select 1 from public.team_members tm1 join public.team_members tm2 on tm2.team_id = tm1.team_id
+    where tm1.user_id = auth.uid() and tm2.user_id = p_target
+  );
+$$;
+
 -- ============================================================
 -- invite-by-email RPCs (the prototype's invite-URL was a UI mock only;
 -- this looks up an existing account by email and adds real membership —
@@ -257,15 +275,8 @@ $$;
 -- RLS policies
 -- ============================================================
 
-create policy "profiles: read own or same-org member" on public.profiles for select
-  using (
-    id = auth.uid()
-    or exists (
-      select 1 from public.org_members om1
-      join public.org_members om2 on om2.org_id = om1.org_id
-      where om1.user_id = auth.uid() and om2.user_id = public.profiles.id
-    )
-  );
+create policy "profiles: read own or shared-org member" on public.profiles for select
+  using (id = auth.uid() or public.shares_org_with(id));
 create policy "profiles: update own" on public.profiles for update
   using (id = auth.uid());
 
@@ -280,8 +291,18 @@ create policy "orgs: delete by owner" on public.orgs for delete
 
 create policy "org_members: select if org accessible" on public.org_members for select
   using (public.can_access_org(org_id));
-create policy "org_members: insert by owner or self (first owner on org create)" on public.org_members for insert
-  with check (public.is_org_owner(org_id) or user_id = auth.uid());
+-- allow org owners to add members, OR the org's creator to bootstrap
+-- themselves as the first オーナー (only while the org has zero members yet —
+-- this prevents anyone else from self-inserting into an existing org)
+create policy "org_members: insert by owner or self-bootstrap" on public.org_members for insert
+  with check (
+    public.is_org_owner(org_id)
+    or (
+      user_id = auth.uid()
+      and exists (select 1 from public.orgs o where o.id = org_id and o.created_by = auth.uid())
+      and not exists (select 1 from public.org_members m where m.org_id = org_members.org_id)
+    )
+  );
 create policy "org_members: update by owner" on public.org_members for update
   using (public.is_org_owner(org_id));
 create policy "org_members: delete by owner" on public.org_members for delete
@@ -298,8 +319,10 @@ create policy "teams: delete by org member" on public.teams for delete
 
 create policy "team_members: select if team accessible" on public.team_members for select
   using (public.can_access_team(team_id));
-create policy "team_members: insert by org member or self" on public.team_members for insert
-  with check (public.is_org_member((select org_id from public.teams where id = team_id)) or user_id = auth.uid());
+-- direct inserts are HQ-manager-only; per-team invites go through the
+-- invite_team_member() RPC below (security definer, permission-checked)
+create policy "team_members: insert by org member" on public.team_members for insert
+  with check (public.is_org_member((select org_id from public.teams where id = team_id)));
 create policy "team_members: update by org member" on public.team_members for update
   using (public.is_org_member((select org_id from public.teams where id = team_id)));
 create policy "team_members: delete by org member" on public.team_members for delete
