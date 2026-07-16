@@ -199,7 +199,7 @@ export function periodLabel(aggUnit: string, month: number, year: number, period
 
 export const CLOSING_DAY_OPTIONS = [
   { value: 'eom', label: '末日' },
-  ...Array.from({ length: 28 }, (_, i) => ({ value: String(i + 1), label: `${i + 1}日` })),
+  ...Array.from({ length: 31 }, (_, i) => ({ value: String(i + 1), label: `${i + 1}日` })),
 ];
 
 export const FISCAL_MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: `${i + 1}月` }));

@@ -188,6 +188,17 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       const f = st.hqSetupForm;
       if (!f.hqName.trim() || !f.firstTeamName.trim()) { set({ authError: 'すべての必須項目を入力してください' }); return; }
       if (!st.session) return;
+      // TEMPORARY DIAGNOSTIC — remove once the orgs-insert RLS issue is confirmed fixed.
+      const { data: sessCheck, error: sessErr } = await supabase.auth.getSession();
+      alert('[診断情報]\n' + JSON.stringify({
+        appStateSession: st.session,
+        hasSupabaseSession: !!sessCheck.session,
+        supabaseUserId: sessCheck.session?.user?.id ?? null,
+        accessTokenPreview: sessCheck.session?.access_token ? sessCheck.session.access_token.slice(0, 20) + '...' : null,
+        expiresAt: sessCheck.session?.expires_at ?? null,
+        nowUnix: Math.floor(Date.now() / 1000),
+        sessErr: sessErr?.message ?? null,
+      }, null, 2));
       try {
         const orgId = await createOrgWithFirstTeam({
           userId: st.session, userName: st.ownerProfile.name, hqName: f.hqName.trim(), firstTeamName: f.firstTeamName.trim(),
