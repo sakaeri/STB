@@ -6,6 +6,7 @@ import MainApp from './components/app/MainApp';
 import AdminDashboard from './components/admin/AdminDashboard';
 import InviteScreen from './components/invite/InviteScreen';
 import TermsModal from './components/modals/TermsModal';
+import ConfirmModal from './components/modals/ConfirmModal';
 
 export default function App() {
   const { state, set, actions } = useStore();
@@ -69,6 +70,7 @@ export default function App() {
     <>
       {screen}
       {state.showTermsModal && <TermsModal />}
+      <ConfirmModal />
     </>
   );
 }

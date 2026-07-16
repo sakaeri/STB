@@ -10,7 +10,6 @@ import SettingsPage from '../settings/SettingsPage';
 import ProfileModal from '../modals/ProfileModal';
 import NewOrgModal from '../modals/NewOrgModal';
 import UpgradeModal from '../modals/UpgradeModal';
-import ConfirmModal from '../modals/ConfirmModal';
 import TxDetailModal from '../modals/TxDetailModal';
 import LogoEditorModal from '../modals/LogoEditorModal';
 import EntryModal from '../modals/EntryModal';
@@ -40,7 +39,6 @@ export default function MainApp() {
       <ProfileModal />
       <NewOrgModal />
       <UpgradeModal />
-      <ConfirmModal />
       <TxDetailModal />
       <LogoEditorModal />
       <EntryModal />
