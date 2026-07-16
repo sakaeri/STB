@@ -72,7 +72,10 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     if (!st.activeOrgId) return;
     try {
       const data = await fetchOrgData(st.activeOrgId);
-      set({ ...data });
+      // fetchOrgData's logoMap only covers the active org's own teams/logo —
+      // merge rather than replace, so the operator-wide logo (loaded
+      // separately, org-independent) doesn't get wiped out on every reload.
+      set((s) => ({ ...data, logoMap: { ...s.logoMap, ...data.logoMap } }));
     } catch (e) {
       console.error('reloadActiveOrg failed', e);
     }
@@ -81,10 +84,10 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
   async function loadOrg(orgId: string) {
     try {
       const data = await fetchOrgData(orgId);
-      set({
+      set((s) => ({
         activeOrgId: orgId, hqNameOverride: data.companyInfo.name || null, viewRole: 'hq', selectedStoreId: null,
-        page: 'list', ...data,
-      });
+        page: 'list', ...data, logoMap: { ...s.logoMap, ...data.logoMap },
+      }));
     } catch (e) {
       console.error('loadOrg failed', e);
       set({ authError: '本部データの読み込みに失敗しました' });
@@ -947,7 +950,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (target) {
         try {
           const orgData = await fetchOrgData(target);
-          set({ hqNameOverride: orgData.companyInfo.name || null, viewRole: 'hq', selectedStoreId: null, ...orgData });
+          set((s) => ({
+            hqNameOverride: orgData.companyInfo.name || null, viewRole: 'hq', selectedStoreId: null,
+            ...orgData, logoMap: { ...s.logoMap, ...orgData.logoMap },
+          }));
         } catch (e) {
           console.error('initial org load failed', e);
         }

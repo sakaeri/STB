@@ -115,12 +115,12 @@ export async function saveAppSettingsTerms(terms: string): Promise<void> {
 
 export async function fetchPublicTerms(): Promise<string | null> {
   const { data, error } = await supabase.rpc('get_public_terms');
-  if (error) return null;
+  if (error) { console.error('fetchPublicTerms failed', error); return null; }
   return (data as string) || null;
 }
 
 export async function fetchPublicAppLogo(): Promise<string | null> {
   const { data, error } = await supabase.rpc('get_public_app_logo');
-  if (error) return null;
+  if (error) { console.error('fetchPublicAppLogo failed', error); return null; }
   return (data as string) || null;
 }
