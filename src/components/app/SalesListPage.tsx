@@ -1,0 +1,272 @@
+import { useStore } from '../../state/store.tsx';
+import {
+  periodData,
+  periodDataPrev,
+  closingDayPassedForCurrentMonth,
+  targetPeriodKey,
+  targetPeriodLabel,
+} from '../../state/calc';
+import { buildRow, isPeriodConfirmed } from './rowHelpers';
+import KpiCards from './KpiCards';
+import SalesTable from './SalesTable';
+import SalesCards from './SalesCards';
+import SalesDetailList from './SalesDetailList';
+import { colors } from '../../tokens';
+
+export default function SalesListPage() {
+  const { state, actions } = useStore();
+
+  const isHq = state.viewRole === 'hq';
+  const unitLabel = state.unitLabel || '店舗';
+  const visible = isHq ? state.stores : state.stores.filter((s) => s.id === state.viewRole);
+
+  // ===== KPI totals =====
+  let tSales = 0,
+    tExpense = 0,
+    tProfit = 0,
+    tRoyalty = 0,
+    tSavings = 0,
+    tSalesPrev = 0;
+  visible.forEach((s) => {
+    const d = periodData(s, state.aggUnit, state.month, state.periodDate, state.transactions);
+    const p = periodDataPrev(s, state.aggUnit, state.month, state.periodDate, state.transactions);
+    tSales += d.sales;
+    tExpense += d.expense;
+    tProfit += d.profit;
+    tRoyalty += d.royalty;
+    tSavings += d.savings;
+    tSalesPrev += p.sales || 0;
+  });
+  const salesDelta = state.aggUnit === 'year' ? null : tSalesPrev ? ((tSales - tSalesPrev) / tSalesPrev) * 100 : 0;
+
+  // ===== closing confirmation banners =====
+  const closingPassed = closingDayPassedForCurrentMonth(state.companyInfo);
+  const targetPeriod = targetPeriodKey();
+  const targetPeriodLbl = targetPeriodLabel();
+  const pendingCloseList =
+    isHq && closingPassed
+      ? state.stores
+          .filter((s) => !s.createdPeriod || s.createdPeriod <= targetPeriod)
+          .filter((s) => !isPeriodConfirmed(state.confirmedPeriods, s.id, targetPeriod))
+      : [];
+  const currentStoreForClose = !isHq ? state.stores.find((s) => s.id === state.viewRole) || null : null;
+  const showSelfCloseBanner =
+    !isHq &&
+    closingPassed &&
+    !!currentStoreForClose &&
+    (!currentStoreForClose.createdPeriod || currentStoreForClose.createdPeriod <= targetPeriod) &&
+    !isPeriodConfirmed(state.confirmedPeriods, currentStoreForClose.id, targetPeriod);
+
+  // ===== rows =====
+  const allRows = visible.map((s) => buildRow(s, state));
+  const pageSize = state.hqTablePageSize || 20;
+  const totalPages = Math.max(1, Math.ceil(visible.length / pageSize));
+  const curPage = Math.min(state.hqTablePage, totalPages);
+  const pagedRows = isHq ? allRows.slice((curPage - 1) * pageSize, curPage * pageSize) : allRows;
+  const showTablePagination = isHq && visible.length > pageSize;
+
+  const openStore = (id: string) => actions.openStoreDrawer(id);
+
+  const doExportCsv = () => {
+    const header = [unitLabel, '売上', '経費', '粗利', 'ロイヤリティ', '貯蓄'];
+    const lines = [header.join(',')];
+    visible.forEach((s) => {
+      const d = periodData(s, state.aggUnit, state.month, state.periodDate, state.transactions);
+      lines.push([s.name, d.sales, d.expense, d.profit, d.royalty, d.savings].join(','));
+    });
+    const unitTag = ({ day: '日別', week: '週別', month: '月別', year: '年間' } as Record<string, string>)[state.aggUnit] || state.aggUnit;
+    const csv = '﻿' + lines.join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `売上一覧_${unitTag}_${state.periodDate || state.year}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const segStyle = (active: boolean) =>
+    ({
+      padding: '7px 16px',
+      borderRadius: 8,
+      fontSize: 13,
+      fontWeight: 700,
+      color: active ? state.accent : '#7a818c',
+      background: active ? '#fff' : 'transparent',
+      boxShadow: active ? '0 1px 2px rgba(0,0,0,.07)' : 'none',
+      transition: 'all .12s',
+    }) as const;
+
+  return (
+    <div style={{ height: '100%', overflowY: 'auto', animation: 'scIn .25s ease both' }}>
+      {/* 締め確認バナー（本部：未確定チーム一覧） */}
+      {isHq && closingPassed && pendingCloseList.length > 0 && (
+        <div style={{ margin: '16px 26px 0', background: colors.warnBg, border: `1px solid ${colors.warnBorder}`, borderRadius: 12, padding: '13px 16px' }}>
+          <button
+            onClick={actions.toggleCloseBanner}
+            style={{ display: 'flex', alignItems: 'center', gap: 9, fontWeight: 700, fontSize: 13, color: colors.warnText, width: '100%', textAlign: 'left' }}
+          >
+            <span
+              style={{
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                background: colors.warn,
+                color: '#fff',
+                fontSize: 12,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flex: 'none',
+              }}
+            >
+              !
+            </span>
+            <span style={{ flex: 1 }}>
+              {targetPeriodLbl}分の確定が未完了のチームが{pendingCloseList.length}件あります
+            </span>
+            <span style={{ color: colors.warnText, fontSize: 11, transform: state.closeBannerOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s' }}>
+              ▾
+            </span>
+          </button>
+          {state.closeBannerOpen && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+              {pendingCloseList.map((s) => (
+                <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 9, padding: '8px 11px' }}>
+                  <div style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: '#3a4150' }}>{s.name}</div>
+                  <button
+                    onClick={() => actions.confirmPeriod(s.id, targetPeriod)}
+                    style={{ height: 28, padding: '0 12px', borderRadius: 7, background: colors.warn, color: '#fff', fontWeight: 700, fontSize: 11.5, flex: 'none' }}
+                  >
+                    {targetPeriodLbl}を確定する
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 締め確認バナー（チーム側：自チームのみ） */}
+      {showSelfCloseBanner && currentStoreForClose && (
+        <div
+          style={{
+            margin: '16px 26px 0',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            background: colors.warnBg,
+            border: `1px solid ${colors.warnBorder}`,
+            borderRadius: 12,
+            padding: '12px 16px',
+          }}
+        >
+          <span
+            style={{
+              width: 18,
+              height: 18,
+              borderRadius: '50%',
+              background: colors.warn,
+              color: '#fff',
+              fontSize: 12,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flex: 'none',
+            }}
+          >
+            !
+          </span>
+          <div style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: colors.warnText }}>
+            {targetPeriodLbl}分の売上・経費がまだ確定されていません。0件でも内容を確認して確定してください。
+          </div>
+          <button
+            onClick={() => actions.confirmPeriod(currentStoreForClose.id, targetPeriod)}
+            style={{ height: 32, padding: '0 14px', borderRadius: 8, background: colors.warn, color: '#fff', fontWeight: 700, fontSize: 12, flex: 'none' }}
+          >
+            {targetPeriodLbl}を確定する
+          </button>
+        </div>
+      )}
+
+      <div style={{ padding: '22px 26px 90px', maxWidth: 1280, margin: '0 auto' }}>
+        <KpiCards
+          isHq={isHq}
+          tSales={tSales}
+          tProfit={tProfit}
+          tRoyalty={tRoyalty}
+          tSavings={tSavings}
+          storeCount={visible.length}
+          unitLabel={unitLabel}
+          salesDelta={salesDelta}
+        />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#3a4150' }}>{isHq ? `${unitLabel}別 売上一覧` : '売上明細'}</span>
+          <div style={{ display: 'flex', background: colors.bg, borderRadius: 9, padding: 3 }}>
+            <button onClick={() => actions.setAggUnit('day')} style={segStyle(state.aggUnit === 'day')}>
+              日別
+            </button>
+            <button onClick={() => actions.setAggUnit('month')} style={segStyle(state.aggUnit === 'month')}>
+              月別
+            </button>
+            <button onClick={() => actions.setAggUnit('year')} style={segStyle(state.aggUnit === 'year')}>
+              年間
+            </button>
+          </div>
+          <div style={{ display: 'flex', background: colors.bg, borderRadius: 9, padding: 3 }}>
+            <button onClick={() => actions.setLayout('table')} style={segStyle(state.layout === 'table')}>
+              表
+            </button>
+            <button onClick={() => actions.setLayout('card')} style={segStyle(state.layout === 'card')}>
+              カード
+            </button>
+            <button onClick={() => actions.setLayout('detail')} style={segStyle(state.layout === 'detail')}>
+              詳細
+            </button>
+          </div>
+          <div style={{ marginLeft: 'auto' }} />
+          <button
+            onClick={doExportCsv}
+            style={{
+              height: 29,
+              padding: '0 14px',
+              borderRadius: 8,
+              background: state.accent,
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: 12,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              justifyContent: 'center',
+            }}
+          >
+            📁 CSV
+          </button>
+        </div>
+
+        {state.layout === 'table' && (
+          <SalesTable
+            rows={pagedRows}
+            unitLabel={unitLabel}
+            onOpen={openStore}
+            accent={state.accent}
+            showPagination={showTablePagination}
+            page={curPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            total={visible.length}
+            onPrevPage={() => actions.setHqTablePage(Math.max(1, curPage - 1))}
+            onNextPage={() => actions.setHqTablePage(Math.min(totalPages, curPage + 1))}
+            onSetPageSize={(n) => actions.setHqTablePageSize(n)}
+          />
+        )}
+        {state.layout === 'card' && <SalesCards rows={allRows} onOpen={openStore} />}
+        {state.layout === 'detail' && <SalesDetailList rows={allRows} onOpen={openStore} />}
+      </div>
+    </div>
+  );
+}

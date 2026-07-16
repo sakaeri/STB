@@ -1,0 +1,27 @@
+/* Hover-only styling for the app shell + sales list — everything else is inline
+   styles, mirroring the design prototype's inline-style approach. */
+
+.stb-nav-btn:hover {
+  background: #f7f8fa;
+}
+.stb-table-row:hover {
+  background: #f8fafc;
+}
+.stb-card:hover {
+  box-shadow: 0 6px 20px rgba(20, 40, 80, 0.1);
+  border-color: #d6dae0;
+}
+.stb-detail-row:hover {
+  border-color: #d6dae0;
+  box-shadow: 0 3px 12px rgba(20, 40, 80, 0.07);
+}
+.stb-icon-btn:hover {
+  background: #f0f2f5;
+}
+.stb-icon-btn-danger:hover {
+  background: #eef0f3;
+  color: #d6453d !important;
+}
+.stb-tx-row:hover {
+  background: #eef0f3;
+}
