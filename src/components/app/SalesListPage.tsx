@@ -22,7 +22,6 @@ export default function SalesListPage() {
 
   // ===== KPI totals =====
   let tSales = 0,
-    tExpense = 0,
     tProfit = 0,
     tRoyalty = 0,
     tSavings = 0,
@@ -31,7 +30,6 @@ export default function SalesListPage() {
     const d = periodData(s, state.aggUnit, state.month, state.periodDate, state.transactions);
     const p = periodDataPrev(s, state.aggUnit, state.month, state.periodDate, state.transactions);
     tSales += d.sales;
-    tExpense += d.expense;
     tProfit += d.profit;
     tRoyalty += d.royalty;
     tSavings += d.savings;
@@ -75,7 +73,7 @@ export default function SalesListPage() {
       lines.push([s.name, d.sales, d.expense, d.profit, d.royalty, d.savings].join(','));
     });
     const unitTag = ({ day: '日別', week: '週別', month: '月別', year: '年間' } as Record<string, string>)[state.aggUnit] || state.aggUnit;
-    const csv = '﻿' + lines.join('\r\n');
+    const csv = '\uFEFF' + lines.join('\r\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
