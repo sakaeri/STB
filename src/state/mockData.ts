@@ -9,7 +9,6 @@ export function createInitialState(): AppState {
     page: 'list',
     layout: 'table',
     viewRole: 'hq',
-    simRole: 'オーナー',
     isMobile: false,
     selectedStoreId: null,
     editingTeamSettings: false,

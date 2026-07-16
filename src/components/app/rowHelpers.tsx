@@ -123,28 +123,44 @@ export function RowAvatar({
   );
 }
 
+// The current viewer's real role, derived from their actual org_members/
+// team_members row (not a self-selected simulation — that was only ever a
+// design-prototype demo affordance and never reflected real permissions).
+// HQ members implicitly manage every team (see can_manage_team in the RLS
+// policies), so an org_members row always applies at store level too.
+export function myRole(state: AppState): Role {
+  const uid = state.session;
+  if (!uid) return '閲覧者';
+  const hq = state.hqMembers.find((m) => m.userId === uid);
+  if (state.viewRole === 'hq') return hq?.role || '閲覧者';
+  if (hq?.role === 'オーナー') return 'オーナー';
+  const store = state.stores.find((s) => s.id === state.viewRole);
+  const teamRole = store ? state.members.find((m) => m.userId === uid && m.store === store.name)?.role : undefined;
+  return teamRole || hq?.role || '閲覧者';
+}
+
 // ===== permission helpers (mirror the prototype's inline canXxx bindings) =====
-export function canDeleteRole(simRole: Role): boolean {
-  return simRole === 'オーナー' || simRole === '管理者';
+export function canDeleteRole(role: Role): boolean {
+  return role === 'オーナー' || role === '管理者';
 }
-export function canManagePermissions(simRole: Role): boolean {
-  return simRole === 'オーナー';
+export function canManagePermissions(role: Role): boolean {
+  return role === 'オーナー';
 }
-export function canDeleteCompanyWide(simRole: Role): boolean {
-  return simRole === 'オーナー';
+export function canDeleteCompanyWide(role: Role): boolean {
+  return role === 'オーナー';
 }
-export function canPermanentDelete(simRole: Role): boolean {
-  return simRole === 'オーナー' || simRole === '管理者';
+export function canPermanentDelete(role: Role): boolean {
+  return role === 'オーナー' || role === '管理者';
 }
-export function canDeleteForStore(simRole: Role, isHq: boolean, viewRole: string, storeId: string): boolean {
-  return simRole === 'オーナー' || (simRole === '管理者' && !isHq && viewRole === storeId);
+export function canDeleteForStore(role: Role, isHq: boolean, viewRole: string, storeId: string): boolean {
+  return role === 'オーナー' || (role === '管理者' && !isHq && viewRole === storeId);
 }
-export function canCreateRole(simRole: Role): boolean {
-  return simRole !== '閲覧者';
+export function canCreateRole(role: Role): boolean {
+  return role !== '閲覧者';
 }
 // Team-settings edit gate: owner (anywhere), or admin viewing their own store.
-export function canEditTeamSettings(simRole: Role, viewRole: string, storeId: string): boolean {
-  return simRole === 'オーナー' || (simRole === '管理者' && viewRole === storeId);
+export function canEditTeamSettings(role: Role, viewRole: string, storeId: string): boolean {
+  return role === 'オーナー' || (role === '管理者' && viewRole === storeId);
 }
 
 export function isPeriodConfirmed(confirmedPeriods: Record<string, boolean>, storeId: string, period: string): boolean {

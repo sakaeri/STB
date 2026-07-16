@@ -668,7 +668,6 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       const s2 = st.stores.find((x) => x.id === v);
       set({ viewRole: v, selectedStoreId: null, aggUnit: v === 'hq' ? 'month' : (s2 ? ((s2.aggUnit as AppState['aggUnit']) || 'month') : 'month') });
     },
-    setSimRole: (v: AppState['simRole']) => set({ simRole: v }),
     setLayout: (v: AppState['layout']) => set({ layout: v }),
     setAggUnit: (v: AppState['aggUnit']) => set({ aggUnit: v }),
     toggleCloseBanner: () => set((s) => ({ closeBannerOpen: !s.closeBannerOpen })),

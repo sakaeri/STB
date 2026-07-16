@@ -34,6 +34,7 @@ export interface Transaction {
 
 export interface Member {
   id: string; // team_members row id
+  userId: string;
   name: string;
   role: Role;
   store: string;
@@ -41,6 +42,7 @@ export interface Member {
 
 export interface HqMember {
   id: string; // org_members row id
+  userId: string;
   name: string;
   role: Role;
 }
@@ -212,7 +214,6 @@ export interface AppState {
   page: PageId;
   layout: LayoutId;
   viewRole: string; // 'hq' or store id
-  simRole: Role;
   isMobile: boolean;
   selectedStoreId: string | null;
   editingTeamSettings: boolean;

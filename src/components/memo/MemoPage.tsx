@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useStore } from '../../state/store.tsx';
 import type { MemoTopic } from '../../types';
 import MemoAddModal from './MemoAddModal';
+import { myRole } from '../app/rowHelpers';
 
 const crumbBtnStyle = (active: boolean): React.CSSProperties => ({
   fontSize: 12.5,
@@ -62,13 +63,14 @@ const emptyCardStyle: React.CSSProperties = {
 
 export default function MemoPage() {
   const { state, actions } = useStore();
-  const { memoTopics, memoNav, viewRole, simRole, stores, accent } = state;
+  const { memoTopics, memoNav, viewRole, stores, accent } = state;
   const isHq = viewRole === 'hq';
+  const role = myRole(state);
 
-  const canDeleteCompanyWide = simRole === 'オーナー';
+  const canDeleteCompanyWide = role === 'オーナー';
   const canDeleteForStore = (storeId: string) =>
-    simRole === 'オーナー' || (simRole === '管理者' && !isHq && viewRole === storeId);
-  const canCreate = simRole !== '閲覧者';
+    role === 'オーナー' || (role === '管理者' && !isHq && viewRole === storeId);
+  const canCreate = role !== '閲覧者';
 
   const curTopic = memoNav.topicId ? memoTopics.find((t) => t.id === memoNav.topicId) || null : null;
   const curEntry = curTopic && memoNav.entryId ? curTopic.entries.find((e) => e.id === memoNav.entryId) || null : null;
@@ -133,7 +135,7 @@ export default function MemoPage() {
                     <div style={{ fontSize: 11.5, fontWeight: 700, color: '#9aa0a8', marginBottom: 8, letterSpacing: '.02em' }}>{g.label}</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {g.items.map((t: MemoTopic) => {
-                        const canPromote = simRole === 'オーナー' && !!t.storeId;
+                        const canPromote = role === 'オーナー' && !!t.storeId;
                         const canDelete = t.storeId ? canDeleteForStore(t.storeId) : canDeleteCompanyWide;
                         const scopeLabel = t.storeId ? stores.find((s) => s.id === t.storeId)?.name || '' : '全体';
                         const scopeColor = t.storeId ? '#2f8f6b' : '#9aa0a8';

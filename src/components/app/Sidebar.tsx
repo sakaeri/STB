@@ -121,32 +121,6 @@ export default function Sidebar() {
             ))}
           </select>
         </div>
-        <div>
-          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#aab0b8', letterSpacing: '.04em', marginBottom: 7, paddingLeft: 2 }}>
-            権限プレビュー（自分の役割）
-          </div>
-          <select
-            value={state.simRole}
-            onChange={(e) => actions.setSimRole(e.target.value as typeof state.simRole)}
-            style={{
-              width: '100%',
-              border: '1.5px solid #e2e5ea',
-              borderRadius: 9,
-              padding: '9px 10px',
-              fontSize: 13,
-              fontWeight: 700,
-              color: '#3a4150',
-              background: '#fff',
-              cursor: 'pointer',
-              outline: 'none',
-            }}
-          >
-            <option>オーナー</option>
-            <option>管理者</option>
-            <option>編集者</option>
-            <option>閲覧者</option>
-          </select>
-        </div>
         <button
           onClick={actions.openProfileModal}
           style={{

@@ -1,5 +1,5 @@
 import { useStore } from '../../state/store.tsx';
-import { canCreateRole, canDeleteCompanyWide } from './rowHelpers';
+import { canCreateRole, canDeleteCompanyWide, myRole } from './rowHelpers';
 
 export default function Fab() {
   const { state, actions } = useStore();
@@ -8,8 +8,9 @@ export default function Fab() {
   if (!showFab) return null;
 
   const isHqView = state.viewRole === 'hq';
-  const canCreateTeamNow = canDeleteCompanyWide(state.simRole) && !state.paymentFailed;
-  const canCreate = canCreateRole(state.simRole);
+  const role = myRole(state);
+  const canCreateTeamNow = canDeleteCompanyWide(role) && !state.paymentFailed;
+  const canCreate = canCreateRole(role);
 
   const menuBtnStyle = (color: string) =>
     ({

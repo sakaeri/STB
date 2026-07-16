@@ -98,9 +98,9 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
   const teamNameById = new Map(teams.map((t) => [t.id, t.name]));
 
   const [orgMembersRes, teamMembersRes, txRes, topicsRes, trashRes, confirmedRes] = await Promise.all([
-    supabase.from('org_members').select('id, role, profiles(name)').eq('org_id', orgId),
+    supabase.from('org_members').select('id, user_id, role, profiles(name)').eq('org_id', orgId),
     teamIds.length
-      ? supabase.from('team_members').select('id, team_id, role, profiles(name)').in('team_id', teamIds)
+      ? supabase.from('team_members').select('id, user_id, team_id, role, profiles(name)').in('team_id', teamIds)
       : Promise.resolve({ data: [], error: null }),
     teamIds.length
       ? supabase.from('transactions').select('*').in('team_id', teamIds).order('date', { ascending: false })
@@ -145,13 +145,13 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
   if (orgRow.logo_url) logoMap['app-logo'] = orgRow.logo_url;
 
   const hqMembers: HqMember[] = (orgMembersRes.data || []).map((row) => {
-    const r = row as unknown as { id: string; role: string; profiles: { name: string } | null };
-    return { id: r.id, name: r.profiles?.name || '(不明)', role: r.role as HqMember['role'] };
+    const r = row as unknown as { id: string; user_id: string; role: string; profiles: { name: string } | null };
+    return { id: r.id, userId: r.user_id, name: r.profiles?.name || '(不明)', role: r.role as HqMember['role'] };
   });
 
   const members: Member[] = (teamMembersRes.data || []).map((row) => {
-    const r = row as unknown as { id: string; role: string; team_id: string; profiles: { name: string } | null };
-    return { id: r.id, name: r.profiles?.name || '(不明)', role: r.role as Member['role'], store: teamNameById.get(r.team_id) || '' };
+    const r = row as unknown as { id: string; user_id: string; role: string; team_id: string; profiles: { name: string } | null };
+    return { id: r.id, userId: r.user_id, name: r.profiles?.name || '(不明)', role: r.role as Member['role'], store: teamNameById.get(r.team_id) || '' };
   });
 
   const transactions: Record<string, Transaction[]> = {};

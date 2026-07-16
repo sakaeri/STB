@@ -9,6 +9,7 @@ import {
   modeSegStyle,
   switchStyles,
   RowAvatar,
+  myRole,
 } from './rowHelpers';
 import './app.css';
 import type { Role } from '../../types';
@@ -26,9 +27,10 @@ export default function StoreDrawer() {
   const marginTxt = d.sales ? ((d.profit / d.sales) * 100).toFixed(0) + '%' : '—';
   const periodLbl = periodLabel(state.aggUnit, state.month, state.year, state.periodDate, state.companyInfo.fiscalStartMonth || 4);
 
-  const drawerCanDelete = canDeleteForStore(state.simRole, isHq, state.viewRole, store.id);
-  const canEditSettings = canEditTeamSettings(state.simRole, state.viewRole, store.id);
-  const canManagePerms = canManagePermissions(state.simRole);
+  const role = myRole(state);
+  const drawerCanDelete = canDeleteForStore(role, isHq, state.viewRole, store.id);
+  const canEditSettings = canEditTeamSettings(role, state.viewRole, store.id);
+  const canManagePerms = canManagePermissions(role);
 
   const royaltyMode = store.royaltyMode || 'rate';
   const savingsMode = store.savingsMode || 'amount';

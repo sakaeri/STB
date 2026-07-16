@@ -3,6 +3,7 @@ import { useStore } from '../../state/store.tsx';
 import { CLOSING_DAY_OPTIONS, FISCAL_MONTH_OPTIONS } from '../../state/calc';
 import { accentSoft, roleBg } from '../../tokens';
 import type { TrashItem } from '../../types';
+import { myRole } from '../app/rowHelpers';
 
 const cardStyle: CSSProperties = { background: '#fff', border: '1px solid #e7e9ed', borderRadius: 15, overflow: 'hidden' };
 const cardHeaderStyle: CSSProperties = { padding: '17px 22px', borderBottom: '1px solid #f0f2f5', display: 'flex', alignItems: 'center', gap: 12 };
@@ -85,8 +86,9 @@ export default function SettingsPage() {
 
   const accent = state.accent;
   const isHqView = state.viewRole === 'hq';
-  const isOwner = state.simRole === 'オーナー';
-  const isOwnerOrAdmin = state.simRole === 'オーナー' || state.simRole === '管理者';
+  const role = myRole(state);
+  const isOwner = role === 'オーナー';
+  const isOwnerOrAdmin = role === 'オーナー' || role === '管理者';
   const unitLabel = state.unitLabel || '店舗';
   const unitLabelPlural = state.unitLabelPlural || '加盟店';
 
