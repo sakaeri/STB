@@ -568,6 +568,22 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     nextPeriodDay: () => set((s) => ({ periodDate: (function () { const d = new Date(s.periodDate + 'T00:00:00'); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); })() })),
     prevPeriodYear: () => set((s) => ({ year: (s.year || 2026) - 1 })),
     nextPeriodYear: () => set((s) => ({ year: (s.year || 2026) + 1 })),
+    // Unified period nav: branches on state.aggUnit, matching the prototype's
+    // single prevPeriod()/nextPeriod() header buttons.
+    prevPeriod: () => {
+      const st = getState();
+      if (st.aggUnit === 'year') { actions.prevPeriodYear(); return; }
+      if (st.aggUnit === 'week') { actions.prevPeriodWeek(); return; }
+      if (st.aggUnit === 'day') { actions.prevPeriodDay(); return; }
+      actions.prevPeriodMonth();
+    },
+    nextPeriod: () => {
+      const st = getState();
+      if (st.aggUnit === 'year') { actions.nextPeriodYear(); return; }
+      if (st.aggUnit === 'week') { actions.nextPeriodWeek(); return; }
+      if (st.aggUnit === 'day') { actions.nextPeriodDay(); return; }
+      actions.nextPeriodMonth();
+    },
     setHqTablePage: (p: number) => set({ hqTablePage: p }),
     setHqTablePageSize: (n: number) => set({ hqTablePageSize: n, hqTablePage: 1 }),
 

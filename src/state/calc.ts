@@ -186,6 +186,17 @@ export function shiftMonth(ym: string, delta: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+export function periodLabel(aggUnit: string, month: number, year: number, periodDate: string, fiscalStartMonth: number): string {
+  if (aggUnit === 'year') return fiscalStartMonth === 1 ? `${year}年` : `${year}年度`;
+  if (aggUnit === 'week') {
+    const from = mondayOf(periodDate);
+    const to = addDays(from, 6);
+    return `${from.slice(5, 7)}/${from.slice(8, 10)} - ${to.slice(5, 7)}/${to.slice(8, 10)}`;
+  }
+  if (aggUnit === 'day') return `${periodDate.slice(0, 4)}/${periodDate.slice(5, 7)}/${periodDate.slice(8, 10)}`;
+  return `${year}年 ${month + 1}月`;
+}
+
 export const CLOSING_DAY_OPTIONS = [
   { value: 'eom', label: '末日' },
   ...Array.from({ length: 28 }, (_, i) => ({ value: String(i + 1), label: `${i + 1}日` })),
