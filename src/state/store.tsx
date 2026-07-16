@@ -67,6 +67,14 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     set({ confirmDelete: cd, confirmChecked: false });
   };
 
+  // Team-only members (no org_members row) never have an "hq" view to fall
+  // back to — RLS won't even return other teams for them — so default them
+  // straight into their own (only) team instead of the HQ rollup.
+  function initialViewRole(session: string | null, data: { hqMembers: { userId: string }[]; stores: { id: string }[] }): string {
+    if (session && data.hqMembers.some((m) => m.userId === session)) return 'hq';
+    return data.stores[0]?.id || 'hq';
+  }
+
   async function reloadActiveOrg() {
     const st = getState();
     if (!st.activeOrgId) return;
@@ -84,8 +92,10 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
   async function loadOrg(orgId: string) {
     try {
       const data = await fetchOrgData(orgId);
+      const session = getState().session;
       set((s) => ({
-        activeOrgId: orgId, hqNameOverride: data.companyInfo.name || null, viewRole: 'hq', selectedStoreId: null,
+        activeOrgId: orgId, hqNameOverride: data.companyInfo.name || null,
+        viewRole: initialViewRole(session, data), selectedStoreId: null,
         page: 'list', ...data, logoMap: { ...s.logoMap, ...data.logoMap },
       }));
     } catch (e) {
@@ -949,8 +959,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (target) {
         try {
           const orgData = await fetchOrgData(target);
+          const isOrgMember = orgData.hqMembers.some((m) => m.userId === session.user.id);
           set((s) => ({
-            hqNameOverride: orgData.companyInfo.name || null, viewRole: 'hq', selectedStoreId: null,
+            hqNameOverride: orgData.companyInfo.name || null,
+            viewRole: isOrgMember ? 'hq' : (orgData.stores[0]?.id || 'hq'), selectedStoreId: null,
             ...orgData, logoMap: { ...s.logoMap, ...orgData.logoMap },
           }));
         } catch (e) {

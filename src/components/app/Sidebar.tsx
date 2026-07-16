@@ -14,6 +14,10 @@ export default function Sidebar() {
   const viewStore = isHq ? null : state.stores.find((s) => s.id === state.viewRole) || null;
   const roleCaption = isHq ? `本部（全${unitLabelPlural}）` : viewStore ? `${viewStore.name}（${unitLabelPlural}）` : unitLabelPlural;
   const brandLogoUrl = state.logoMap['app-logo'] || state.logoMap['operator-logo'] || null;
+  // Team-only members (no org_members row) only ever have their own team
+  // visible (RLS scopes it that way) — the HQ-wide rollup option is
+  // meaningless for them, so skip showing it.
+  const isOrgMember = state.hqMembers.some((m) => m.userId === state.session);
 
   const navStyle = (active: boolean): CSSProperties => ({
     display: 'flex',
@@ -96,7 +100,7 @@ export default function Sidebar() {
 
       <div style={{ marginTop: 'auto', padding: '14px 16px', borderTop: '1px solid #eef0f3', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div>
-          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#aab0b8', letterSpacing: '.04em', marginBottom: 7, paddingLeft: 2 }}>表示権限</div>
+          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#aab0b8', letterSpacing: '.04em', marginBottom: 7, paddingLeft: 2 }}>表示切替</div>
           <select
             value={state.viewRole}
             onChange={(e) => actions.setViewRole(e.target.value)}
@@ -113,7 +117,7 @@ export default function Sidebar() {
               outline: 'none',
             }}
           >
-            <option value="hq">本部（全{unitLabelPlural}）</option>
+            {isOrgMember && <option value="hq">本部（全{unitLabelPlural}）</option>}
             {state.stores.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
