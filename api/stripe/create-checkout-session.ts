@@ -32,7 +32,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { data: org, error: orgErr } = await supabase
       .from('orgs').select('id, name, stripe_customer_id').eq('id', orgId).single();
-    if (orgErr || !org) { res.status(404).json({ error: '本部が見つかりません' }); return; }
+    if (orgErr || !org) {
+      console.error('create-checkout-session: orgs lookup failed', orgErr);
+      res.status(404).json({ error: `本部が見つかりません${orgErr ? `（${orgErr.message}）` : ''}` });
+      return;
+    }
 
     const { count } = await supabase.from('teams').select('id', { count: 'exact', head: true }).eq('org_id', orgId);
     const { data: pricingRaw } = await supabase.rpc('get_public_pricing');
