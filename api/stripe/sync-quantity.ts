@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { userClient, bearerToken } from '../_lib/supabase';
-import { getStripe } from '../_lib/stripe';
-import { stepsForCount, parsePricingConfig } from '../_lib/pricing';
+import { userClient, bearerToken } from '../_lib/supabase.js';
+import { getStripe } from '../_lib/stripe.js';
+import { stepsForCount, parsePricingConfig } from '../_lib/pricing.js';
 
 // Called (fire-and-forget) after a team is created or deleted, so a live
 // subscription's billed quantity tracks the org's actual team count.

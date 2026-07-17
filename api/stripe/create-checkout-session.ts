@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { userClient, bearerToken } from '../_lib/supabase';
-import { getStripe } from '../_lib/stripe';
-import { stepsForCount, parsePricingConfig } from '../_lib/pricing';
+import { userClient, bearerToken } from '../_lib/supabase.js';
+import { getStripe } from '../_lib/stripe.js';
+import { stepsForCount, parsePricingConfig } from '../_lib/pricing.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }

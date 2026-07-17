@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import type Stripe from 'stripe';
-import { getStripe } from '../_lib/stripe';
-import { serviceClient } from '../_lib/supabase';
+import { getStripe } from '../_lib/stripe.js';
+import { serviceClient } from '../_lib/supabase.js';
 
 // Stripe needs the raw, unparsed request body to verify the signature —
 // Vercel's default JSON body parsing would break that.
