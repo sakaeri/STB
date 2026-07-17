@@ -1,3 +1,5 @@
+import type { PlanStep, PricingConfig } from './tokens';
+
 export type Role = 'オーナー' | '管理者' | '編集者' | '閲覧者';
 export type TeamRole = '管理者' | '編集者' | '閲覧者';
 
@@ -194,14 +196,8 @@ export interface ConfirmDialogState {
 }
 
 export interface PendingUpgrade {
-  fromPlan: { name: string; color: string; min: number; max: number; price: number };
-  toPlan: { name: string; color: string; min: number; max: number; price: number };
-}
-
-export interface PlanPriceOverride {
-  min: number;
-  max: number | null; // null = infinity
-  price: number;
+  fromPlan: PlanStep;
+  toPlan: PlanStep;
 }
 
 export type PageId = 'list' | 'memo' | 'settings';
@@ -235,6 +231,7 @@ export interface AppState {
   unitLabel: string | null;
   unitLabelPlural: string | null;
   orgStatus: 'active' | 'frozen';
+  hasStripeSubscription: boolean;
 
   // data
   stores: Store[];
@@ -356,7 +353,7 @@ export interface AppState {
   // app settings (admin)
   billingProvider: 'stripe' | 'square';
   billingApiKeys: { stripe: string; square: string };
-  settingsPlanPrices: Record<string, PlanPriceOverride> | null;
+  pricingConfig: PricingConfig;
   settingsTerms: string;
   paymentGraceDays: number;
   showLogoSaved: boolean;

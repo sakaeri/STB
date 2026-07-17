@@ -1,5 +1,6 @@
 import type { AppState } from '../types';
 import { currentPeriodKey } from './calc';
+import { DEFAULT_PRICING } from '../tokens';
 
 // Real org/team/transaction/memo data now comes from Supabase (see
 // src/state/dataLoader.ts) — this only seeds pre-login UI state and the
@@ -27,6 +28,7 @@ export function createInitialState(): AppState {
     unitLabel: null,
     unitLabelPlural: null,
     orgStatus: 'active',
+    hasStripeSubscription: false,
 
     stores: [],
     members: [],
@@ -141,7 +143,7 @@ export function createInitialState(): AppState {
 
     billingProvider: 'stripe',
     billingApiKeys: { stripe: '', square: '' },
-    settingsPlanPrices: null,
+    pricingConfig: DEFAULT_PRICING,
     settingsTerms: '',
     paymentGraceDays: 7,
     showLogoSaved: false,

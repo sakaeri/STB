@@ -7,9 +7,9 @@ import { supabase } from '../lib/supabase';
 import { fetchMyOrgs, fetchOrgData, createOrgWithFirstTeam } from './dataLoader';
 import {
   fetchAdminOrgs, fetchAuditLog, fetchAppSettings, addAuditLog,
-  saveAppSettingsBilling, saveAppSettingsTerms, fetchPublicTerms, fetchPublicAppLogo,
+  saveAppSettingsBilling, saveAppSettingsTerms, fetchPublicTerms, fetchPublicAppLogo, fetchPublicPricing,
 } from './adminData';
-import { planForCount, type PlanTier } from '../tokens';
+import { planForCount, type PlanStep } from '../tokens';
 
 type Patch = Partial<AppState> | ((s: AppState) => Partial<AppState>);
 
@@ -70,10 +70,10 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
   };
 
   const activeTeamCount = () => getState().stores.length;
-  const effectivePlan = () => planForCount(activeTeamCount());
-  // billing/plan enforcement isn't backed by real data yet, so there's never
-  // a "you're now over/under a tier" prompt to show.
-  const downgradeCandidatePlan = (): PlanTier | null => null;
+  const effectivePlan = () => planForCount(activeTeamCount(), getState().pricingConfig);
+  // downgrades (removing teams) never prompt — only step-ups need the
+  // upgrade-confirmation + Stripe checkout/sync flow.
+  const downgradeCandidatePlan = (): PlanStep | null => null;
 
   const addTrash = async (type: TrashItem['type'], label: string, data: unknown, storeId?: string | null) => {
     const st = getState();
@@ -125,11 +125,12 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
 
   async function loadAdminOverview() {
     try {
-      const [orgs, auditLog, settings] = await Promise.all([fetchAdminOrgs(), fetchAuditLog(), fetchAppSettings()]);
+      const settings = await fetchAppSettings();
+      const [orgs, auditLog] = await Promise.all([fetchAdminOrgs(settings.pricingConfig), fetchAuditLog()]);
       set((s) => ({
         adminMockOrgs: orgs, auditLog,
         billingProvider: settings.billingProvider, billingApiKeys: settings.billingApiKeys,
-        settingsPlanPrices: settings.settingsPlanPrices, settingsTerms: settings.settingsTerms,
+        pricingConfig: settings.pricingConfig, settingsTerms: settings.settingsTerms,
         paymentGraceDays: settings.paymentGraceDays,
         logoMap: settings.logoUrl ? { ...s.logoMap, 'operator-logo': settings.logoUrl } : s.logoMap,
       }));
@@ -228,6 +229,10 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     loadPublicBranding: async () => {
       const logoUrl = await fetchPublicAppLogo();
       if (logoUrl) set((s) => ({ logoMap: { ...s.logoMap, 'operator-logo': logoUrl } }));
+    },
+    loadPublicPricing: async () => {
+      const pricingConfig = await fetchPublicPricing();
+      set({ pricingConfig });
     },
 
     // ===== HQ setup =====
@@ -404,12 +409,20 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       const st = getState();
       const f = st.addForm;
       if (!f || !f.name.trim()) return;
-      const currentPlan = planForCount(st.stores.length);
-      const nextPlan = planForCount(st.stores.length + 1);
-      if (nextPlan.name !== currentPlan.name) { set({ pendingUpgrade: { fromPlan: currentPlan, toPlan: nextPlan } }); return; }
+      const currentPlan = planForCount(st.stores.length, st.pricingConfig);
+      const nextPlan = planForCount(st.stores.length + 1, st.pricingConfig);
+      if (nextPlan.price !== currentPlan.price) { set({ pendingUpgrade: { fromPlan: currentPlan, toPlan: nextPlan } }); return; }
       actuallyCreateStore();
     },
-    confirmUpgradeAndCreate: () => { set({ pendingUpgrade: null }); actuallyCreateStore(); },
+    // The very first step into paid territory needs a real Stripe Checkout
+    // (no subscription exists yet); every later step-up just updates the
+    // quantity on the subscription that's already running.
+    confirmUpgradeAndCreate: () => {
+      const st = getState();
+      const needsCheckout = !st.hasStripeSubscription && !!st.pendingUpgrade && st.pendingUpgrade.toPlan.price > 0;
+      set({ pendingUpgrade: null });
+      actuallyCreateStore(needsCheckout);
+    },
     cancelUpgrade: () => set({ pendingUpgrade: null }),
     copyInvite: () => { flash('copied', 1600); },
     copyMemberInvite: () => { flash('memberInviteCopied', 1600); },
@@ -797,8 +810,8 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     setBillingProvider: (p: 'stripe' | 'square') => set({ billingProvider: p, billingDirty: true }),
     onProviderApiKeyChange: (v: string) => set((s) => ({ billingApiKeys: { ...s.billingApiKeys, [s.billingProvider]: v }, billingDirty: true })),
     copyWebhookUrl: () => flash('copiedWebhook', 1600),
-    setPlanPrice: (name: string, patch: Partial<{ min: number; max: number | null; price: number }>) => set((s) => ({
-      settingsPlanPrices: { ...(s.settingsPlanPrices || {}), [name]: { ...(s.settingsPlanPrices?.[name] || { min: 0, max: null, price: 0 }), ...patch } },
+    setPricingConfig: (patch: Partial<AppState['pricingConfig']>) => set((s) => ({
+      pricingConfig: { ...s.pricingConfig, ...patch },
       billingDirty: true,
     })),
     onPaymentGraceDaysChange: (v: number) => set({ paymentGraceDays: v, billingDirty: true }),
@@ -809,7 +822,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       try {
         await saveAppSettingsBilling({
           billingProvider: st.billingProvider, billingApiKeys: st.billingApiKeys,
-          settingsPlanPrices: st.settingsPlanPrices, paymentGraceDays: st.paymentGraceDays,
+          pricingConfig: st.pricingConfig, paymentGraceDays: st.paymentGraceDays,
         });
         set({ billingDirty: false });
         flash('showBillingSaved');
@@ -909,7 +922,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     });
   }
 
-  function actuallyCreateStore() {
+  function actuallyCreateStore(andThenCheckout?: boolean) {
     const st = getState();
     const f = st.addForm;
     if (!f || !f.name.trim() || !st.activeOrgId) return;
@@ -923,8 +936,12 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       const { data: inviteId, error: inviteErr } = await supabase.rpc('create_invite', { p_team_id: data.id, p_role: '管理者' });
       if (inviteErr) console.error('create_invite failed', inviteErr);
       set({ addStep: 'done', createdToken: (inviteId as string) || '', createdName: f.name.trim(), copied: false });
-      syncStripeQuantity(st.activeOrgId);
       await reloadActiveOrg();
+      if (andThenCheckout) {
+        await actions.startCheckout();
+      } else {
+        syncStripeQuantity(st.activeOrgId);
+      }
     });
   }
 
@@ -960,6 +977,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
     void actions.loadPublicTerms();
     void actions.loadPublicBranding();
+    void actions.loadPublicPricing();
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (cancelled) return;
       void handleAuthChange(event, session);

@@ -3,20 +3,20 @@
 // dataLoader.ts since it queries across every org, gated by profiles.is_admin
 // via RLS admin-bypass policies rather than org/team membership.
 import { supabase } from '../lib/supabase';
-import { planForCount } from '../tokens';
+import { planForCount, DEFAULT_PRICING, type PricingConfig } from '../tokens';
 import { currentPeriodKey } from './calc';
-import type { AdminMockOrg, AuditLogEntry, PlanPriceOverride } from '../types';
+import type { AdminMockOrg, AuditLogEntry } from '../types';
 
 export interface AdminSettingsData {
   logoUrl: string | null;
   billingProvider: 'stripe' | 'square';
   billingApiKeys: { stripe: string; square: string };
-  settingsPlanPrices: Record<string, PlanPriceOverride> | null;
+  pricingConfig: PricingConfig;
   settingsTerms: string;
   paymentGraceDays: number;
 }
 
-export async function fetchAdminOrgs(): Promise<AdminMockOrg[]> {
+export async function fetchAdminOrgs(pricing: PricingConfig = DEFAULT_PRICING): Promise<AdminMockOrg[]> {
   const { data: orgs, error: orgsErr } = await supabase
     .from('orgs')
     .select('id, name, rep, reading, address, status, created_at')
@@ -56,7 +56,7 @@ export async function fetchAdminOrgs(): Promise<AdminMockOrg[]> {
     return {
       id: o.id, name: o.name, rep: o.rep, reading: o.reading || '',
       teams: teamCount, monthlySales: history[nowKey].sales,
-      plan: planForCount(teamCount).name, status: o.status as 'active' | 'frozen',
+      plan: planForCount(teamCount, pricing).label, status: o.status as 'active' | 'frozen',
       joinedAt: (o.created_at as string).slice(0, 10), address: o.address, history,
     };
   });
@@ -78,6 +78,15 @@ export async function addAuditLog(text: string): Promise<void> {
   await supabase.from('admin_audit_log').insert({ text, created_by: userRes.user?.id });
 }
 
+function parsePricingConfig(raw: unknown): PricingConfig {
+  const r = (raw as Partial<PricingConfig>) || {};
+  return {
+    freeTeams: typeof r.freeTeams === 'number' ? r.freeTeams : DEFAULT_PRICING.freeTeams,
+    teamsPerStep: typeof r.teamsPerStep === 'number' ? r.teamsPerStep : DEFAULT_PRICING.teamsPerStep,
+    pricePerStep: typeof r.pricePerStep === 'number' ? r.pricePerStep : DEFAULT_PRICING.pricePerStep,
+  };
+}
+
 export async function fetchAppSettings(): Promise<AdminSettingsData> {
   const { data, error } = await supabase.from('app_settings').select('*').eq('id', 1).single();
   if (error) throw error;
@@ -85,7 +94,7 @@ export async function fetchAppSettings(): Promise<AdminSettingsData> {
     logoUrl: data.logo_url,
     billingProvider: data.billing_provider as 'stripe' | 'square',
     billingApiKeys: { stripe: data.billing_api_key_stripe || '', square: data.billing_api_key_square || '' },
-    settingsPlanPrices: (data.plan_prices as Record<string, PlanPriceOverride>) || null,
+    pricingConfig: parsePricingConfig(data.plan_prices),
     settingsTerms: data.terms || '',
     paymentGraceDays: data.payment_grace_days,
   };
@@ -94,14 +103,14 @@ export async function fetchAppSettings(): Promise<AdminSettingsData> {
 export async function saveAppSettingsBilling(patch: {
   billingProvider: 'stripe' | 'square';
   billingApiKeys: { stripe: string; square: string };
-  settingsPlanPrices: Record<string, PlanPriceOverride> | null;
+  pricingConfig: PricingConfig;
   paymentGraceDays: number;
 }): Promise<void> {
   const { error } = await supabase.from('app_settings').update({
     billing_provider: patch.billingProvider,
     billing_api_key_stripe: patch.billingApiKeys.stripe,
     billing_api_key_square: patch.billingApiKeys.square,
-    plan_prices: patch.settingsPlanPrices || {},
+    plan_prices: patch.pricingConfig,
     payment_grace_days: patch.paymentGraceDays,
     updated_at: new Date().toISOString(),
   }).eq('id', 1);
@@ -123,4 +132,10 @@ export async function fetchPublicAppLogo(): Promise<string | null> {
   const { data, error } = await supabase.rpc('get_public_app_logo');
   if (error) { console.error('fetchPublicAppLogo failed', error); return null; }
   return (data as string) || null;
+}
+
+export async function fetchPublicPricing(): Promise<PricingConfig> {
+  const { data, error } = await supabase.rpc('get_public_pricing');
+  if (error) { console.error('fetchPublicPricing failed', error); return DEFAULT_PRICING; }
+  return parsePricingConfig(data);
 }

@@ -16,7 +16,7 @@ export default function OrgsTab() {
   const statFrozenCount = orgs.filter((o) => o.status === 'frozen').length;
   const statBillingTotal = orgs
     .filter((o) => o.status === 'active')
-    .reduce((sum, o) => sum + planForCount(monthDataFor(o, month).teams).price, 0);
+    .reduce((sum, o) => sum + planForCount(monthDataFor(o, month).teams, state.pricingConfig).price, 0);
 
   const prefOptions = Array.from(new Set(orgs.map((o) => prefectureOf(o.address)))).sort();
 
@@ -178,7 +178,7 @@ function Th({ children, align }: { children: ReactNode; align?: 'right' }) {
 function OrgRow({ org, month }: { org: AdminMockOrg; month: string }) {
   const { state, actions } = useStore();
   const { teams, sales } = monthDataFor(org, month);
-  const plan = planForCount(teams);
+  const plan = planForCount(teams, state.pricingConfig);
   const isFrozen = org.status === 'frozen';
   const showActionMenu = state.adminActionMenuOrgId === org.id;
   const showDetail = state.adminDetailOrgId === org.id;
@@ -193,7 +193,7 @@ function OrgRow({ org, month }: { org: AdminMockOrg; month: string }) {
         <td style={{ padding: '12px 18px', textAlign: 'right', fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>
           ¥{sales.toLocaleString('ja-JP')}
         </td>
-        <td style={{ padding: '12px 18px', fontSize: 12, fontWeight: 700, color: plan.color }}>{plan.name}</td>
+        <td style={{ padding: '12px 18px', fontSize: 12, fontWeight: 700, color: plan.color }}>{plan.label}</td>
         <td style={{ padding: '12px 18px' }}>
           <span
             style={{

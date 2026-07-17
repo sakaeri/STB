@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { userClient, bearerToken } from '../_lib/supabase';
 import { getStripe } from '../_lib/stripe';
+import { stepsForCount, parsePricingConfig } from '../_lib/pricing';
 
 // Called (fire-and-forget) after a team is created or deleted, so a live
 // subscription's billed quantity tracks the org's actual team count.
@@ -27,7 +28,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!org.stripe_subscription_id) { res.status(200).json({ skipped: true }); return; }
 
     const { count } = await supabase.from('teams').select('id', { count: 'exact', head: true }).eq('org_id', orgId);
-    const quantity = Math.max(1, count || 1);
+    const { data: pricingRaw } = await supabase.rpc('get_public_pricing');
+    const pricing = parsePricingConfig(pricingRaw);
+    // Once subscribed, never drop the billed quantity below 1 — a team
+    // count back within the free range doesn't auto-cancel the
+    // subscription (that's a separate, explicit unsubscribe action).
+    const quantity = Math.max(1, stepsForCount(count || 0, pricing));
 
     const stripe = getStripe();
     const subscription = await stripe.subscriptions.retrieve(org.stripe_subscription_id);

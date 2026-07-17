@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type { ChangeEvent, DragEvent } from 'react';
 import { useStore } from '../../state/store.tsx';
-import { PLAN_TIERS, accentBorder, accentSoft } from '../../tokens';
+import { accentBorder, accentSoft } from '../../tokens';
 
 const LOGO_ID = 'operator-logo';
 
@@ -162,49 +162,40 @@ export default function AppSettingsTab() {
         </div>
 
         <div>
-          <div style={{ fontSize: 12, color: '#8a909a', marginBottom: 8 }}>プラン別 月額料金</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {PLAN_TIERS.map((tier) => {
-              const override = state.settingsPlanPrices?.[tier.name];
-              const min = override?.min ?? tier.min;
-              const max = override ? override.max : (tier.max === Infinity ? null : tier.max);
-              const price = override?.price ?? tier.price;
-              const maxTxt = max === null ? '' : String(max);
-              return (
-                <div key={tier.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: '#f7f8fa', borderRadius: 9 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: tier.color, flex: 'none' }} />
-                  <div style={{ width: 70, fontSize: 12.5, fontWeight: 700, flex: 'none' }}>{tier.name}</div>
-                  <input
-                    type="number"
-                    value={min}
-                    onChange={(e) => actions.setPlanPrice(tier.name, { min: parseInt(e.target.value, 10) || 0 })}
-                    style={{ width: 56, border: '1.5px solid #dfe3e8', borderRadius: 8, padding: '7px 8px', fontSize: 12.5, textAlign: 'right', outline: 'none' }}
-                  />
-                  <span style={{ fontSize: 11.5, color: '#8a909a', flex: 'none' }}>〜</span>
-                  <input
-                    type="text"
-                    value={maxTxt}
-                    placeholder="∞"
-                    onChange={(e) => {
-                      const v = e.target.value.trim();
-                      if (v === '' || v === '∞') { actions.setPlanPrice(tier.name, { max: null }); return; }
-                      const n = parseInt(v, 10);
-                      actions.setPlanPrice(tier.name, { max: Number.isNaN(n) ? null : n });
-                    }}
-                    style={{ width: 56, border: '1.5px solid #dfe3e8', borderRadius: 8, padding: '7px 8px', fontSize: 12.5, textAlign: 'right', outline: 'none' }}
-                  />
-                  <span style={{ fontSize: 11.5, color: '#8a909a', flex: 1 }}>チーム</span>
-                  <input
-                    type="number"
-                    value={price}
-                    onChange={(e) => actions.setPlanPrice(tier.name, { price: parseInt(e.target.value, 10) || 0 })}
-                    style={{ width: 100, border: '1.5px solid #dfe3e8', borderRadius: 8, padding: '7px 10px', fontSize: 12.5, textAlign: 'right', outline: 'none' }}
-                  />
-                  <span style={{ fontSize: 12, color: '#8a909a', flex: 'none' }}>円/月</span>
-                </div>
-              );
-            })}
+          <div style={{ fontSize: 12, color: '#8a909a', marginBottom: 8 }}>料金設定（線形・上限なし）</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: '#f7f8fa', borderRadius: 9, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12.5, color: '#3a4150' }}>最初の</span>
+            <input
+              type="number"
+              min={0}
+              value={state.pricingConfig.freeTeams}
+              onChange={(e) => actions.setPricingConfig({ freeTeams: Math.max(0, parseInt(e.target.value, 10) || 0) })}
+              style={{ width: 64, border: '1.5px solid #dfe3e8', borderRadius: 8, padding: '7px 8px', fontSize: 12.5, textAlign: 'right', outline: 'none' }}
+            />
+            <span style={{ fontSize: 12.5, color: '#3a4150' }}>チームまでは無料。以降、</span>
+            <input
+              type="number"
+              min={1}
+              value={state.pricingConfig.teamsPerStep}
+              onChange={(e) => actions.setPricingConfig({ teamsPerStep: Math.max(1, parseInt(e.target.value, 10) || 1) })}
+              style={{ width: 64, border: '1.5px solid #dfe3e8', borderRadius: 8, padding: '7px 8px', fontSize: 12.5, textAlign: 'right', outline: 'none' }}
+            />
+            <span style={{ fontSize: 12.5, color: '#3a4150' }}>チーム増えるごとに月額</span>
+            <input
+              type="number"
+              min={0}
+              step={100}
+              value={state.pricingConfig.pricePerStep}
+              onChange={(e) => actions.setPricingConfig({ pricePerStep: Math.max(0, parseInt(e.target.value, 10) || 0) })}
+              style={{ width: 90, border: '1.5px solid #dfe3e8', borderRadius: 8, padding: '7px 8px', fontSize: 12.5, textAlign: 'right', outline: 'none' }}
+            />
+            <span style={{ fontSize: 12.5, color: '#3a4150' }}>円ずつ加算（上限なし）</span>
           </div>
+          <p style={{ margin: '8px 0 0', fontSize: 11.5, color: '#9aa0a8', lineHeight: 1.7 }}>
+            例：{state.pricingConfig.freeTeams + 1}〜{state.pricingConfig.freeTeams + state.pricingConfig.teamsPerStep}チームで月額¥{state.pricingConfig.pricePerStep.toLocaleString('ja-JP')}、
+            {state.pricingConfig.freeTeams + state.pricingConfig.teamsPerStep + 1}〜{state.pricingConfig.freeTeams + state.pricingConfig.teamsPerStep * 2}チームで月額¥{(state.pricingConfig.pricePerStep * 2).toLocaleString('ja-JP')}…と続きます。
+            Stripe側の価格（1ステップ分の金額）と揃えてください。
+          </p>
         </div>
 
         <div>

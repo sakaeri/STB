@@ -66,24 +66,39 @@ export const palette = [
   '#3a9a8f',
 ];
 
-export interface PlanTier {
-  min: number;
-  max: number;
-  name: string;
-  color: string;
-  price: number;
+// Linear, uncapped pricing: the first `freeTeams` teams are free, then the
+// price steps up by `pricePerStep` for every additional `teamsPerStep`
+// teams — no fixed named tiers, no upper bound. Mirrored server-side in
+// api/_lib/pricing.ts (kept manually in sync; /api has no shared package
+// boundary with src/).
+export interface PricingConfig {
+  freeTeams: number;
+  teamsPerStep: number;
+  pricePerStep: number;
 }
 
-export const PLAN_TIERS: PlanTier[] = [
-  { min: 1, max: 5, name: 'Free', color: '#8a909a', price: 0 },
-  { min: 6, max: 10, name: 'Blue', color: '#2f6fb3', price: 2980 },
-  { min: 11, max: 20, name: 'Emerald', color: '#1f9d6b', price: 5980 },
-  { min: 21, max: 30, name: 'Gold', color: '#c79a2e', price: 9800 },
-  { min: 31, max: Infinity, name: 'Black', color: '#2a2e35', price: 19800 },
-];
+export const DEFAULT_PRICING: PricingConfig = { freeTeams: 5, teamsPerStep: 5, pricePerStep: 3000 };
 
-export function planForCount(n: number): PlanTier {
-  return PLAN_TIERS.find((t) => n <= t.max) || PLAN_TIERS[PLAN_TIERS.length - 1];
+export interface PlanStep {
+  step: number; // 0 = free
+  price: number;
+  label: string;
+  color: string;
+}
+
+export function stepsForCount(n: number, pricing: PricingConfig): number {
+  return Math.max(0, Math.ceil((n - pricing.freeTeams) / pricing.teamsPerStep));
+}
+
+export function planForCount(n: number, pricing: PricingConfig = DEFAULT_PRICING): PlanStep {
+  const step = stepsForCount(n, pricing);
+  const price = step * pricing.pricePerStep;
+  return {
+    step,
+    price,
+    label: step === 0 ? 'Free' : `¥${price.toLocaleString('ja-JP')}/月`,
+    color: step === 0 ? '#8a909a' : '#1f7a5a',
+  };
 }
 
 export const radius = {

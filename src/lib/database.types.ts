@@ -17,6 +17,7 @@ export interface Database {
           default_use_royalty: boolean; default_royalty_mode: string; default_royalty_rate: number; default_royalty_amount: number;
           default_use_savings: boolean; default_savings_mode: string; default_savings: number; default_savings_rate: number;
           created_by: string | null; created_at: string; status: 'active' | 'frozen'; reading: string;
+          stripe_customer_id: string | null; stripe_subscription_id: string | null;
         };
         Insert: Partial<Database['public']['Tables']['orgs']['Row']> & { name: string };
         Update: Partial<Database['public']['Tables']['orgs']['Row']>;
@@ -109,6 +110,8 @@ export interface Database {
       get_invite_info: { Args: { p_id: string }; Returns: unknown };
       redeem_invite: { Args: { p_id: string }; Returns: unknown };
       get_public_terms: { Args: Record<string, never>; Returns: string };
+      get_public_app_logo: { Args: Record<string, never>; Returns: string };
+      get_public_pricing: { Args: Record<string, never>; Returns: unknown };
     };
   };
 }

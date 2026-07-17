@@ -138,14 +138,14 @@ export default function SettingsPage() {
           </div>
           {isHqView && (
             <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fff', background: plan.color, padding: '6px 12px', borderRadius: 8, flex: 'none' }}>
-              {plan.name}プラン ・ {state.stores.length}{unitLabel}
+              {plan.label} ・ {state.stores.length}{unitLabel}
             </span>
           )}
           {canEditCompanyInfo && !state.editingCompanyInfo && (
             <button onClick={actions.openCompanyInfoEdit} style={{ height: 32, padding: '0 14px', borderRadius: 9, background: accentSoft(accent), color: accent, fontWeight: 700, fontSize: 12.5, flex: 'none' }}>変更</button>
           )}
           {showDowngradePrompt && downgradeCand && (
-            <button onClick={actions.confirmDowngrade} title={`来月から${downgradeCand.name}プランに変更します`} style={{ fontSize: 11, fontWeight: 700, color: accent, background: accentSoft(accent), padding: '6px 10px', borderRadius: 8, flex: 'none' }}>{downgradeCand.name}に変更</button>
+            <button onClick={actions.confirmDowngrade} title={`来月から${downgradeCand.label}に変更します`} style={{ fontSize: 11, fontWeight: 700, color: accent, background: accentSoft(accent), padding: '6px 10px', borderRadius: 8, flex: 'none' }}>{downgradeCand.label}に変更</button>
           )}
         </div>
         {canEditCompanyInfo && state.editingCompanyInfo ? (

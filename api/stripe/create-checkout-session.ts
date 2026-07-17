@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { userClient, bearerToken } from '../_lib/supabase';
 import { getStripe } from '../_lib/stripe';
+import { stepsForCount, parsePricingConfig } from '../_lib/pricing';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
@@ -34,7 +35,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (orgErr || !org) { res.status(404).json({ error: '本部が見つかりません' }); return; }
 
     const { count } = await supabase.from('teams').select('id', { count: 'exact', head: true }).eq('org_id', orgId);
-    const quantity = Math.max(1, count || 1);
+    const { data: pricingRaw } = await supabase.rpc('get_public_pricing');
+    const pricing = parsePricingConfig(pricingRaw);
+    // Checkout only ever runs to resolve a frozen/unpaid state, so always
+    // bill at least the first paid step even if team count is technically
+    // still within the free range (e.g. frozen for an unrelated reason).
+    const quantity = Math.max(1, stepsForCount(count || 0, pricing));
 
     const priceId = process.env.STRIPE_PRICE_ID;
     if (!priceId) { res.status(500).json({ error: 'サーバー設定エラー（STRIPE_PRICE_ID未設定）' }); return; }
