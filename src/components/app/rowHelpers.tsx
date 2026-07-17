@@ -38,10 +38,14 @@ export function buildRow(store: Store, state: AppState): RowData {
   const marginPct = d.sales ? (d.profit / d.sales) * 100 : 0;
   const marginFrac = d.sales ? d.profit / d.sales : 0;
   const bc = d.sales ? barColor(marginFrac) : '#b8bec6';
+  // The displayed "担当者" follows whoever currently holds the 管理者 role
+  // for this team, falling back to the name recorded at team creation if
+  // no one has been assigned that role yet.
+  const manager = state.members.find((m) => m.store === store.name && m.role === '管理者');
   return {
     id: store.id,
     name: store.name,
-    owner: store.owner,
+    owner: manager?.name || store.owner,
     initial: store.name.charAt(0),
     avatarBg: store.bg,
     logoUrl: state.logoMap[store.id] || null,

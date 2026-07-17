@@ -107,7 +107,7 @@ export default function StoreDrawer() {
           <div style={{ flex: 1, lineHeight: 1.3, minWidth: 0 }}>
             <div style={{ fontWeight: 700, fontSize: 17 }}>{store.name}</div>
             <div style={{ fontSize: 12, color: colors.faint2 }}>
-              {store.owner} ・ {periodLbl}
+              {row.owner} ・ {periodLbl}
             </div>
           </div>
           <button className="stb-icon-btn" onClick={actions.closeStoreDrawer} style={{ width: 32, height: 32, borderRadius: 8, color: colors.faint, fontSize: 19, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
