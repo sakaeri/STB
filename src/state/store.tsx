@@ -34,6 +34,25 @@ async function dataUrlToPublicUrl(path: string, dataUrl: string): Promise<string
   return `${data.publicUrl}?t=${Date.now()}`;
 }
 
+async function callBillingApi(path: string, orgId: string): Promise<{ url?: string; error?: string }> {
+  const { data: sessionRes } = await supabase.auth.getSession();
+  const token = sessionRes.session?.access_token;
+  if (!token) return { error: 'ログインが必要です' };
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ orgId }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) return { error: body.error || 'リクエストに失敗しました' };
+  return body;
+}
+
+function syncStripeQuantity(orgId: string | null) {
+  if (!orgId) return;
+  callBillingApi('/api/stripe/sync-quantity', orgId).catch((e) => console.error('syncStripeQuantity failed', e));
+}
+
 export interface StoreApi {
   state: AppState;
   set: (patch: Patch) => void;
@@ -667,6 +686,17 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     confirmDowngrade: () => { /* no-op: billing/plan tracking isn't backed by real data yet */ },
     dismissDowngrade: () => { /* no-op */ },
 
+    // ===== billing (Stripe) =====
+    startCheckout: async () => {
+      const st = getState();
+      if (!st.activeOrgId) return;
+      set({ billingCheckoutLoading: true });
+      const { url, error } = await callBillingApi('/api/stripe/create-checkout-session', st.activeOrgId);
+      set({ billingCheckoutLoading: false });
+      if (error || !url) { alert(error || 'お支払い手続きの開始に失敗しました'); return; }
+      window.location.href = url;
+    },
+
     // ===== navigation =====
     goList: () => set({ page: 'list' }),
     goMemo: () => set({ page: 'memo' }),
@@ -872,7 +902,10 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
   function deleteTeam(store: Store) {
     addTrash('team', store.name, store, store.id).then(() => {
       set((s) => ({ stores: s.stores.filter((s2) => s2.id !== store.id), selectedStoreId: null }));
-      supabase.from('teams').delete().eq('id', store.id).then(({ error }) => { if (error) console.error('deleteTeam failed', error); });
+      supabase.from('teams').delete().eq('id', store.id).then(({ error }) => {
+        if (error) { console.error('deleteTeam failed', error); return; }
+        syncStripeQuantity(getState().activeOrgId);
+      });
     });
   }
 
@@ -890,6 +923,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       const { data: inviteId, error: inviteErr } = await supabase.rpc('create_invite', { p_team_id: data.id, p_role: '管理者' });
       if (inviteErr) console.error('create_invite failed', inviteErr);
       set({ addStep: 'done', createdToken: (inviteId as string) || '', createdName: f.name.trim(), copied: false });
+      syncStripeQuantity(st.activeOrgId);
       await reloadActiveOrg();
     });
   }

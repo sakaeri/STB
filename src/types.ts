@@ -321,6 +321,7 @@ export interface AppState {
 
   // plan / payment
   pendingUpgrade: PendingUpgrade | null;
+  billingCheckoutLoading: boolean;
 
   // memo
   memoNav: { topicId: string | null; entryId: string | null };

@@ -25,6 +25,7 @@ export default function StoreDrawer() {
   // business is still running) but lose access to per-store detail —
   // meant as a nudge to resolve payment, not a hard data lockout.
   if (state.orgStatus === 'frozen') {
+    const isOwner = myRole(state) === 'オーナー';
     return (
       <>
         <div onClick={actions.closeStoreDrawer} style={{ position: 'fixed', inset: 0, background: 'rgba(20,28,42,.34)', zIndex: 40, animation: 'scOver .2s ease both' }} />
@@ -42,12 +43,23 @@ export default function StoreDrawer() {
               ✕
             </button>
           </div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', textAlign: 'center', gap: 12 }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', textAlign: 'center', gap: 14 }}>
             <div style={{ width: 48, height: 48, borderRadius: '50%', background: colors.dangerBg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.danger, fontSize: 21 }}>🔒</div>
             <div style={{ fontWeight: 700, fontSize: 15 }}>この本部は凍結されています</div>
             <p style={{ margin: 0, fontSize: 12.5, color: colors.faint, lineHeight: 1.8 }}>
-              {store.name}の詳細はご確認いただけません。ご利用を再開するには、運営事務局までお問い合わせのうえお支払い状況をご確認ください。
+              お支払いが確認できていないため、{store.name}の詳細はご確認いただけません。お支払いを完了すると自動的に解除されます。
             </p>
+            {isOwner ? (
+              <button
+                onClick={actions.startCheckout}
+                disabled={state.billingCheckoutLoading}
+                style={{ height: 42, padding: '0 22px', borderRadius: 10, fontWeight: 700, fontSize: 13.5, color: '#fff', background: state.accent, opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
+              >
+                {state.billingCheckoutLoading ? '処理中…' : 'お支払い手続きへ'}
+              </button>
+            ) : (
+              <p style={{ margin: 0, fontSize: 11.5, color: colors.faint2 }}>お支払い手続きはオーナー権限のメンバーのみ行えます。</p>
+            )}
           </div>
         </div>
       </>

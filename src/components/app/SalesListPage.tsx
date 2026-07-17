@@ -62,6 +62,7 @@ export default function SalesListPage() {
   const pagedRows = isHq ? allRows.slice((curPage - 1) * pageSize, curPage * pageSize) : allRows;
   const showTablePagination = isHq && visible.length > pageSize;
 
+  const frozen = state.orgStatus === 'frozen';
   const openStore = (id: string) => actions.openStoreDrawer(id);
 
   const doExportCsv = () => {
@@ -189,18 +190,26 @@ export default function SalesListPage() {
       )}
 
       <div style={{ padding: '22px 26px 90px', maxWidth: 1280, margin: '0 auto' }}>
-        <KpiCards
-          isHq={isHq}
-          tSales={tSales}
-          tProfit={tProfit}
-          tRoyalty={tRoyalty}
-          tSavings={tSavings}
-          storeCount={visible.length}
-          unitLabel={unitLabel}
-          salesDelta={salesDelta}
-        />
+        {frozen && (
+          <div style={{ marginBottom: 14, background: colors.dangerBg, border: `1px solid ${colors.dangerBorder}`, borderRadius: 12, padding: '12px 16px', fontSize: 12.5, color: colors.danger, fontWeight: 700 }}>
+            🔒 この本部は凍結されています。数値は「本部情報」からのお支払い手続き完了後に確認できます。
+          </div>
+        )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
+        <div style={{ filter: frozen ? 'blur(6px)' : 'none', userSelect: frozen ? 'none' : 'auto' }}>
+          <KpiCards
+            isHq={isHq}
+            tSales={tSales}
+            tProfit={tProfit}
+            tRoyalty={tRoyalty}
+            tSavings={tSavings}
+            storeCount={visible.length}
+            unitLabel={unitLabel}
+            salesDelta={salesDelta}
+          />
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, marginTop: 18, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: '#3a4150' }}>{isHq ? `${unitLabel}別 売上一覧` : '売上明細'}</span>
           <div style={{ display: 'flex', background: colors.bg, borderRadius: 9, padding: 3 }}>
             <button onClick={() => actions.setAggUnit('day')} style={segStyle(state.aggUnit === 'day')}>
@@ -224,41 +233,45 @@ export default function SalesListPage() {
           <div style={{ marginLeft: 'auto' }} />
           <button
             onClick={doExportCsv}
+            disabled={frozen}
             style={{
               height: 29,
               padding: '0 14px',
               borderRadius: 8,
-              background: state.accent,
-              color: '#fff',
+              background: frozen ? colors.neutralChipBg : state.accent,
+              color: frozen ? colors.neutralChipText : '#fff',
               fontWeight: 700,
               fontSize: 12,
               display: 'flex',
               alignItems: 'center',
               gap: 6,
               justifyContent: 'center',
+              cursor: frozen ? 'not-allowed' : 'pointer',
             }}
           >
             📁 CSV
           </button>
         </div>
 
-        {state.layout === 'table' && (
-          <SalesTable
-            rows={pagedRows}
-            unitLabel={unitLabel}
-            onOpen={openStore}
-            accent={state.accent}
-            showPagination={showTablePagination}
-            page={curPage}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            total={visible.length}
-            onPrevPage={() => actions.setHqTablePage(Math.max(1, curPage - 1))}
-            onNextPage={() => actions.setHqTablePage(Math.min(totalPages, curPage + 1))}
-            onSetPageSize={(n) => actions.setHqTablePageSize(n)}
-          />
-        )}
-        {state.layout === 'card' && <SalesCards rows={allRows} onOpen={openStore} />}
+        <div style={{ filter: frozen ? 'blur(6px)' : 'none', userSelect: frozen ? 'none' : 'auto' }}>
+          {state.layout === 'table' && (
+            <SalesTable
+              rows={pagedRows}
+              unitLabel={unitLabel}
+              onOpen={openStore}
+              accent={state.accent}
+              showPagination={showTablePagination}
+              page={curPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              total={visible.length}
+              onPrevPage={() => actions.setHqTablePage(Math.max(1, curPage - 1))}
+              onNextPage={() => actions.setHqTablePage(Math.min(totalPages, curPage + 1))}
+              onSetPageSize={(n) => actions.setHqTablePageSize(n)}
+            />
+          )}
+          {state.layout === 'card' && <SalesCards rows={allRows} onOpen={openStore} />}
+        </div>
       </div>
     </div>
   );

@@ -109,6 +109,26 @@ export default function SettingsPage() {
   return (
     <div style={{ padding: '24px 26px 90px', maxWidth: 880, margin: '0 auto', animation: 'scIn .25s ease both', display: 'flex', flexDirection: 'column', gap: 18 }}>
 
+      {/* 凍結中バナー */}
+      {isHqView && state.orgStatus === 'frozen' && (
+        <div style={{ background: '#fbe7e5', border: '1px solid #f3d4d0', borderRadius: 13, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 20 }}>🔒</span>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontWeight: 700, fontSize: 13.5, color: '#c2453d' }}>この本部は凍結されています</div>
+            <div style={{ fontSize: 12, color: '#a3453f', marginTop: 2 }}>お支払いが確認できていません。お支払いを完了すると自動的に解除されます。</div>
+          </div>
+          {isOwner && (
+            <button
+              onClick={actions.startCheckout}
+              disabled={state.billingCheckoutLoading}
+              style={{ height: 40, padding: '0 20px', borderRadius: 10, fontWeight: 700, fontSize: 13, color: '#fff', background: '#c2453d', flex: 'none', opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
+            >
+              {state.billingCheckoutLoading ? '処理中…' : 'お支払い手続きへ'}
+            </button>
+          )}
+        </div>
+      )}
+
       {/* 本部（会社）情報 */}
       <section style={cardStyle}>
         <div style={cardHeaderStyle}>
