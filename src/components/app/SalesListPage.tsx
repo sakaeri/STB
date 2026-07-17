@@ -10,7 +10,6 @@ import { buildRow, isPeriodConfirmed } from './rowHelpers';
 import KpiCards from './KpiCards';
 import SalesTable from './SalesTable';
 import SalesCards from './SalesCards';
-import SalesDetailList from './SalesDetailList';
 import { colors } from '../../tokens';
 
 export default function SalesListPage() {
@@ -221,9 +220,6 @@ export default function SalesListPage() {
             <button onClick={() => actions.setLayout('card')} style={segStyle(state.layout === 'card')}>
               カード
             </button>
-            <button onClick={() => actions.setLayout('detail')} style={segStyle(state.layout === 'detail')}>
-              詳細
-            </button>
           </div>
           <div style={{ marginLeft: 'auto' }} />
           <button
@@ -263,7 +259,6 @@ export default function SalesListPage() {
           />
         )}
         {state.layout === 'card' && <SalesCards rows={allRows} onOpen={openStore} />}
-        {state.layout === 'detail' && <SalesDetailList rows={allRows} onOpen={openStore} />}
       </div>
     </div>
   );

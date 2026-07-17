@@ -22,6 +22,7 @@ export default function Topbar() {
   const label = periodLabel(state.aggUnit, state.month, state.year, state.periodDate, state.companyInfo.fiscalStartMonth || 4);
   const isAdmin = !!state.accounts.find((a) => a.id === state.session)?.isAdmin;
   const brandLogoUrl = state.logoMap['app-logo'] || state.logoMap['operator-logo'] || null;
+  const isOrgMember = state.hqMembers.some((m) => m.userId === state.session);
 
   return (
     <header
@@ -88,7 +89,7 @@ export default function Topbar() {
               maxWidth: 130,
             }}
           >
-            <option value="hq">本部（全{unitLabelPlural}）</option>
+            {isOrgMember && <option value="hq">本部（全{unitLabelPlural}）</option>}
             {state.stores.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}

@@ -13,8 +13,12 @@ export default function App() {
 
   // Restore session / unit label overrides / mobile flag on first mount.
   useEffect(() => {
+    // Default layout follows device at first load only (table on desktop,
+    // card on mobile — table needs horizontal scroll on narrow screens);
+    // later resizes don't fight the user's own toggle choice.
+    const initialMobile = window.innerWidth < 860;
+    set({ isMobile: initialMobile, layout: initialMobile ? 'card' : 'table' });
     const onResize = () => set({ isMobile: window.innerWidth < 860 });
-    onResize();
     window.addEventListener('resize', onResize);
     try {
       const savedUnit = localStorage.getItem('fc_unitLabel');

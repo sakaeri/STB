@@ -205,7 +205,7 @@ export interface PlanPriceOverride {
 }
 
 export type PageId = 'list' | 'memo' | 'settings';
-export type LayoutId = 'table' | 'card' | 'detail';
+export type LayoutId = 'table' | 'card';
 export type AuthView = 'login' | 'signup' | 'forgot' | 'reset' | 'verify';
 export type AdminTab = 'orgs' | 'settings';
 
