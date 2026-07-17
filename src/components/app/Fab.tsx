@@ -9,7 +9,7 @@ export default function Fab() {
 
   const isHqView = state.viewRole === 'hq';
   const role = myRole(state);
-  const canCreateTeamNow = canDeleteCompanyWide(role) && !state.paymentFailed;
+  const canCreateTeamNow = canDeleteCompanyWide(role);
   const canCreate = canCreateRole(role);
 
   const menuBtnStyle = (color: string) =>

@@ -392,8 +392,6 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     },
     confirmUpgradeAndCreate: () => { set({ pendingUpgrade: null }); actuallyCreateStore(); },
     cancelUpgrade: () => set({ pendingUpgrade: null }),
-    togglePaymentDemo: () => set((s) => ({ paymentFailed: !s.paymentFailed })),
-    retryPayment: () => set({ paymentFailed: false }),
     copyInvite: () => { flash('copied', 1600); },
     copyMemberInvite: () => { flash('memberInviteCopied', 1600); },
     closeMemberInvite: () => set({ showMemberInvite: false }),

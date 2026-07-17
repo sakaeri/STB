@@ -320,7 +320,6 @@ export interface AppState {
 
   // plan / payment
   pendingUpgrade: PendingUpgrade | null;
-  paymentFailed: boolean;
 
   // memo
   memoNav: { topicId: string | null; entryId: string | null };

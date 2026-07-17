@@ -96,7 +96,7 @@ export default function SettingsPage() {
   const canManageHqMembers = isOwner;
   const canDeleteCompanyWide = isOwner;
   const canPermanentDelete = isOwnerOrAdmin;
-  const canInviteHqMember = isOwnerOrAdmin && !state.paymentFailed;
+  const canInviteHqMember = isOwnerOrAdmin;
 
   const plan = actions.effectivePlan();
   const downgradeCand = actions.downgradeCandidatePlan();
@@ -126,11 +126,6 @@ export default function SettingsPage() {
           )}
           {showDowngradePrompt && downgradeCand && (
             <button onClick={actions.confirmDowngrade} title={`来月から${downgradeCand.name}プランに変更します`} style={{ fontSize: 11, fontWeight: 700, color: accent, background: accentSoft(accent), padding: '6px 10px', borderRadius: 8, flex: 'none' }}>{downgradeCand.name}に変更</button>
-          )}
-          {isHqView && isOwner && (
-            <button onClick={actions.togglePaymentDemo} style={{ fontSize: 11, fontWeight: 700, color: '#aab0b8', background: '#f0f2f5', padding: '6px 10px', borderRadius: 8, flex: 'none' }}>
-              {state.paymentFailed ? '(デモ)支払い成功にする' : '(デモ)支払い失敗を再現'}
-            </button>
           )}
         </div>
         {canEditCompanyInfo && state.editingCompanyInfo ? (
