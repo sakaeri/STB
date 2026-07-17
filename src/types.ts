@@ -234,6 +234,7 @@ export interface AppState {
   // brand
   unitLabel: string | null;
   unitLabelPlural: string | null;
+  orgStatus: 'active' | 'frozen';
 
   // data
   stores: Store[];

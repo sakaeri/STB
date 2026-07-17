@@ -21,6 +21,39 @@ export default function StoreDrawer() {
   const store = state.stores.find((s) => s.id === state.selectedStoreId);
   if (!store) return null;
 
+  // Frozen orgs keep the sales-list rollup visible (so it's clear the
+  // business is still running) but lose access to per-store detail —
+  // meant as a nudge to resolve payment, not a hard data lockout.
+  if (state.orgStatus === 'frozen') {
+    return (
+      <>
+        <div onClick={actions.closeStoreDrawer} style={{ position: 'fixed', inset: 0, background: 'rgba(20,28,42,.34)', zIndex: 40, animation: 'scOver .2s ease both' }} />
+        <div
+          style={{
+            position: 'fixed', top: 0, right: 0, bottom: 0, width: 440, maxWidth: '92vw', background: '#fff', zIndex: 41,
+            boxShadow: '-8px 0 30px rgba(20,40,80,.16)', display: 'flex', flexDirection: 'column', animation: 'scDraw .26s cubic-bezier(.2,.8,.25,1) both',
+          }}
+        >
+          <div style={{ padding: '20px 22px 18px', borderBottom: '1px solid #f0f2f5', display: 'flex', alignItems: 'center', gap: 13 }}>
+            <div style={{ flex: 1, lineHeight: 1.3, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 17 }}>{store.name}</div>
+            </div>
+            <button className="stb-icon-btn" onClick={actions.closeStoreDrawer} style={{ width: 32, height: 32, borderRadius: 8, color: colors.faint, fontSize: 19, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              ✕
+            </button>
+          </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 32px', textAlign: 'center', gap: 12 }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: colors.dangerBg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: colors.danger, fontSize: 21 }}>🔒</div>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>この本部は凍結されています</div>
+            <p style={{ margin: 0, fontSize: 12.5, color: colors.faint, lineHeight: 1.8 }}>
+              {store.name}の詳細はご確認いただけません。ご利用を再開するには、運営事務局までお問い合わせのうえお支払い状況をご確認ください。
+            </p>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   const isHq = state.viewRole === 'hq';
   const row = buildRow(store, state);
   const d = periodData(store, state.aggUnit, state.month, state.periodDate, state.transactions);

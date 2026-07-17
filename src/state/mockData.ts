@@ -26,6 +26,7 @@ export function createInitialState(): AppState {
 
     unitLabel: null,
     unitLabelPlural: null,
+    orgStatus: 'active',
 
     stores: [],
     members: [],

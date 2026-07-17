@@ -11,6 +11,7 @@ export interface LoadedOrgData {
   defaults: Defaults;
   unitLabel: string | null;
   unitLabelPlural: string | null;
+  orgStatus: 'active' | 'frozen';
   stores: Store[];
   hqMembers: HqMember[];
   members: Member[];
@@ -188,6 +189,7 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
       savings: Number(orgRow.default_savings), savingsRate: Number(orgRow.default_savings_rate),
     },
     unitLabel: orgRow.unit_label, unitLabelPlural: orgRow.unit_label_plural,
+    orgStatus: orgRow.status as 'active' | 'frozen',
     stores, hqMembers, members, transactions, memoTopics, trash, confirmedPeriods, logoMap,
   };
 }
