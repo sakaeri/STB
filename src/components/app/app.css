@@ -51,10 +51,5 @@
     display: block !important;
     background: #fff;
     padding: 16mm 14mm;
-    /* A4 height minus the padding above — gives the flex column inside
-       (see SalesListPage) something to push the QR footer down against,
-       without relying on position:fixed (unreliably supported for print,
-       especially on mobile). */
-    min-height: 265mm;
   }
 }
