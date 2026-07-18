@@ -4,7 +4,7 @@ import { canCreateRole, canDeleteCompanyWide, myRole } from './rowHelpers';
 export default function Fab() {
   const { state, actions } = useStore();
 
-  const showFab = state.page === 'list' && !state.selectedStoreId;
+  const showFab = state.page === 'list' && !state.selectedStoreId && !state.showEntry;
   if (!showFab) return null;
 
   const isHqView = state.viewRole === 'hq';
