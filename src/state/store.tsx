@@ -647,7 +647,6 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     },
 
     // ===== trash / confirm =====
-    purgeTrash: () => { /* server-side retention isn't enforced yet; trash_items simply accumulate */ },
     closeConfirm: () => set({ confirmDelete: null, confirmChecked: false }),
     toggleConfirmChecked: () => set((s) => ({ confirmChecked: !s.confirmChecked })),
     runConfirm: () => {

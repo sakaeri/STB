@@ -9,7 +9,7 @@ import TermsModal from './components/modals/TermsModal';
 import ConfirmModal from './components/modals/ConfirmModal';
 
 export default function App() {
-  const { state, set, actions } = useStore();
+  const { state, set } = useStore();
 
   // Restore session / unit label overrides / mobile flag on first mount.
   useEffect(() => {
@@ -55,7 +55,6 @@ export default function App() {
         window.history.replaceState({}, '', window.location.pathname);
       }
     } catch { /* noop */ }
-    actions.purgeTrash();
     return () => window.removeEventListener('resize', onResize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
