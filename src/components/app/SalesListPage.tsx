@@ -171,7 +171,7 @@ export default function SalesListPage() {
                 <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 9, padding: '8px 11px' }}>
                   <div style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: '#3a4150' }}>{s.name}</div>
                   <button
-                    onClick={() => actions.confirmPeriod(s.id, targetPeriod)}
+                    onClick={() => actions.requestConfirmPeriod(s.id, targetPeriod, targetPeriodLbl)}
                     style={{ height: 28, padding: '0 12px', borderRadius: 7, background: colors.warn, color: '#fff', fontWeight: 700, fontSize: 11.5, flex: 'none' }}
                   >
                     {targetPeriodLbl}を確定する
@@ -217,7 +217,7 @@ export default function SalesListPage() {
             {targetPeriodLbl}分の売上・経費がまだ確定されていません。0件でも内容を確認して確定してください。
           </div>
           <button
-            onClick={() => actions.confirmPeriod(currentStoreForClose.id, targetPeriod)}
+            onClick={() => actions.requestConfirmPeriod(currentStoreForClose.id, targetPeriod, targetPeriodLbl)}
             style={{ height: 32, padding: '0 14px', borderRadius: 8, background: colors.warn, color: '#fff', fontWeight: 700, fontSize: 12, flex: 'none' }}
           >
             {targetPeriodLbl}を確定する
@@ -261,7 +261,7 @@ export default function SalesListPage() {
                 <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 9, padding: '8px 11px' }}>
                   <div style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: '#3a4150' }}>{s.name}</div>
                   <button
-                    onClick={() => actions.confirmPeriod(s.id, yKey)}
+                    onClick={() => actions.requestConfirmPeriod(s.id, yKey, yLbl)}
                     style={{ height: 28, padding: '0 12px', borderRadius: 7, background: colors.warn, color: '#fff', fontWeight: 700, fontSize: 11.5, flex: 'none' }}
                   >
                     {yLbl}を確定する
@@ -307,7 +307,7 @@ export default function SalesListPage() {
             {yLbl}分の売上・経費がまだ確定されていません。0件でも内容を確認して確定してください。
           </div>
           <button
-            onClick={() => actions.confirmPeriod(currentStoreForClose.id, yKey)}
+            onClick={() => actions.requestConfirmPeriod(currentStoreForClose.id, yKey, yLbl)}
             style={{ height: 32, padding: '0 14px', borderRadius: 8, background: colors.warn, color: '#fff', fontWeight: 700, fontSize: 12, flex: 'none' }}
           >
             {yLbl}を確定する

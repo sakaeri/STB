@@ -726,6 +726,20 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       const st = getState();
       await supabase.from('confirmed_periods').upsert({ team_id: storeId, period, confirmed_by: st.session });
     },
+    requestConfirmPeriod: (storeId: string, period: string, periodLabel: string) => {
+      const st = getState();
+      const tx = st.transactions[storeId] || [];
+      const isDay = period.length === 10;
+      const matching = tx.filter((t) => (isDay ? t.date === period : t.date.slice(0, 7) === period));
+      const salesCount = matching.filter((t) => t.type === 'sales').length;
+      const expenseCount = matching.filter((t) => t.type === 'expense').length;
+      openConfirm(
+        `${periodLabel}を確定`,
+        `売上${salesCount}件、経費${expenseCount}件で確定します。確定後も編集・削除は可能ですが、この一覧では確定済みとして扱われます。`,
+        () => actions.confirmPeriod(storeId, period),
+        '確定する',
+      );
+    },
     prevPeriodMonth: () => set((s) => { const m = s.month - 1; return m < 0 ? { month: 11, year: (s.year || 2026) - 1 } : { month: m }; }),
     nextPeriodMonth: () => set((s) => { const m = s.month + 1; return m > 11 ? { month: 0, year: (s.year || 2026) + 1 } : { month: m }; }),
     prevPeriodWeek: () => set((s) => ({ periodDate: (function () { const d = new Date(s.periodDate + 'T00:00:00'); d.setDate(d.getDate() - 7); return d.toISOString().slice(0, 10); })() })),
