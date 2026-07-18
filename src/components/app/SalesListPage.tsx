@@ -62,7 +62,9 @@ export default function SalesListPage() {
   const pagedRows = isHq ? allRows.slice((curPage - 1) * pageSize, curPage * pageSize) : allRows;
   const showTablePagination = isHq && visible.length > pageSize;
 
-  const frozen = state.orgStatus === 'frozen';
+  // Only the HQ (aggregate) view is restricted when frozen — a team
+  // member looking at only their own store is unaffected.
+  const frozen = state.orgStatus === 'frozen' && isHq;
   const openStore = (id: string) => actions.openStoreDrawer(id);
 
   const doExportCsv = () => {
@@ -192,22 +194,21 @@ export default function SalesListPage() {
       <div style={{ padding: '22px 26px 90px', maxWidth: 1280, margin: '0 auto' }}>
         {frozen && (
           <div style={{ marginBottom: 14, background: colors.dangerBg, border: `1px solid ${colors.dangerBorder}`, borderRadius: 12, padding: '12px 16px', fontSize: 12.5, color: colors.danger, fontWeight: 700 }}>
-            🔒 この本部は凍結されています。数値は「本部情報」からのお支払い手続き完了後に確認できます。
+            🔒 この本部は凍結されています。{unitLabel}別の一覧は「本部情報」からのお支払い手続き完了後に確認できます。
           </div>
         )}
 
-        <div style={{ filter: frozen ? 'blur(6px)' : 'none', userSelect: frozen ? 'none' : 'auto' }}>
-          <KpiCards
-            isHq={isHq}
-            tSales={tSales}
-            tProfit={tProfit}
-            tRoyalty={tRoyalty}
-            tSavings={tSavings}
-            storeCount={visible.length}
-            unitLabel={unitLabel}
-            salesDelta={salesDelta}
-          />
-        </div>
+        <KpiCards
+          isHq={isHq}
+          tSales={tSales}
+          tProfit={tProfit}
+          tRoyalty={tRoyalty}
+          tSavings={tSavings}
+          storeCount={visible.length}
+          unitLabel={unitLabel}
+          salesDelta={salesDelta}
+          isMobile={state.isMobile}
+        />
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, marginTop: 18, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: '#3a4150' }}>{isHq ? `${unitLabel}別 売上一覧` : '売上明細'}</span>
@@ -253,7 +254,7 @@ export default function SalesListPage() {
           </button>
         </div>
 
-        <div style={{ filter: frozen ? 'blur(6px)' : 'none', userSelect: frozen ? 'none' : 'auto' }}>
+        <div style={{ filter: frozen ? 'blur(6px)' : 'none', userSelect: frozen ? 'none' : 'auto', pointerEvents: frozen ? 'none' : 'auto' }}>
           {state.layout === 'table' && (
             <SalesTable
               rows={pagedRows}

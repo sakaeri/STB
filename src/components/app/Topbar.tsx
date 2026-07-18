@@ -24,14 +24,53 @@ export default function Topbar() {
   const brandLogoUrl = state.logoMap['app-logo'] || state.logoMap['operator-logo'] || null;
   const isOrgMember = state.hqMembers.some((m) => m.userId === state.session);
 
+  const periodNav = state.page === 'list' && (
+    <div style={{ display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #e2e5ea', borderRadius: 10, overflow: 'hidden', flex: 'none' }}>
+      <button
+        onClick={actions.prevPeriod}
+        aria-label="前の期間"
+        style={{ width: 34, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5a6270' }}
+      >
+        <span style={{ width: 8, height: 8, borderLeft: '2px solid currentColor', borderBottom: '2px solid currentColor', transform: 'rotate(45deg)', marginLeft: 3 }} />
+      </button>
+      <div
+        style={{
+          minWidth: 104,
+          textAlign: 'center',
+          fontWeight: 700,
+          fontSize: 14,
+          fontVariantNumeric: 'tabular-nums',
+          borderLeft: '1px solid #eef0f3',
+          borderRight: '1px solid #eef0f3',
+          height: 36,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0 10px',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {label}
+      </div>
+      <button
+        onClick={actions.nextPeriod}
+        aria-label="次の期間"
+        style={{ width: 34, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5a6270' }}
+      >
+        <span style={{ width: 8, height: 8, borderRight: '2px solid currentColor', borderTop: '2px solid currentColor', transform: 'rotate(45deg)', marginRight: 3 }} />
+      </button>
+    </div>
+  );
+
   return (
     <header
       style={{
         flex: 'none',
         display: 'flex',
-        alignItems: 'center',
-        gap: 14,
-        padding: state.isMobile ? '13px 18px' : '16px 26px',
+        flexDirection: state.isMobile ? 'column' : 'row',
+        alignItems: state.isMobile ? 'stretch' : 'center',
+        gap: state.isMobile ? 9 : 14,
+        padding: state.isMobile ? '11px 16px' : '16px 26px',
         background: '#fff',
         borderBottom: '1px solid #e7e9ed',
         minHeight: 64,
@@ -54,7 +93,7 @@ export default function Topbar() {
             {!brandLogoUrl && <div style={{ width: 13, height: 13, border: '2.5px solid #fff', borderRadius: 3, borderBottomWidth: 5 }} />}
           </div>
         )}
-        <div style={{ minWidth: 0 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <h1 style={{ margin: 0, fontSize: 19, fontWeight: 700, letterSpacing: '.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {titles[state.page]}
           </h1>
@@ -62,22 +101,37 @@ export default function Topbar() {
             {subs[state.page]}
           </p>
         </div>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto', flexWrap: 'wrap' }}>
-        {isAdmin && (
+        {state.isMobile && (
           <button
-            onClick={actions.goAdminDashboard}
-            style={{ height: 36, padding: '0 14px', borderRadius: 9, background: '#f0f2f5', color: '#6b7280', fontWeight: 700, fontSize: 12.5, whiteSpace: 'nowrap' }}
+            onClick={actions.openProfileModal}
+            aria-label="アカウント"
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: state.accent,
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: 13,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flex: 'none',
+            }}
           >
-            ← 運営ダッシュボードに戻る
+            {(state.ownerProfile.name || '?').charAt(0)}
           </button>
         )}
-        {state.isMobile && (
+      </div>
+
+      {state.isMobile ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <select
             value={state.viewRole}
             onChange={(e) => actions.setViewRole(e.target.value)}
             style={{
+              flex: 1,
+              minWidth: 0,
               border: '1.5px solid #e2e5ea',
               borderRadius: 9,
               padding: '8px 9px',
@@ -86,7 +140,6 @@ export default function Topbar() {
               color: '#3a4150',
               background: '#fff',
               outline: 'none',
-              maxWidth: 130,
             }}
           >
             {isOrgMember && <option value="hq">本部（全{unitLabelPlural}）</option>}
@@ -96,46 +149,21 @@ export default function Topbar() {
               </option>
             ))}
           </select>
-        )}
-
-        {state.page === 'list' && (
-          <div style={{ display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #e2e5ea', borderRadius: 10, overflow: 'hidden' }}>
+          {periodNav}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto', flexWrap: 'wrap' }}>
+          {isAdmin && (
             <button
-              onClick={actions.prevPeriod}
-              aria-label="前の期間"
-              style={{ width: 34, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5a6270' }}
+              onClick={actions.goAdminDashboard}
+              style={{ height: 36, padding: '0 14px', borderRadius: 9, background: '#f0f2f5', color: '#6b7280', fontWeight: 700, fontSize: 12.5, whiteSpace: 'nowrap' }}
             >
-              <span style={{ width: 8, height: 8, borderLeft: '2px solid currentColor', borderBottom: '2px solid currentColor', transform: 'rotate(45deg)', marginLeft: 3 }} />
+              ← 運営ダッシュボードに戻る
             </button>
-            <div
-              style={{
-                minWidth: 104,
-                textAlign: 'center',
-                fontWeight: 700,
-                fontSize: 14,
-                fontVariantNumeric: 'tabular-nums',
-                borderLeft: '1px solid #eef0f3',
-                borderRight: '1px solid #eef0f3',
-                height: 36,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '0 10px',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {label}
-            </div>
-            <button
-              onClick={actions.nextPeriod}
-              aria-label="次の期間"
-              style={{ width: 34, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5a6270' }}
-            >
-              <span style={{ width: 8, height: 8, borderRight: '2px solid currentColor', borderTop: '2px solid currentColor', transform: 'rotate(45deg)', marginRight: 3 }} />
-            </button>
-          </div>
-        )}
-      </div>
+          )}
+          {periodNav}
+        </div>
+      )}
     </header>
   );
 }

@@ -24,7 +24,9 @@ export default function StoreDrawer() {
   // Frozen orgs keep the sales-list rollup visible (so it's clear the
   // business is still running) but lose access to per-store detail —
   // meant as a nudge to resolve payment, not a hard data lockout.
-  if (state.orgStatus === 'frozen') {
+  // Only the HQ view is restricted; a team member looking at their own
+  // store is unaffected — freezing is HQ's payment problem, not theirs.
+  if (state.orgStatus === 'frozen' && state.viewRole === 'hq') {
     const isOwner = myRole(state) === 'オーナー';
     return (
       <>

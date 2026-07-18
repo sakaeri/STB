@@ -12,6 +12,7 @@ export default function ProfileModal() {
   const accent = state.accent;
   const account = state.accounts.find((a) => a.id === state.session);
   const orgs = account?.orgs || [];
+  const isAdmin = !!account?.isAdmin;
   const draft = state.profileDraft || { name: '', email: '', password: '' };
   const showEditForm = state.profileEditing && state.emailChangeStep !== 'code';
   const showEmailStep = state.emailChangeStep === 'code';
@@ -115,6 +116,16 @@ export default function ProfileModal() {
             </button>
           </div>
         </div>
+        {isAdmin && (
+          <div style={{ padding: '0 24px 16px' }}>
+            <button
+              onClick={() => { actions.closeProfileModal(); actions.goAdminDashboard(); }}
+              style={{ width: '100%', height: 38, borderRadius: 10, fontWeight: 700, fontSize: 12.5, color: '#6b7280', background: '#f0f2f5' }}
+            >
+              運営ダッシュボードへ
+            </button>
+          </div>
+        )}
         <div style={{ padding: '0 24px 22px', display: 'flex', justifyContent: 'space-between' }}>
           <button onClick={actions.logout} style={{ height: 32, padding: '0 18px', borderRadius: 10, fontWeight: 700, fontSize: 12, color: '#c2453d', background: '#fbeaea', width: 112 }}>ログアウト</button>
           <button onClick={actions.closeProfileModal} style={{ height: 32, padding: '0 18px', borderRadius: 10, fontWeight: 700, fontSize: 12, color: '#6b7280', background: '#f0f2f5', width: 112 }}>閉じる</button>
