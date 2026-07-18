@@ -4,10 +4,14 @@ import { canCreateRole, canDeleteCompanyWide, myRole } from './rowHelpers';
 export default function Fab() {
   const { state, actions } = useStore();
 
-  const showFab = state.page === 'list' && !state.selectedStoreId && !state.showEntry;
+  const isHqView = state.viewRole === 'hq';
+  // Frozen only restricts the HQ (aggregate) side — a team member acting
+  // on their own store is unaffected, same as everywhere else frozen is
+  // enforced.
+  const frozenForHq = state.orgStatus === 'frozen' && isHqView;
+  const showFab = state.page === 'list' && !state.selectedStoreId && !state.showEntry && !frozenForHq;
   if (!showFab) return null;
 
-  const isHqView = state.viewRole === 'hq';
   const role = myRole(state);
   const canCreateTeamNow = canDeleteCompanyWide(role);
   const canCreate = canCreateRole(role);
