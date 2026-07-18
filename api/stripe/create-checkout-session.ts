@@ -73,6 +73,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       subscription_data: { metadata: { org_id: orgId } },
     });
 
+    // Freeze immediately rather than waiting on Stripe's own dunning to
+    // notice non-payment: without this, a team created past the free tier
+    // was fully usable the moment it was inserted, checkout or no checkout
+    // (team creation isn't deferred until payment — reworking that would
+    // mean waiting on the webhook round-trip before showing the invite
+    // URL). The checkout.session.completed webhook flips it back to
+    // active on successful payment; abandoning checkout leaves it frozen.
+    await supabase.from('orgs').update({ status: 'frozen' }).eq('id', orgId);
+
     res.status(200).json({ url: session.url });
   } catch (e) {
     console.error('create-checkout-session failed', e);
