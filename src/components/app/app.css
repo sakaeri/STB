@@ -26,24 +26,30 @@
   background: #eef0f3;
 }
 
-/* Print/PDF export: only the dedicated print table is shown when printing
-   (triggered via window.print() — the browser's own "PDFとして保存"). */
-.stb-print-only {
+/* Print/PDF export: the print table is portaled into #print-root (a plain
+   sibling of #root, outside the app's own layout/animation/flex tree, so it
+   can't inherit any positioning quirks from the sidebar/scroll containers).
+   Swapping which of #root/#print-root is displayed — rather than
+   visibility tricks on the live app tree — keeps this immune to whatever
+   layout the rest of the app happens to be using. */
+#print-root {
   display: none;
 }
 @media print {
-  body * {
-    visibility: hidden;
+  @page {
+    size: auto;
+    margin: 0;
   }
-  .stb-print-only,
-  .stb-print-only * {
-    visibility: visible;
+  html,
+  body {
+    background: #fff;
   }
-  .stb-print-only {
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
+  #root {
+    display: none !important;
+  }
+  #print-root {
+    display: block !important;
+    background: #fff;
+    padding: 16mm 14mm;
   }
 }

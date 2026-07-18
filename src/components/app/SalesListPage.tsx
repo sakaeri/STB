@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useStore } from '../../state/store.tsx';
 import {
   periodData,
@@ -277,36 +278,39 @@ export default function SalesListPage() {
           </button>
         </div>
 
-        {/* PDF出力用（印刷時のみ表示・画面には出ません） */}
-        <div className="stb-print-only">
-          <h1 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 4px' }}>{state.brandName} 売上一覧</h1>
-          <p style={{ fontSize: 12, color: '#5a6270', margin: '0 0 16px' }}>
-            {periodLabel(state.aggUnit, state.month, state.year || 2026, state.periodDate, state.companyInfo.fiscalStartMonth || 4)}
-          </p>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-            <thead>
-              <tr>
-                {[unitLabel, '売上', '経費', '利益', 'ロイヤリティ', '貯蓄'].map((h) => (
-                  <th key={h} style={{ textAlign: 'left', borderBottom: '1.5px solid #000', padding: '5px 8px' }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {allRows.map((r) => (
-                <tr key={r.id}>
-                  <td style={{ borderBottom: '1px solid #ccc', padding: '5px 8px' }}>{r.name}</td>
-                  <td style={{ borderBottom: '1px solid #ccc', padding: '5px 8px' }}>{r.salesFmt}</td>
-                  <td style={{ borderBottom: '1px solid #ccc', padding: '5px 8px' }}>{r.expenseFmt}</td>
-                  <td style={{ borderBottom: '1px solid #ccc', padding: '5px 8px' }}>{r.profitFmt}</td>
-                  <td style={{ borderBottom: '1px solid #ccc', padding: '5px 8px' }}>{r.royaltyFmt}</td>
-                  <td style={{ borderBottom: '1px solid #ccc', padding: '5px 8px' }}>{r.savingsFmt}</td>
+        {/* PDF出力用（印刷時のみ #print-root に表示され、画面には出ません） */}
+        {createPortal(
+          <div>
+            <h1 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 4px' }}>{state.companyInfo.name || state.brandName} 売上一覧</h1>
+            <p style={{ fontSize: 12, color: '#5a6270', margin: '0 0 16px' }}>
+              {periodLabel(state.aggUnit, state.month, state.year || 2026, state.periodDate, state.companyInfo.fiscalStartMonth || 4)}
+            </p>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr>
+                  {[unitLabel, '売上', '経費', '利益', 'ロイヤリティ', '貯蓄'].map((h) => (
+                    <th key={h} style={{ textAlign: 'left', borderBottom: '1.5px solid #000', padding: '5px 8px' }}>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {allRows.map((r) => (
+                  <tr key={r.id}>
+                    <td style={{ borderBottom: '1px solid #ccc', padding: '5px 8px' }}>{r.name}</td>
+                    <td style={{ borderBottom: '1px solid #ccc', padding: '5px 8px' }}>{r.salesFmt}</td>
+                    <td style={{ borderBottom: '1px solid #ccc', padding: '5px 8px' }}>{r.expenseFmt}</td>
+                    <td style={{ borderBottom: '1px solid #ccc', padding: '5px 8px' }}>{r.profitFmt}</td>
+                    <td style={{ borderBottom: '1px solid #ccc', padding: '5px 8px' }}>{r.royaltyFmt}</td>
+                    <td style={{ borderBottom: '1px solid #ccc', padding: '5px 8px' }}>{r.savingsFmt}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>,
+          document.getElementById('print-root')!,
+        )}
 
         <div style={{ filter: frozen ? 'blur(6px)' : 'none', userSelect: frozen ? 'none' : 'auto', pointerEvents: frozen ? 'none' : 'auto' }}>
           {state.layout === 'table' && (

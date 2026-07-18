@@ -83,6 +83,7 @@ function trashDetail(item: TrashItem): string {
 export default function SettingsPage() {
   const { state, actions } = useStore();
   const [dangerOpen, setDangerOpen] = useState(false);
+  const [trashMenuOpenId, setTrashMenuOpenId] = useState<string | null>(null);
 
   const accent = state.accent;
   const isHqView = state.viewRole === 'hq';
@@ -391,17 +392,58 @@ export default function SettingsPage() {
             const meta = TRASH_META[item.type];
             const daysAgo = Math.floor((Date.now() - item.deletedAt) / 86400000);
             const daysLeft = Math.max(0, 30 - daysAgo);
+            const menuOpen = trashMenuOpenId === item.id;
             return (
-              <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 11, background: '#f7f8fa', borderRadius: 11, padding: '10px 13px' }}>
+              <div key={item.id} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 11, background: '#f7f8fa', borderRadius: 11, padding: '10px 13px' }}>
                 <div style={{ width: 32, height: 32, borderRadius: 9, flex: 'none', background: '#eef0f3', color: meta.color, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{meta.icon}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</div>
                   <div style={{ fontSize: 11, color: '#9aa0a8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{trashDetail(item)}</div>
                   <div style={{ fontSize: 10.5, color: '#c3c8d0', marginTop: 2 }}>{trashTypeLabel(item, unitLabel)} ・ {daysAgo}日前削除 ・ 残り{daysLeft}日</div>
                 </div>
-                <button onClick={() => actions.restoreTrashItem(item)} style={{ height: 32, padding: '0 12px', borderRadius: 8, border: '1.5px solid #dfe3e8', color: '#3a4150', fontWeight: 700, fontSize: 11.5, flex: 'none' }}>元に戻す</button>
-                {canPermanentDelete && (
-                  <button onClick={() => actions.requestPermanentDelete(item)} style={{ height: 32, padding: '0 12px', borderRadius: 8, color: '#d6453d', fontWeight: 700, fontSize: 11.5, flex: 'none' }}>完全に削除</button>
+                {state.isMobile ? (
+                  <>
+                    <button
+                      onClick={() => setTrashMenuOpenId(menuOpen ? null : item.id)}
+                      style={{ width: 32, height: 32, borderRadius: 8, flex: 'none', color: '#6b7280', fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      ⋯
+                    </button>
+                    {menuOpen && (
+                      <>
+                        <div onClick={() => setTrashMenuOpenId(null)} style={{ position: 'fixed', inset: 0, zIndex: 20 }} />
+                        <div
+                          style={{
+                            position: 'absolute', top: '100%', right: 13, marginTop: 4, zIndex: 21,
+                            background: '#fff', borderRadius: 10, boxShadow: '0 6px 20px rgba(20,40,80,.16)', border: '1px solid #eef0f3',
+                            display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 128,
+                          }}
+                        >
+                          <button
+                            onClick={() => { setTrashMenuOpenId(null); actions.restoreTrashItem(item); }}
+                            style={{ padding: '10px 14px', textAlign: 'left', fontSize: 12.5, fontWeight: 700, color: '#3a4150' }}
+                          >
+                            元に戻す
+                          </button>
+                          {canPermanentDelete && (
+                            <button
+                              onClick={() => { setTrashMenuOpenId(null); actions.requestPermanentDelete(item); }}
+                              style={{ padding: '10px 14px', textAlign: 'left', fontSize: 12.5, fontWeight: 700, color: '#d6453d', borderTop: '1px solid #f0f2f5' }}
+                            >
+                              完全に削除
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => actions.restoreTrashItem(item)} style={{ height: 32, padding: '0 12px', borderRadius: 8, border: '1.5px solid #dfe3e8', color: '#3a4150', fontWeight: 700, fontSize: 11.5, flex: 'none' }}>元に戻す</button>
+                    {canPermanentDelete && (
+                      <button onClick={() => actions.requestPermanentDelete(item)} style={{ height: 32, padding: '0 12px', borderRadius: 8, color: '#d6453d', fontWeight: 700, fontSize: 11.5, flex: 'none' }}>完全に削除</button>
+                    )}
+                  </>
                 )}
               </div>
             );

@@ -527,6 +527,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       openConfirm(`「${tx.title}」を削除`, `この記録をゴミ箱に移動します。金額：¥${Math.round(tx.amount).toLocaleString('ja-JP')}（${tx.date}）。`, async () => {
         await addTrash('tx', tx.title, { storeId, tx }, storeId);
         await actions.deleteTx(storeId, tx.id);
+        await reloadActiveOrg();
       });
     },
     openTxDetail: (detail: unknown) => set({ txDetail: detail }),
