@@ -21,6 +21,8 @@ function translateAuthError(err: { message?: string } | null | undefined): strin
   if (/password should be at least/i.test(msg)) return 'パスワードは8文字以上で入力してください';
   if (/new password should be different/i.test(msg)) return '新しいパスワードは、現在のパスワードと違うものにしてください';
   if (/rate limit/i.test(msg)) return 'しばらく時間をおいてから再度お試しください';
+  const cooldown = msg.match(/only request this after (\d+) seconds?/i);
+  if (cooldown) return `連続で操作しすぎました。${cooldown[1]}秒ほど時間をおいてから再度お試しください`;
   return msg || '不明なエラーが発生しました';
 }
 
