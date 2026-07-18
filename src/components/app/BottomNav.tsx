@@ -23,7 +23,7 @@ export default function BottomNav() {
         background: '#fff',
         borderTop: '1px solid #e7e9ed',
         display: 'flex',
-        padding: '15px 8px calc(9px + env(safe-area-inset-bottom))',
+        padding: '10px 8px calc(8px + env(safe-area-inset-bottom))',
       }}
     >
       <button onClick={actions.goList} style={tabStyle(state.page === 'list')}>
