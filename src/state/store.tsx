@@ -987,11 +987,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         set({ session: null, accounts: [], activeOrgId: null, stores: [], members: [], hqMembers: [], transactions: {}, memoTopics: [], trash: [] });
         return;
       }
-      const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-      const { data: userRes } = await supabase.auth.getUser();
+      // None of these three depend on each other's results — fetch them
+      // together instead of as three sequential round trips.
+      const [{ data: profile }, { data: userRes }, myOrgs] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', session.user.id).single(),
+        supabase.auth.getUser(),
+        fetchMyOrgs(session.user.id),
+      ]);
       const email = userRes.user?.email || '';
       const verified = !!userRes.user?.email_confirmed_at;
-      const myOrgs = await fetchMyOrgs(session.user.id);
       set((s) => ({
         session: session.user.id,
         ownerProfile: { name: profile?.name || '', email, password: '' },

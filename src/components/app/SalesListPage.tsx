@@ -322,9 +322,14 @@ export default function SalesListPage() {
               </tbody>
             </table>
             {qrDataUrl && (
-              <div style={{ position: 'fixed', bottom: '10mm', right: '10mm', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                <img src={qrDataUrl} style={{ width: 34, height: 34, opacity: 0.75 }} />
-                <span style={{ fontSize: 8.5, color: '#b0b5bc' }}>{appUrl.replace(/^https?:\/\//, '')}</span>
+              // position:fixed isn't reliably honored by every mobile print
+              // engine — falls back to normal flow, so this stays right-
+              // aligned (via flex, not fixed positioning) either way.
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                  <img src={qrDataUrl} style={{ width: 34, height: 34, opacity: 0.75 }} onError={() => setQrDataUrl(null)} />
+                  <span style={{ fontSize: 8.5, color: '#b0b5bc' }}>{appUrl.replace(/^https?:\/\//, '')}</span>
+                </div>
               </div>
             )}
           </div>,

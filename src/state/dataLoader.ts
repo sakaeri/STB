@@ -89,13 +89,16 @@ export async function createOrgWithFirstTeam(params: {
 }
 
 export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
-  const { data: orgRow, error: orgErr } = await supabase.from('orgs').select('*').eq('id', orgId).single();
-  if (orgErr || !orgRow) throw orgErr || new Error('org not found');
-
-  const { data: teamRows, error: teamErr } = await supabase
-    .from('teams').select('*').eq('org_id', orgId).order('created_at', { ascending: true });
-  if (teamErr) throw teamErr;
-  const teams = teamRows || [];
+  // orgs/teams don't depend on each other's results, so fetch them together
+  // instead of as two sequential round trips.
+  const [orgRes, teamsRes] = await Promise.all([
+    supabase.from('orgs').select('*').eq('id', orgId).single(),
+    supabase.from('teams').select('*').eq('org_id', orgId).order('created_at', { ascending: true }),
+  ]);
+  if (orgRes.error || !orgRes.data) throw orgRes.error || new Error('org not found');
+  if (teamsRes.error) throw teamsRes.error;
+  const orgRow = orgRes.data;
+  const teams = teamsRes.data || [];
   const teamIds = teams.map((t) => t.id);
   const teamNameById = new Map(teams.map((t) => [t.id, t.name]));
 
@@ -107,7 +110,10 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
     teamIds.length
       ? supabase.from('transactions').select('*').in('team_id', teamIds).order('date', { ascending: false })
       : Promise.resolve({ data: [], error: null }),
-    supabase.from('memo_topics').select('*').eq('org_id', orgId),
+    // Nested embed pulls topics + their entries + those entries' records in
+    // one round trip instead of three sequential ones (each still scoped by
+    // its own RLS policy).
+    supabase.from('memo_topics').select('*, memo_entries(*, memo_records(*))').eq('org_id', orgId),
     supabase.from('trash_items').select('*').eq('org_id', orgId).order('deleted_at', { ascending: false }),
     teamIds.length
       ? supabase.from('confirmed_periods').select('*').in('team_id', teamIds)
@@ -121,19 +127,6 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
   if (confirmedRes.error) throw confirmedRes.error;
 
   const topics = topicsRes.data || [];
-  const topicIds = topics.map((t) => t.id);
-  const [entriesRes] = await Promise.all([
-    topicIds.length
-      ? supabase.from('memo_entries').select('*').in('topic_id', topicIds)
-      : Promise.resolve({ data: [], error: null }),
-  ]);
-  if (entriesRes.error) throw entriesRes.error;
-  const entries = entriesRes.data || [];
-  const entryIds = entries.map((e) => e.id);
-  const { data: recordRows, error: recordsErr } = entryIds.length
-    ? await supabase.from('memo_records').select('*').in('entry_id', entryIds)
-    : { data: [], error: null };
-  if (recordsErr) throw recordsErr;
 
   const stores: Store[] = teams.map((t) => ({
     id: t.id, name: t.name, owner: t.owner_name, seed: 0, base: 0, expRatio: 0, bg: t.bg_color,
@@ -162,13 +155,16 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
     list.push({ id: row.id, type: row.type, title: row.title, amount: Number(row.amount), date: row.date, photo: row.photo_url });
   });
 
-  const memoTopics: MemoTopic[] = topics.map((t) => ({
-    id: t.id, name: t.name, storeId: t.team_id,
-    entries: entries.filter((e) => e.topic_id === t.id).map((e) => ({
-      id: e.id, name: e.name,
-      records: (recordRows || []).filter((r) => r.entry_id === e.id).map((r) => ({ id: r.id, label: r.label, text: r.text, date: r.date })),
-    })),
-  }));
+  const memoTopics: MemoTopic[] = topics.map((t) => {
+    const row = t as unknown as { memo_entries?: { id: string; name: string; memo_records?: { id: string; label: string; text: string; date: string }[] }[] };
+    return {
+      id: t.id, name: t.name, storeId: t.team_id,
+      entries: (row.memo_entries || []).map((e) => ({
+        id: e.id, name: e.name,
+        records: (e.memo_records || []).map((r) => ({ id: r.id, label: r.label, text: r.text, date: r.date })),
+      })),
+    };
+  });
 
   const trash: TrashItem[] = (trashRes.data || []).map((row) => ({
     id: row.id, type: row.type as TrashItem['type'], label: row.label, deletedAt: new Date(row.deleted_at).getTime(),
