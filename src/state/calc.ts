@@ -1,14 +1,9 @@
 import type { Store, Transaction, CompanyInfo } from '../types';
 
-export const FACTORS = [0.92, 0.95, 1.05, 1.10, 1.02, 0.98, 1.06, 1.08, 1.00, 1.03, 1.12, 1.20];
-
-export function rnd(i: number, m: number): number {
-  const x = Math.sin((i + 1) * 12.9898 + (m + 1) * 78.233) * 43758.5453;
-  return x - Math.floor(x);
-}
-
 export function yen(n: number): string {
-  return '¥' + Math.round(n).toLocaleString('ja-JP');
+  // Math.round(x) can return -0 (e.g. 0 * a negative factor), and
+  // (-0).toLocaleString() renders as the string "-0" — normalize it away.
+  return '¥' + (Math.round(n) || 0).toLocaleString('ja-JP');
 }
 
 export function yenShort(n: number): string {
@@ -55,23 +50,12 @@ export function monthData(store: Store, year: number, m: number, transactions: R
   );
   const salesTx = tx.filter((t) => t.type === 'sales');
   const expTx = tx.filter((t) => t.type === 'expense');
-  let sales: number, expense: number, isManual: boolean;
-  if (salesTx.length || expTx.length) {
-    sales = salesTx.reduce((a, t) => a + t.amount, 0);
-    expense = expTx.reduce((a, t) => a + t.amount, 0);
-    isManual = true;
-  } else {
-    const f = FACTORS[mi];
-    const r1 = rnd(store.seed, m);
-    const r2 = rnd(store.seed + 40, m);
-    sales = Math.round((store.base * f * (0.95 + 0.09 * r1)) / 1000) * 1000;
-    expense = Math.round((sales * (store.expRatio + (r2 - 0.5) * 0.05)) / 1000) * 1000;
-    isManual = false;
-  }
+  const sales = salesTx.reduce((a, t) => a + t.amount, 0);
+  const expense = expTx.reduce((a, t) => a + t.amount, 0);
   const royalty = computeRoyalty(store, sales);
   const savings = computeSavings(store, sales);
   const profit = sales - expense - royalty - savings;
-  return { sales, expense, profit, royalty, savings, hasSavings: !!store.useSavings, isManual };
+  return { sales, expense, profit, royalty, savings, hasSavings: !!store.useSavings, isManual: true };
 }
 
 export function addDays(dateStr: string, n: number): string {

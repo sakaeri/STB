@@ -382,7 +382,7 @@ export default function SettingsPage() {
       )}
 
       {/* ゴミ箱 */}
-      <section style={cardStyle}>
+      <section style={{ ...cardStyle, overflow: 'visible' }}>
         <div style={{ padding: '17px 22px', borderBottom: '1px solid #f0f2f5' }}>
           <h2 style={cardTitleStyle}>ゴミ箱</h2>
           <p style={cardSubStyle}>削除されたチーム・メンバー・情報メモは30日間ここに保存され、31日目に自動的に完全削除されます。</p>

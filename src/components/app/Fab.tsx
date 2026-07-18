@@ -34,7 +34,7 @@ export default function Fab() {
             style={{
               position: 'fixed',
               right: 28,
-              bottom: 96,
+              bottom: state.isMobile ? 152 : 96,
               zIndex: 59,
               display: 'flex',
               flexDirection: 'column',
@@ -84,7 +84,7 @@ export default function Fab() {
         style={{
           position: 'fixed',
           right: 28,
-          bottom: 28,
+          bottom: state.isMobile ? 84 : 28,
           zIndex: 59,
           width: 58,
           height: 58,

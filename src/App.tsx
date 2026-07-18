@@ -51,6 +51,22 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keep the browser-tab favicon (and the icon picked up if the user does
+  // "add to home screen") in sync with whatever operator logo is currently
+  // set — updates automatically since it just follows logoMap.
+  useEffect(() => {
+    const logoUrl = state.logoMap['app-logo'] || state.logoMap['operator-logo'];
+    if (!logoUrl) return;
+    const iconLink = (document.querySelector("link[rel='icon']") as HTMLLinkElement | null) || document.createElement('link');
+    iconLink.rel = 'icon';
+    iconLink.href = logoUrl;
+    if (!iconLink.parentNode) document.head.appendChild(iconLink);
+    const touchLink = (document.querySelector("link[rel='apple-touch-icon']") as HTMLLinkElement | null) || document.createElement('link');
+    touchLink.rel = 'apple-touch-icon';
+    touchLink.href = logoUrl;
+    if (!touchLink.parentNode) document.head.appendChild(touchLink);
+  }, [state.logoMap]);
+
   const account = useMemo(() => state.accounts.find((a) => a.id === state.session) || null, [state.accounts, state.session]);
 
   let screen: React.ReactNode;

@@ -24,6 +24,7 @@ export default function MainApp() {
       <Sidebar />
 
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', minWidth: 0 }}>
+        <div style={{ flex: 'none', background: '#fff', paddingTop: 'env(safe-area-inset-top)' }} />
         <Topbar />
         <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
           {state.page === 'list' && <SalesListPage />}
