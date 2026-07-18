@@ -22,7 +22,6 @@ export default function Topbar() {
   const label = periodLabel(state.aggUnit, state.month, state.year, state.periodDate, state.companyInfo.fiscalStartMonth || 4);
   const isAdmin = !!state.accounts.find((a) => a.id === state.session)?.isAdmin;
   const brandLogoUrl = state.logoMap['app-logo'] || state.logoMap['operator-logo'] || null;
-  const isOrgMember = state.hqMembers.some((m) => m.userId === state.session);
 
   const periodNav = state.page === 'list' && (
     <div style={{ display: 'flex', alignItems: 'center', background: '#fff', border: '1px solid #e2e5ea', borderRadius: 10, overflow: 'hidden', flex: 'none' }}>
@@ -146,32 +145,7 @@ export default function Topbar() {
       </div>
 
       {state.isMobile ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <select
-            value={state.viewRole}
-            onChange={(e) => actions.setViewRole(e.target.value)}
-            style={{
-              flex: 1,
-              minWidth: 0,
-              border: '1.5px solid #e2e5ea',
-              borderRadius: 9,
-              padding: '8px 9px',
-              fontSize: 12.5,
-              fontWeight: 700,
-              color: '#3a4150',
-              background: '#fff',
-              outline: 'none',
-            }}
-          >
-            {isOrgMember && <option value="hq">本部（全{unitLabelPlural}）</option>}
-            {state.stores.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-          {periodNav}
-        </div>
+        state.page === 'list' && <div style={{ display: 'flex', alignItems: 'center' }}>{periodNav}</div>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto', flexWrap: 'wrap' }}>
           {isAdmin && (
