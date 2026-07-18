@@ -724,7 +724,8 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     confirmPeriod: async (storeId: string, period: string) => {
       set((s) => ({ confirmedPeriods: { ...s.confirmedPeriods, [`${storeId}|${period}`]: true } }));
       const st = getState();
-      await supabase.from('confirmed_periods').upsert({ team_id: storeId, period, confirmed_by: st.session });
+      const { error } = await supabase.from('confirmed_periods').upsert({ team_id: storeId, period, confirmed_by: st.session });
+      if (error) console.error('confirmPeriod failed', error);
     },
     requestConfirmPeriod: (storeId: string, period: string, periodLabel: string) => {
       const st = getState();
