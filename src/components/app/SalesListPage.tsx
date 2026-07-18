@@ -291,19 +291,27 @@ export default function SalesListPage() {
 
         {/* PDF出力用（印刷時のみ #print-root に表示され、画面には出ません） */}
         {createPortal(
-          // Forcing a full-page min-height (to push the QR to the physical
-          // bottom via margin-top:auto) backfired on mobile — the actual
-          // rendered page height there isn't a reliable A4 297mm, so the
-          // stretch itself was overflowing onto a second, mostly-blank
-          // page. Plain flow + right-alignment is the safe choice: no
-          // overflow risk on any device, even though it sits right after
-          // the table rather than pinned to the page's outer edge.
+          // Anchoring the QR to the bottom needed either position:fixed
+          // (not reliably honored by print engines, especially on mobile)
+          // or a full-page min-height stretch (overflowed onto a second
+          // page when the actual rendered page height didn't match A4).
+          // Top-right, alongside the header, needs neither — it's just
+          // part of the normal top-of-content flow, so it can't overflow
+          // regardless of device/paper size.
           <div>
-            <div style={{ marginBottom: 16 }}>
-              <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{state.companyInfo.name || state.brandName} 売上一覧</h1>
-              <p style={{ fontSize: 12, color: '#5a6270', margin: '2px 0 0' }}>
-                {periodLabel(state.aggUnit, state.month, state.year || 2026, state.periodDate, state.companyInfo.fiscalStartMonth || 4)}
-              </p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 16 }}>
+              <div>
+                <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{state.companyInfo.name || state.brandName} 売上一覧</h1>
+                <p style={{ fontSize: 12, color: '#5a6270', margin: '2px 0 0' }}>
+                  {periodLabel(state.aggUnit, state.month, state.year || 2026, state.periodDate, state.companyInfo.fiscalStartMonth || 4)}
+                </p>
+              </div>
+              {qrDataUrl && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flex: 'none' }}>
+                  <img src={qrDataUrl} style={{ width: 28, height: 28, opacity: 0.75 }} onError={() => setQrDataUrl(null)} />
+                  <span style={{ fontSize: 8, color: '#b0b5bc' }}>{appUrl.replace(/^https?:\/\//, '')}</span>
+                </div>
+              )}
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
@@ -328,14 +336,6 @@ export default function SalesListPage() {
                 ))}
               </tbody>
             </table>
-            {qrDataUrl && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                  <img src={qrDataUrl} style={{ width: 34, height: 34, opacity: 0.75 }} onError={() => setQrDataUrl(null)} />
-                  <span style={{ fontSize: 8.5, color: '#b0b5bc' }}>{appUrl.replace(/^https?:\/\//, '')}</span>
-                </div>
-              </div>
-            )}
           </div>,
           document.getElementById('print-root')!,
         )}
