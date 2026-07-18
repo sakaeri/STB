@@ -45,6 +45,15 @@ export default function App() {
         const savedInvite = localStorage.getItem('fc_pendingInvite');
         if (savedInvite) set({ pendingInviteId: savedInvite });
       }
+      // Supabase appends auth errors (expired/used email links, etc.) as a
+      // URL hash it never cleans up itself — left alone it sits in the
+      // address bar indefinitely (and shows up, unhelpfully, in mobile
+      // browsers' auto print footer). Surface a friendly message instead
+      // and strip it from the URL.
+      if (window.location.hash.startsWith('#error=')) {
+        set({ authError: '認証リンクが無効か、有効期限が切れています。もう一度お試しください。' });
+        window.history.replaceState({}, '', window.location.pathname);
+      }
     } catch { /* noop */ }
     actions.purgeTrash();
     return () => window.removeEventListener('resize', onResize);

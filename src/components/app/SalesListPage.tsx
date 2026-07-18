@@ -291,7 +291,13 @@ export default function SalesListPage() {
 
         {/* PDF出力用（印刷時のみ #print-root に表示され、画面には出ません） */}
         {createPortal(
-          <div>
+          // display:flex column + marginTop:auto on the QR block pushes it
+          // to the physical bottom of the page using only normal flow —
+          // position:fixed isn't reliably honored by every print engine
+          // (especially on mobile), where it silently falls back to static
+          // flow and the alignItems:center on a full-width block used to
+          // land the QR dead center instead of the bottom-right corner.
+          <div style={{ display: 'flex', flexDirection: 'column', minHeight: '265mm' }}>
             <div style={{ marginBottom: 16 }}>
               <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{state.companyInfo.name || state.brandName} 売上一覧</h1>
               <p style={{ fontSize: 12, color: '#5a6270', margin: '2px 0 0' }}>
@@ -322,14 +328,9 @@ export default function SalesListPage() {
               </tbody>
             </table>
             {qrDataUrl && (
-              // position:fixed isn't reliably honored by every mobile print
-              // engine — falls back to normal flow, so this stays right-
-              // aligned (via flex, not fixed positioning) either way.
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                  <img src={qrDataUrl} style={{ width: 34, height: 34, opacity: 0.75 }} onError={() => setQrDataUrl(null)} />
-                  <span style={{ fontSize: 8.5, color: '#b0b5bc' }}>{appUrl.replace(/^https?:\/\//, '')}</span>
-                </div>
+              <div style={{ marginTop: 'auto', alignSelf: 'flex-end', paddingTop: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                <img src={qrDataUrl} style={{ width: 34, height: 34, opacity: 0.75 }} onError={() => setQrDataUrl(null)} />
+                <span style={{ fontSize: 8.5, color: '#b0b5bc' }}>{appUrl.replace(/^https?:\/\//, '')}</span>
               </div>
             )}
           </div>,
