@@ -21,6 +21,7 @@ export function createInitialState(): AppState {
     aggUnit: 'month',
     periodDate: new Date().toISOString().slice(0, 10),
     closeBannerOpen: false,
+    dailyCloseBannerOpen: false,
 
     hqTablePage: 1,
     hqTablePageSize: 20,
@@ -36,7 +37,7 @@ export function createInitialState(): AppState {
     transactions: {},
     memoTopics: [],
     trash: [],
-    companyInfo: { name: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4 },
+    companyInfo: { name: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4, dailyClosingEnabled: false },
     confirmedPeriods: {},
     defaults: { royaltyRate: 5, useSavings: true, savings: 50000 },
 

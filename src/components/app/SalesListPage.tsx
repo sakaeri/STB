@@ -9,6 +9,8 @@ import {
   closingDayPassedForCurrentMonth,
   targetPeriodKey,
   targetPeriodLabel,
+  yesterdayKey,
+  yesterdayLabel,
 } from '../../state/calc';
 import { buildRow, isPeriodConfirmed } from './rowHelpers';
 import KpiCards from './KpiCards';
@@ -67,6 +69,24 @@ export default function SalesListPage() {
     !!currentStoreForClose &&
     (!currentStoreForClose.createdPeriod || currentStoreForClose.createdPeriod <= targetPeriod) &&
     !isPeriodConfirmed(state.confirmedPeriods, currentStoreForClose.id, targetPeriod);
+
+  // ===== daily closing (optional, independent of the monthly closing day) =====
+  const dailyEnabled = !!state.companyInfo.dailyClosingEnabled;
+  const yKey = yesterdayKey();
+  const yLbl = yesterdayLabel();
+  const yMonth = yKey.slice(0, 7);
+  const pendingDailyCloseList =
+    isHq && dailyEnabled
+      ? state.stores
+          .filter((s) => !s.createdPeriod || s.createdPeriod <= yMonth)
+          .filter((s) => !isPeriodConfirmed(state.confirmedPeriods, s.id, yKey))
+      : [];
+  const showSelfDailyCloseBanner =
+    !isHq &&
+    dailyEnabled &&
+    !!currentStoreForClose &&
+    (!currentStoreForClose.createdPeriod || currentStoreForClose.createdPeriod <= yMonth) &&
+    !isPeriodConfirmed(state.confirmedPeriods, currentStoreForClose.id, yKey);
 
   // ===== rows =====
   const allRows = visible.map((s) => buildRow(s, state));
@@ -201,6 +221,96 @@ export default function SalesListPage() {
             style={{ height: 32, padding: '0 14px', borderRadius: 8, background: colors.warn, color: '#fff', fontWeight: 700, fontSize: 12, flex: 'none' }}
           >
             {targetPeriodLbl}を確定する
+          </button>
+        </div>
+      )}
+
+      {/* 日次確定バナー（本部：未確定チーム一覧） */}
+      {isHq && dailyEnabled && pendingDailyCloseList.length > 0 && (
+        <div style={{ margin: '16px 26px 0', background: colors.warnBg, border: `1px solid ${colors.warnBorder}`, borderRadius: 12, padding: '13px 16px' }}>
+          <button
+            onClick={actions.toggleDailyCloseBanner}
+            style={{ display: 'flex', alignItems: 'center', gap: 9, fontWeight: 700, fontSize: 13, color: colors.warnText, width: '100%', textAlign: 'left' }}
+          >
+            <span
+              style={{
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                background: colors.warn,
+                color: '#fff',
+                fontSize: 12,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flex: 'none',
+              }}
+            >
+              !
+            </span>
+            <span style={{ flex: 1 }}>
+              {yLbl}分の日次確定が未完了のチームが{pendingDailyCloseList.length}件あります
+            </span>
+            <span style={{ color: colors.warnText, fontSize: 11, transform: state.dailyCloseBannerOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform .15s' }}>
+              ▾
+            </span>
+          </button>
+          {state.dailyCloseBannerOpen && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+              {pendingDailyCloseList.map((s) => (
+                <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 9, padding: '8px 11px' }}>
+                  <div style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: '#3a4150' }}>{s.name}</div>
+                  <button
+                    onClick={() => actions.confirmPeriod(s.id, yKey)}
+                    style={{ height: 28, padding: '0 12px', borderRadius: 7, background: colors.warn, color: '#fff', fontWeight: 700, fontSize: 11.5, flex: 'none' }}
+                  >
+                    {yLbl}を確定する
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 日次確定バナー（チーム側：自チームのみ） */}
+      {showSelfDailyCloseBanner && currentStoreForClose && (
+        <div
+          style={{
+            margin: '16px 26px 0',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            background: colors.warnBg,
+            border: `1px solid ${colors.warnBorder}`,
+            borderRadius: 12,
+            padding: '12px 16px',
+          }}
+        >
+          <span
+            style={{
+              width: 18,
+              height: 18,
+              borderRadius: '50%',
+              background: colors.warn,
+              color: '#fff',
+              fontSize: 12,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flex: 'none',
+            }}
+          >
+            !
+          </span>
+          <div style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: colors.warnText }}>
+            {yLbl}分の売上・経費がまだ確定されていません。0件でも内容を確認して確定してください。
+          </div>
+          <button
+            onClick={() => actions.confirmPeriod(currentStoreForClose.id, yKey)}
+            style={{ height: 32, padding: '0 14px', borderRadius: 8, background: colors.warn, color: '#fff', fontWeight: 700, fontSize: 12, flex: 'none' }}
+          >
+            {yLbl}を確定する
           </button>
         </div>
       )}

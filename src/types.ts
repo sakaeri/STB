@@ -84,6 +84,7 @@ export interface CompanyInfo {
   rep: string;
   closingDay: string; // 'eom' or day number as string
   fiscalStartMonth: number;
+  dailyClosingEnabled: boolean;
 }
 
 export interface Defaults {
@@ -222,6 +223,7 @@ export interface AppState {
   aggUnit: 'day' | 'week' | 'month' | 'year';
   periodDate: string;
   closeBannerOpen: boolean;
+  dailyCloseBannerOpen: boolean;
 
   // hq table pagination
   hqTablePage: number;

@@ -143,7 +143,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     set({
       session: null, accounts: [], activeOrgId: null, hqNameOverride: null,
       stores: [], members: [], hqMembers: [], transactions: {}, memoTopics: [], trash: [],
-      companyInfo: { name: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4 },
+      companyInfo: { name: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4, dailyClosingEnabled: false },
       confirmedPeriods: {}, page: 'list', selectedStoreId: null,
       authEmail: '', authPassword: '',
     });
@@ -355,6 +355,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         const c = st.companyInfo;
         await supabase.from('orgs').update({
           name: c.name, address: c.address, rep: c.rep, closing_day: c.closingDay, fiscal_start_month: c.fiscalStartMonth,
+          daily_closing_enabled: c.dailyClosingEnabled,
         }).eq('id', st.activeOrgId);
         set({ hqNameOverride: c.name });
       }
@@ -363,6 +364,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     onCompanyAddress: (v: string) => set((s) => ({ companyInfo: { ...s.companyInfo, address: v } })),
     onCompanyRep: (v: string) => set((s) => ({ companyInfo: { ...s.companyInfo, rep: v } })),
     onCompanyClosingDay: (v: string) => set((s) => ({ companyInfo: { ...s.companyInfo, closingDay: v } })),
+    onCompanyDailyClosingEnabled: (v: boolean) => set((s) => ({ companyInfo: { ...s.companyInfo, dailyClosingEnabled: v } })),
     onCompanyFiscalStartMonth: (v: number) => set((s) => ({ companyInfo: { ...s.companyInfo, fiscalStartMonth: v } })),
 
     // ===== hq defaults =====
@@ -718,6 +720,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     setLayout: (v: AppState['layout']) => set({ layout: v }),
     setAggUnit: (v: AppState['aggUnit']) => set({ aggUnit: v }),
     toggleCloseBanner: () => set((s) => ({ closeBannerOpen: !s.closeBannerOpen })),
+    toggleDailyCloseBanner: () => set((s) => ({ dailyCloseBannerOpen: !s.dailyCloseBannerOpen })),
     confirmPeriod: async (storeId: string, period: string) => {
       set((s) => ({ confirmedPeriods: { ...s.confirmedPeriods, [`${storeId}|${period}`]: true } }));
       const st = getState();
@@ -902,7 +905,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       set({
         activeOrgId: null, hqNameOverride: null, showProfileModal: true,
         stores: [], members: [], hqMembers: [], transactions: {}, memoTopics: [], trash: [],
-        companyInfo: { name: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4 },
+        companyInfo: { name: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4, dailyClosingEnabled: false },
         page: 'list' as const, selectedStoreId: null,
       });
     });

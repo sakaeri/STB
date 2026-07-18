@@ -18,6 +18,7 @@ export interface Database {
           default_use_savings: boolean; default_savings_mode: string; default_savings: number; default_savings_rate: number;
           created_by: string | null; created_at: string; status: 'active' | 'frozen'; reading: string;
           stripe_customer_id: string | null; stripe_subscription_id: string | null;
+          daily_closing_enabled: boolean;
         };
         Insert: Partial<Database['public']['Tables']['orgs']['Row']> & { name: string };
         Update: Partial<Database['public']['Tables']['orgs']['Row']>;

@@ -178,6 +178,7 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
     companyInfo: {
       name: orgRow.name, address: orgRow.address, rep: orgRow.rep,
       closingDay: orgRow.closing_day, fiscalStartMonth: orgRow.fiscal_start_month,
+      dailyClosingEnabled: !!orgRow.daily_closing_enabled,
     },
     defaults: {
       royaltyRate: Number(orgRow.default_royalty_rate), useRoyalty: orgRow.default_use_royalty,

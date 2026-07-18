@@ -170,6 +170,19 @@ export function targetPeriodLabel(): string {
   return `${y}年${parseInt(m, 10)}月`;
 }
 
+// Daily closing targets yesterday — today's entries are still in progress,
+// so there's nothing to grace-period around like the monthly closing day.
+export function yesterdayKey(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
+export function yesterdayLabel(): string {
+  const k = yesterdayKey();
+  return `${k.slice(0, 4)}年${parseInt(k.slice(5, 7), 10)}月${parseInt(k.slice(8, 10), 10)}日`;
+}
+
 export function shiftMonth(ym: string, delta: number): string {
   const [y, m] = ym.split('-').map(Number);
   const d = new Date(y, m - 1 + delta, 1);
