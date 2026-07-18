@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { CSSProperties, InputHTMLAttributes } from 'react';
 
 // Shared visual building blocks for the auth-screen views (login / signup /
@@ -91,6 +92,32 @@ export function Field({ label, required, style, ...rest }: FieldProps) {
         {required && <span style={{ color: '#d6453d' }}> *</span>}
       </label>
       <input style={{ ...inputStyle, ...style }} {...rest} />
+    </div>
+  );
+}
+
+// Masked by default with a 表示/隠す toggle, matching the pattern already
+// used in ProfileModal — the auth screens' password fields never had one.
+type PasswordFieldProps = Omit<FieldProps, 'type'>;
+
+export function PasswordField({ label, required, style, ...rest }: PasswordFieldProps) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div>
+      <label style={labelStyle}>
+        {label}
+        {required && <span style={{ color: '#d6453d' }}> *</span>}
+      </label>
+      <div style={{ position: 'relative' }}>
+        <input type={visible ? 'text' : 'password'} style={{ ...inputStyle, paddingRight: 52, ...style }} {...rest} />
+        <button
+          type="button"
+          onClick={() => setVisible((v) => !v)}
+          style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', width: 40, height: 30, borderRadius: 7, color: '#8a909a', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          {visible ? '隠す' : '表示'}
+        </button>
+      </div>
     </div>
   );
 }

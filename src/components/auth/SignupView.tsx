@@ -1,5 +1,5 @@
 import { useStore } from '../../state/store.tsx';
-import { bodyStyle, Field, ErrorBanner, primaryButtonStyle } from './shared';
+import { bodyStyle, Field, PasswordField, ErrorBanner, primaryButtonStyle } from './shared';
 
 export default function SignupView() {
   const { state, actions } = useStore();
@@ -24,10 +24,9 @@ export default function SignupView() {
         onChange={(e) => actions.onSignupEmail(e.target.value)}
         placeholder="you@example.com"
       />
-      <Field
+      <PasswordField
         label="パスワード"
         required
-        type="password"
         value={form.password}
         onChange={(e) => actions.onSignupPassword(e.target.value)}
         placeholder="8文字以上"

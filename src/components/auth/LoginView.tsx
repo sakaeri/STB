@@ -1,5 +1,5 @@
 import { useStore } from '../../state/store.tsx';
-import { bodyStyle, Field, ErrorBanner, primaryButtonStyle } from './shared';
+import { bodyStyle, Field, PasswordField, ErrorBanner, primaryButtonStyle } from './shared';
 
 export default function LoginView() {
   const { state, actions } = useStore();
@@ -12,9 +12,8 @@ export default function LoginView() {
         onChange={(e) => actions.onAuthEmail(e.target.value)}
         placeholder="you@example.com"
       />
-      <Field
+      <PasswordField
         label="パスワード"
-        type="password"
         value={state.authPassword}
         onChange={(e) => actions.onAuthPassword(e.target.value)}
         placeholder="••••••••"
