@@ -307,10 +307,7 @@ export default function SalesListPage() {
                 </p>
               </div>
               {qrDataUrl && (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, flex: 'none' }}>
-                  <img src={qrDataUrl} style={{ width: 28, height: 28, opacity: 0.75 }} onError={() => setQrDataUrl(null)} />
-                  <span style={{ fontSize: 8, color: '#b0b5bc' }}>{appUrl.replace(/^https?:\/\//, '')}</span>
-                </div>
+                <img src={qrDataUrl} style={{ width: 28, height: 28, opacity: 0.75, flex: 'none' }} onError={() => setQrDataUrl(null)} />
               )}
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
