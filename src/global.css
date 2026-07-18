@@ -2,7 +2,12 @@
 html, body { margin: 0; padding: 0; }
 body {
   font-family: 'Noto Sans JP', system-ui, -apple-system, sans-serif;
-  background: #eceef1;
+  /* White, not the app's gray content-backdrop color — this is what shows
+     through in any gap around the app shell (iOS overscroll bounce, a
+     dynamic-viewport resize as the mobile browser chrome shows/hides), and
+     it should read as a continuation of the header band, not a stray gray
+     strip. The gray backdrop itself lives on the inner scroll container. */
+  background: #fff;
   color: #1b1f27;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -11,7 +16,7 @@ input, select, button, textarea { font-family: inherit; }
 button { cursor: pointer; border: none; background: none; }
 table { border-collapse: collapse; }
 
-#root { height: 100vh; }
+#root { height: 100vh; height: 100dvh; }
 
 @keyframes scIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes scOver { from { opacity: 0; } to { opacity: 1; } }

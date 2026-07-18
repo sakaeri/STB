@@ -20,13 +20,13 @@ export default function MainApp() {
   const { state } = useStore();
 
   return (
-    <div style={{ display: 'flex', width: '100%', height: '100vh', overflow: 'hidden', background: '#eceef1' }}>
+    <div style={{ display: 'flex', width: '100%', height: '100dvh', overflow: 'hidden', background: '#fff' }}>
       <Sidebar />
 
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', minWidth: 0 }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100dvh', minWidth: 0, background: '#fff' }}>
         <div style={{ flex: 'none', background: '#fff', paddingTop: 'env(safe-area-inset-top)' }} />
         <Topbar />
-        <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
+        <div style={{ flex: 1, overflow: 'auto', minHeight: 0, background: '#eceef1' }}>
           {state.page === 'list' && <SalesListPage />}
           {state.page === 'memo' && <MemoPage />}
           {state.page === 'settings' && <SettingsPage />}

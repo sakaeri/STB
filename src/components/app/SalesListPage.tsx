@@ -24,7 +24,7 @@ export default function SalesListPage() {
 
   useEffect(() => {
     if (!appUrl) return;
-    QRCode.toDataURL(appUrl, { width: 96, margin: 0, color: { dark: '#1b1f27', light: '#ffffff' } })
+    QRCode.toDataURL(appUrl, { width: 96, margin: 0, color: { dark: '#5a6270', light: '#ffffff' } })
       .then(setQrDataUrl)
       .catch(() => setQrDataUrl(null));
   }, [appUrl]);
@@ -293,22 +293,14 @@ export default function SalesListPage() {
         {/* PDF出力用（印刷時のみ #print-root に表示され、画面には出ません） */}
         {createPortal(
           <div>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16, gap: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                {brandLogoUrl && <img src={brandLogoUrl} style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover' }} />}
-                <div>
-                  <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{state.companyInfo.name || state.brandName} 売上一覧</h1>
-                  <p style={{ fontSize: 12, color: '#5a6270', margin: '2px 0 0' }}>
-                    {periodLabel(state.aggUnit, state.month, state.year || 2026, state.periodDate, state.companyInfo.fiscalStartMonth || 4)}
-                  </p>
-                </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              {brandLogoUrl && <img src={brandLogoUrl} style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover' }} />}
+              <div>
+                <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{state.companyInfo.name || state.brandName} 売上一覧</h1>
+                <p style={{ fontSize: 12, color: '#5a6270', margin: '2px 0 0' }}>
+                  {periodLabel(state.aggUnit, state.month, state.year || 2026, state.periodDate, state.companyInfo.fiscalStartMonth || 4)}
+                </p>
               </div>
-              {qrDataUrl && (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, flex: 'none' }}>
-                  <img src={qrDataUrl} style={{ width: 64, height: 64 }} />
-                  <span style={{ fontSize: 9.5, color: '#8a909a' }}>{appUrl.replace(/^https?:\/\//, '')}</span>
-                </div>
-              )}
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
@@ -333,6 +325,12 @@ export default function SalesListPage() {
                 ))}
               </tbody>
             </table>
+            {qrDataUrl && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, marginTop: 14, marginLeft: 'auto', width: 'fit-content' }}>
+                <img src={qrDataUrl} style={{ width: 34, height: 34, opacity: 0.75 }} />
+                <span style={{ fontSize: 8.5, color: '#b0b5bc' }}>{appUrl.replace(/^https?:\/\//, '')}</span>
+              </div>
+            )}
           </div>,
           document.getElementById('print-root')!,
         )}
