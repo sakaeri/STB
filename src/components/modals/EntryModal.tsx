@@ -39,6 +39,14 @@ export default function EntryModal() {
   const amountNum = parseInt(draft.amount, 10) || 0;
   const valid = amountNum > 0;
 
+  // Only fold the in-progress amount into the preview if its date actually
+  // falls within the month being displayed — the date field is editable,
+  // so it doesn't always match.
+  const draftInThisMonth = draft.date
+    ? parseInt(draft.date.slice(0, 4), 10) === state.year && parseInt(draft.date.slice(5, 7), 10) - 1 === mi
+    : true;
+  const previewTotal = monthTotal + (draftInThisMonth ? amountNum : 0);
+
   return (
     <div
       onClick={actions.closeEntry}
@@ -122,9 +130,14 @@ export default function EntryModal() {
               </label>
             )}
           </div>
-          <div style={{ background: '#f7f8fa', borderRadius: 11, padding: '13px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 12.5, color: '#6b7280' }}>{totalLabel}（{monthLabel}）</span>
-            <span style={{ fontWeight: 700, fontSize: 17, fontVariantNumeric: 'tabular-nums', color: typeColor }}>{yen(monthTotal)}</span>
+          <div style={{ background: '#f7f8fa', borderRadius: 11, padding: '13px 16px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 12.5, color: '#6b7280' }}>{totalLabel}（{monthLabel}・この入力を含む）</span>
+              <span style={{ fontWeight: 700, fontSize: 17, fontVariantNumeric: 'tabular-nums', color: typeColor }}>{yen(previewTotal)}</span>
+            </div>
+            {amountNum > 0 && (
+              <span style={{ fontSize: 11, color: '#9aa0a8' }}>保存前の{monthLabel}合計：{yen(monthTotal)}</span>
+            )}
           </div>
         </div>
 
