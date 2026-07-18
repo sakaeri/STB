@@ -25,3 +25,25 @@
 .stb-tx-row:hover {
   background: #eef0f3;
 }
+
+/* Print/PDF export: only the dedicated print table is shown when printing
+   (triggered via window.print() — the browser's own "PDFとして保存"). */
+.stb-print-only {
+  display: none;
+}
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .stb-print-only,
+  .stb-print-only * {
+    visibility: visible;
+  }
+  .stb-print-only {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+  }
+}

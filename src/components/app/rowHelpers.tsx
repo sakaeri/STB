@@ -162,9 +162,10 @@ export function canDeleteForStore(role: Role, isHq: boolean, viewRole: string, s
 export function canCreateRole(role: Role): boolean {
   return role !== '閲覧者';
 }
-// Team-settings edit gate: owner (anywhere), or admin viewing their own store.
-export function canEditTeamSettings(role: Role, viewRole: string, storeId: string): boolean {
-  return role === 'オーナー' || (role === '管理者' && viewRole === storeId);
+// Team-settings edit gate: owner only — royalty/savings are an HQ-franchise
+// agreement, not something a local team manager should be able to change.
+export function canEditTeamSettings(role: Role): boolean {
+  return role === 'オーナー';
 }
 
 export function isPeriodConfirmed(confirmedPeriods: Record<string, boolean>, storeId: string, period: string): boolean {

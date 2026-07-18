@@ -76,7 +76,7 @@ export default function StoreDrawer() {
 
   const role = myRole(state);
   const drawerCanDelete = canDeleteForStore(role, isHq, state.viewRole, store.id);
-  const canEditSettings = canEditTeamSettings(role, state.viewRole, store.id);
+  const canEditSettings = canEditTeamSettings(role);
   const canManagePerms = canManagePermissions(role);
 
   const royaltyMode = store.royaltyMode || 'rate';
