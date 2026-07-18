@@ -26,8 +26,8 @@ export default function SalesListPage() {
     tSavings = 0,
     tSalesPrev = 0;
   visible.forEach((s) => {
-    const d = periodData(s, state.aggUnit, state.month, state.periodDate, state.transactions);
-    const p = periodDataPrev(s, state.aggUnit, state.month, state.periodDate, state.transactions);
+    const d = periodData(s, state.aggUnit, state.month, state.year || 2026, state.periodDate, state.transactions);
+    const p = periodDataPrev(s, state.aggUnit, state.month, state.year || 2026, state.periodDate, state.transactions);
     tSales += d.sales;
     tProfit += d.profit;
     tRoyalty += d.royalty;
@@ -71,7 +71,7 @@ export default function SalesListPage() {
     const header = [unitLabel, '売上', '経費', '粗利', 'ロイヤリティ', '貯蓄'];
     const lines = [header.join(',')];
     visible.forEach((s) => {
-      const d = periodData(s, state.aggUnit, state.month, state.periodDate, state.transactions);
+      const d = periodData(s, state.aggUnit, state.month, state.year || 2026, state.periodDate, state.transactions);
       lines.push([s.name, d.sales, d.expense, d.profit, d.royalty, d.savings].join(','));
     });
     const unitTag = ({ day: '日別', week: '週別', month: '月別', year: '年間' } as Record<string, string>)[state.aggUnit] || state.aggUnit;

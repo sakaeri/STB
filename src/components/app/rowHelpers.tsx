@@ -34,7 +34,7 @@ export interface RowData {
 }
 
 export function buildRow(store: Store, state: AppState): RowData {
-  const d = periodData(store, state.aggUnit, state.month, state.periodDate, state.transactions);
+  const d = periodData(store, state.aggUnit, state.month, state.year || 2026, state.periodDate, state.transactions);
   const marginPct = d.sales ? (d.profit / d.sales) * 100 : 0;
   const marginFrac = d.sales ? d.profit / d.sales : 0;
   const bc = d.sales ? barColor(marginFrac) : '#b8bec6';

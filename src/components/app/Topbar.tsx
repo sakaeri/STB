@@ -101,6 +101,27 @@ export default function Topbar() {
             {subs[state.page]}
           </p>
         </div>
+        {state.isMobile && isAdmin && (
+          <button
+            onClick={actions.goAdminDashboard}
+            aria-label="運営ダッシュボードに戻る"
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: '#f0f2f5',
+              color: '#6b7280',
+              fontWeight: 700,
+              fontSize: 14,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flex: 'none',
+            }}
+          >
+            ⚙
+          </button>
+        )}
         {state.isMobile && (
           <button
             onClick={actions.openProfileModal}

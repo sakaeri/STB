@@ -46,9 +46,13 @@ export interface PeriodResult {
   hasTx?: boolean;
 }
 
-export function monthData(store: Store, m: number, transactions: Record<string, Transaction[]>): PeriodResult {
-  const mi = ((m % 12) + 12) % 12;
-  const tx = (transactions[store.id] || []).filter((t) => parseInt(t.date.slice(5, 7), 10) - 1 === mi);
+export function monthData(store: Store, year: number, m: number, transactions: Record<string, Transaction[]>): PeriodResult {
+  const totalMonths = year * 12 + m;
+  const yr = Math.floor(totalMonths / 12);
+  const mi = ((totalMonths % 12) + 12) % 12;
+  const tx = (transactions[store.id] || []).filter(
+    (t) => parseInt(t.date.slice(0, 4), 10) === yr && parseInt(t.date.slice(5, 7), 10) - 1 === mi,
+  );
   const salesTx = tx.filter((t) => t.type === 'sales');
   const expTx = tx.filter((t) => t.type === 'expense');
   let sales: number, expense: number, isManual: boolean;
@@ -92,11 +96,11 @@ export function txAgg(store: Store, fromStr: string, toStr: string, transactions
   return { sales, expense, profit, royalty, savings: 0, hasSavings: false, isManual: true, hasTx: tx.length > 0 };
 }
 
-export function yearAgg(store: Store, transactions: Record<string, Transaction[]>): PeriodResult {
+export function yearAgg(store: Store, year: number, transactions: Record<string, Transaction[]>): PeriodResult {
   let sales = 0, expense = 0, royalty = 0, savings = 0;
   let anyManual = false;
   for (let m = 0; m < 12; m++) {
-    const d = monthData(store, m, transactions);
+    const d = monthData(store, year, m, transactions);
     sales += d.sales; expense += d.expense; royalty += d.royalty; savings += d.savings;
     if (d.isManual) anyManual = true;
   }
@@ -108,26 +112,28 @@ export function periodData(
   store: Store,
   aggUnit: string,
   month: number,
+  year: number,
   periodDate: string,
   transactions: Record<string, Transaction[]>,
 ): PeriodResult {
-  if (aggUnit === 'year') return yearAgg(store, transactions);
+  if (aggUnit === 'year') return yearAgg(store, year, transactions);
   if (aggUnit === 'week') {
     const from = mondayOf(periodDate);
     return txAgg(store, from, addDays(from, 6), transactions);
   }
   if (aggUnit === 'day') return txAgg(store, periodDate, periodDate, transactions);
-  return monthData(store, month, transactions);
+  return monthData(store, year, month, transactions);
 }
 
 export function periodDataPrev(
   store: Store,
   aggUnit: string,
   month: number,
+  year: number,
   periodDate: string,
   transactions: Record<string, Transaction[]>,
 ): PeriodResult {
-  if (aggUnit === 'year') return { sales: 0, expense: 0, profit: 0, royalty: 0, savings: 0, hasSavings: false, isManual: false };
+  if (aggUnit === 'year') return yearAgg(store, year - 1, transactions);
   if (aggUnit === 'week') {
     const from = addDays(mondayOf(periodDate), -7);
     return txAgg(store, from, addDays(from, 6), transactions);
@@ -136,7 +142,7 @@ export function periodDataPrev(
     const d = addDays(periodDate, -1);
     return txAgg(store, d, d, transactions);
   }
-  return monthData(store, month - 1, transactions);
+  return monthData(store, year, month - 1, transactions);
 }
 
 export function toHiragana(str: string): string {

@@ -70,7 +70,7 @@ export default function StoreDrawer() {
 
   const isHq = state.viewRole === 'hq';
   const row = buildRow(store, state);
-  const d = periodData(store, state.aggUnit, state.month, state.periodDate, state.transactions);
+  const d = periodData(store, state.aggUnit, state.month, state.year || 2026, state.periodDate, state.transactions);
   const marginTxt = d.sales ? ((d.profit / d.sales) * 100).toFixed(0) + '%' : '—';
   const periodLbl = periodLabel(state.aggUnit, state.month, state.year, state.periodDate, state.companyInfo.fiscalStartMonth || 4);
 

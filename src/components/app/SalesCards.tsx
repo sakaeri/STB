@@ -36,10 +36,7 @@ export default function SalesCards({ rows, onOpen }: { rows: RowData[]; onOpen: 
             <div style={{ fontSize: 11, color: colors.faint, marginBottom: 2 }}>売上</div>
             <div style={{ fontSize: 24, fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '-.01em' }}>{r.salesFmt}</div>
           </div>
-          <div style={{ height: 7, borderRadius: 4, background: colors.divider, overflow: 'hidden', marginBottom: 14 }}>
-            <div style={{ height: '100%', width: r.barWidth, background: r.barColor, borderRadius: 4 }} />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: colors.divider, borderRadius: 10, overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, background: colors.divider, borderRadius: 10, overflow: 'hidden', marginTop: 14 }}>
             <div style={{ background: '#fafbfc', padding: '9px 11px' }}>
               <div style={{ fontSize: 10.5, color: colors.faint }}>経費</div>
               <div style={{ fontWeight: 700, fontSize: 13.5, fontVariantNumeric: 'tabular-nums', color: colors.muted }}>{r.expenseFmt}</div>
