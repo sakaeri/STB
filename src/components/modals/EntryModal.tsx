@@ -71,7 +71,9 @@ export default function EntryModal() {
           )}
           <div>
             <label style={labelStyle}>日付</label>
-            <input type="date" value={draft.date} onChange={(e) => actions.onEntryDate(e.target.value)} style={inputStyle} />
+            {/* Native date inputs stretch their internal segments unevenly at
+                width:100% on mobile — give it a natural, fixed width instead. */}
+            <input type="date" value={draft.date} onChange={(e) => actions.onEntryDate(e.target.value)} style={{ ...inputStyle, width: 168 }} />
           </div>
           <div>
             <label style={labelStyle}>項目名</label>
