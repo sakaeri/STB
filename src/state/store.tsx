@@ -9,7 +9,7 @@ import {
   fetchAdminOrgs, fetchAuditLog, fetchAppSettings, addAuditLog,
   saveAppSettingsBilling, saveAppSettingsTerms, fetchPublicTerms, fetchPublicAppLogo, fetchPublicPricing,
 } from './adminData';
-import { planForCount, billedPlanFor, type PlanStep } from '../tokens';
+import { billedPlanFor, type PlanStep } from '../tokens';
 
 type Patch = Partial<AppState> | ((s: AppState) => Partial<AppState>);
 
@@ -420,8 +420,8 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       const st = getState();
       const f = st.addForm;
       if (!f || !f.name.trim()) return;
-      const currentPlan = planForCount(st.stores.length, st.pricingConfig);
-      const nextPlan = planForCount(st.stores.length + 1, st.pricingConfig);
+      const currentPlan = billedPlanFor(st.stores.length, st.orgBilledStep, st.pricingConfig);
+      const nextPlan = billedPlanFor(st.stores.length + 1, st.orgBilledStep, st.pricingConfig);
       if (nextPlan.price !== currentPlan.price) { set({ pendingUpgrade: { fromPlan: currentPlan, toPlan: nextPlan } }); return; }
       actuallyCreateStore();
     },
