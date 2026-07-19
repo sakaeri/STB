@@ -803,7 +803,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       set((s) => ({
         adminMockOrgs: s.adminMockOrgs.map((o) => (o.id === id ? { ...o, status: nextStatus } : o)),
         adminActionMenuOrgId: null,
-        auditLog: [{ ts: nowLabel(), text: `「${org.name}」を${label}しました` }, ...s.auditLog],
+        auditLog: [{ ts: new Date().toISOString(), label: nowLabel(), text: `「${org.name}」を${label}しました` }, ...s.auditLog],
       }));
     },
     deleteAdminOrg: (id: string) => {
@@ -818,7 +818,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         set((s) => ({
           adminMockOrgs: s.adminMockOrgs.filter((o) => o.id !== id),
           adminActionMenuOrgId: null,
-          auditLog: [{ ts: nowLabel(), text: `「${org.name}」を削除しました` }, ...s.auditLog],
+          auditLog: [{ ts: new Date().toISOString(), label: nowLabel(), text: `「${org.name}」を削除しました` }, ...s.auditLog],
         }));
       });
     },

@@ -7,16 +7,20 @@ import type { AdminMockOrg } from '../../types';
 
 export default function OrgsTab() {
   const { state, actions } = useStore();
-  const orgs = state.adminMockOrgs;
   const month = state.adminMonth;
+  // An org that registered after the selected month didn't exist yet, so it
+  // shouldn't be counted (or listed) when looking at that month.
+  const orgs = state.adminMockOrgs.filter((o) => o.joinedAt.slice(0, 7) <= month);
 
-  // Stats are always computed over the full unfiltered org set.
+  // Stats are always computed over the full unfiltered (but month-scoped) org set.
   const statOrgCount = orgs.length;
   const statTeamCount = orgs.reduce((sum, o) => sum + monthDataFor(o, month).teams, 0);
   const statFrozenCount = orgs.filter((o) => o.status === 'frozen').length;
   const statBillingTotal = orgs
     .filter((o) => o.status === 'active')
     .reduce((sum, o) => sum + billedPlanFor(monthDataFor(o, month).teams, o.billedStep, state.pricingConfig).price, 0);
+
+  const monthAuditLog = state.auditLog.filter((log) => log.ts.slice(0, 7) === month);
 
   const prefOptions = Array.from(new Set(orgs.map((o) => prefectureOf(o.address)))).sort();
 
@@ -141,11 +145,11 @@ export default function OrgsTab() {
         <div style={{ padding: '14px 20px', borderBottom: '1px solid #f0f2f5', fontSize: 12.5, fontWeight: 700, color: '#3a4150' }}>
           操作ログ（凍結・削除）・{adminMonthLabel(month)}
         </div>
-        {state.auditLog.length > 0 ? (
+        {monthAuditLog.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {state.auditLog.map((log, i) => (
+            {monthAuditLog.map((log, i) => (
               <div key={i} style={{ padding: '10px 20px', borderTop: '1px solid #f5f6f8', display: 'flex', gap: 14, fontSize: 12.5 }}>
-                <span style={{ color: '#9aa0a8', flex: 'none' }}>{log.ts}</span>
+                <span style={{ color: '#9aa0a8', flex: 'none' }}>{log.label}</span>
                 <span style={{ color: '#3a4150' }}>{log.text}</span>
               </div>
             ))}

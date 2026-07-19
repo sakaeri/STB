@@ -130,7 +130,8 @@ export interface OrgSnapshot {
 }
 
 export interface AuditLogEntry {
-  ts: string;
+  ts: string; // raw ISO timestamp — used to filter by month
+  label: string; // formatted for display, e.g. "7/19 10:23"
   text: string;
 }
 

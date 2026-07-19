@@ -71,7 +71,7 @@ function formatAuditTs(iso: string): string {
 export async function fetchAuditLog(): Promise<AuditLogEntry[]> {
   const { data, error } = await supabase.from('admin_audit_log').select('ts, text').order('ts', { ascending: false }).limit(200);
   if (error) throw error;
-  return (data || []).map((row) => ({ ts: formatAuditTs(row.ts), text: row.text }));
+  return (data || []).map((row) => ({ ts: row.ts, label: formatAuditTs(row.ts), text: row.text }));
 }
 
 export async function addAuditLog(text: string): Promise<void> {
