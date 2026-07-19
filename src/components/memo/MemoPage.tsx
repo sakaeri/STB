@@ -255,40 +255,64 @@ export default function MemoPage() {
               )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {curEntry.records.slice().sort((x, y) => y.date.localeCompare(x.date)).map((r) => {
-                const dateFmt = `${r.date.slice(0, 4)}/${r.date.slice(5, 7)}/${r.date.slice(8, 10)}`;
-                return (
-                  <div key={r.id} style={{ background: '#fff', border: '1px solid #e7e9ed', borderRadius: 13, padding: '15px 17px' }}>
-                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 6 }}>
-                      <span style={{ fontWeight: 700, fontSize: 13.5, color: accent }}>{r.label}</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 'none' }}>
-                        <span style={{ fontSize: 11, color: '#aab0b8', whiteSpace: 'nowrap' }}>
-                          {dateFmt}{r.authorName && ` ・ ${r.authorName}`}
-                        </span>
-                        {memoEntryCanDelete && (
-                          <button
-                            className="fc-memo-delbtn"
-                            onClick={() => actions.requestDeleteMemoRecord(curTopic.id, curEntry.id, r)}
-                            style={{ width: 22, height: 22, borderRadius: 6, color: '#c3c8d0', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
+              {(() => {
+                // Records sharing a 見出し stack inside one card (oldest on
+                // top, newest added at the bottom) instead of each getting
+                // its own separate card — that's the whole point of being
+                // able to pick an existing heading rather than retyping it.
+                const byLabel = new Map<string, typeof curEntry.records>();
+                curEntry.records.forEach((r) => {
+                  const arr = byLabel.get(r.label);
+                  if (arr) arr.push(r); else byLabel.set(r.label, [r]);
+                });
+                const groups = Array.from(byLabel.entries()).map(([label, records]) => ({
+                  label,
+                  records: records.slice().sort((a, b) => a.date.localeCompare(b.date)),
+                }));
+                groups.sort((a, b) => {
+                  const aLast = a.records[a.records.length - 1]?.date || '';
+                  const bLast = b.records[b.records.length - 1]?.date || '';
+                  return bLast.localeCompare(aLast);
+                });
+                return groups.map((g) => (
+                  <div key={g.label} style={{ background: '#fff', border: '1px solid #e7e9ed', borderRadius: 13, padding: '15px 17px' }}>
+                    <div style={{ fontWeight: 700, fontSize: 13.5, color: accent, marginBottom: 10 }}>{g.label}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {g.records.map((r, i) => {
+                        const dateFmt = `${r.date.slice(0, 4)}/${r.date.slice(5, 7)}/${r.date.slice(8, 10)}`;
+                        return (
+                          <div key={r.id} style={i > 0 ? { borderTop: '1px solid #f0f2f5', paddingTop: 12 } : undefined}>
+                            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 6 }}>
+                              <span style={{ fontSize: 11, color: '#aab0b8', whiteSpace: 'nowrap' }}>
+                                {dateFmt}{r.authorName && ` ・ ${r.authorName}`}
+                              </span>
+                              {memoEntryCanDelete && (
+                                <button
+                                  className="fc-memo-delbtn"
+                                  onClick={() => actions.requestDeleteMemoRecord(curTopic.id, curEntry.id, r)}
+                                  style={{ width: 22, height: 22, borderRadius: 6, color: '#c3c8d0', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
+                                >
+                                  ✕
+                                </button>
+                              )}
+                            </div>
+                            {!!r.text && <div style={{ fontSize: 13.5, color: '#2a2f38', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{r.text}</div>}
+                            {!!r.images?.length && (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+                                {r.images.map((src, idx) => (
+                                  <a key={idx} href={src} target="_blank" rel="noreferrer" style={{ width: 84, height: 84, borderRadius: 10, overflow: 'hidden', border: '1px solid #e7e9ed', flex: 'none', display: 'block' }}>
+                                    <img src={src} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-                    {!!r.text && <div style={{ fontSize: 13.5, color: '#2a2f38', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{r.text}</div>}
-                    {!!r.images?.length && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
-                        {r.images.map((src, i) => (
-                          <a key={i} href={src} target="_blank" rel="noreferrer" style={{ width: 84, height: 84, borderRadius: 10, overflow: 'hidden', border: '1px solid #e7e9ed', flex: 'none', display: 'block' }}>
-                            <img src={src} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                          </a>
-                        ))}
-                      </div>
-                    )}
                   </div>
-                );
-              })}
+                ));
+              })()}
               {curEntry.records.length === 0 && (
                 <div style={emptyCardStyle}>まだ記録がありません。「＋記録を追加」から入力できます。</div>
               )}
