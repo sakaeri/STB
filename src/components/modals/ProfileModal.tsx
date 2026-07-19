@@ -20,7 +20,7 @@ export default function ProfileModal() {
   return (
     <div
       onClick={actions.closeProfileModal}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(20,28,42,.4)', zIndex: 55, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, animation: 'scOver .2s ease both' }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(20,28,42,.4)', zIndex: 62, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, animation: 'scOver .2s ease both' }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -63,9 +63,9 @@ export default function ProfileModal() {
                   type={state.profilePasswordVisible ? 'text' : 'password'}
                   value={draft.password}
                   onChange={(e) => actions.onOwnerProfilePassword(e.target.value)}
-                  style={{ ...inputStyle, padding: '10px 40px 10px 12px' }}
+                  style={{ ...inputStyle, padding: '10px 52px 10px 12px' }}
                 />
-                <button onClick={actions.toggleProfilePasswordVisible} style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', width: 30, height: 30, borderRadius: 7, color: '#8a909a', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <button onClick={actions.toggleProfilePasswordVisible} style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', width: 42, height: 30, borderRadius: 7, color: '#8a909a', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {state.profilePasswordVisible ? '隠す' : '表示'}
                 </button>
               </div>

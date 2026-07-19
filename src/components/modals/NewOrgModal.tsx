@@ -17,7 +17,7 @@ export default function NewOrgModal() {
   return (
     <div
       onClick={actions.closeNewOrg}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(20,28,42,.4)', zIndex: 56, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, animation: 'scOver .2s ease both' }}
+      style={{ position: 'fixed', inset: 0, background: 'rgba(20,28,42,.4)', zIndex: 62, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, animation: 'scOver .2s ease both' }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
