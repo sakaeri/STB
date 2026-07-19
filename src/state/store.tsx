@@ -56,6 +56,19 @@ function syncStripeQuantity(orgId: string | null) {
   callBillingApi('/api/stripe/sync-quantity', orgId).catch((e) => console.error('syncStripeQuantity failed', e));
 }
 
+const ACTIVE_ORG_STORAGE_KEY = 'stb_active_org_id';
+
+// Client state (and so activeOrgId) resets to nothing on every full page
+// reload, and the org_members query behind fetchMyOrgs has no defined row
+// order — so for an account in more than one org, which one ends up
+// "active" after a reload was effectively random, without this.
+function saveActiveOrgId(orgId: string) {
+  try { localStorage.setItem(ACTIVE_ORG_STORAGE_KEY, orgId); } catch { /* noop */ }
+}
+function loadSavedActiveOrgId(): string | null {
+  try { return localStorage.getItem(ACTIVE_ORG_STORAGE_KEY); } catch { return null; }
+}
+
 export interface StoreApi {
   state: AppState;
   set: (patch: Patch) => void;
@@ -124,6 +137,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     try {
       const data = await fetchOrgData(orgId);
       const session = getState().session;
+      saveActiveOrgId(orgId);
       set((s) => ({
         activeOrgId: orgId, hqNameOverride: data.companyInfo.name || null,
         viewRole: initialViewRole(session, data), selectedStoreId: null,
@@ -1088,15 +1102,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       console.timeEnd('[perf] profile+user+myOrgs');
       const email = userRes.user?.email || '';
       const verified = !!userRes.user?.email_confirmed_at;
-      set((s) => ({
+      // s.activeOrgId is always null right after a fresh page load (client
+      // state resets), so without checking localStorage too, an account in
+      // more than one org would land on whichever org happens to come back
+      // first from the (unordered) org_members query — effectively random.
+      const savedOrgId = loadSavedActiveOrgId();
+      const preferredOrgId = getState().activeOrgId || savedOrgId;
+      const resolvedOrgId = preferredOrgId && myOrgs.some((o) => o.id === preferredOrgId) ? preferredOrgId : (myOrgs[0]?.id ?? null);
+      if (resolvedOrgId) saveActiveOrgId(resolvedOrgId);
+      set({
         session: session.user.id,
         ownerProfile: { name: profile?.name || '', email, password: '' },
         accounts: [{
           id: session.user.id, name: profile?.name || '', email, password: '', verified,
           hqCreated: myOrgs.length > 0, orgs: myOrgs, isAdmin: !!profile?.is_admin,
         }],
-        activeOrgId: s.activeOrgId && myOrgs.some((o) => o.id === s.activeOrgId) ? s.activeOrgId : (myOrgs[0]?.id ?? null),
-      }));
+        activeOrgId: resolvedOrgId,
+      });
       const target = stateRef.current.activeOrgId;
       if (target) {
         console.time('[perf] fetchOrgData');
