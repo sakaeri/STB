@@ -29,34 +29,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.status(404).json({ error: `本部が見つかりません${orgErr ? `（${orgErr.message}）` : ''}` });
       return;
     }
-    if (!org.stripe_subscription_id) {
-      // No subscription at all (never started one, or it's fully ended —
-      // e.g. an immediate Stripe-side cancellation, not just a scheduled
-      // downgrade-to-Free) — if team count has grown past the free tier
-      // in the meantime, freeze rather than silently letting paid-tier
-      // usage continue unpaid. Freezing isn't a dead end here: the
-      // frozen banner's "お支払い手続きへ" button already starts a brand
-      // new Checkout in this exact case (stripe_subscription_id is null),
-      // so this is effectively "send them to sign up again", not a block.
-      const { count } = await supabase.from('teams').select('id', { count: 'exact', head: true }).eq('org_id', orgId);
-      const { data: pricingRaw } = await supabase.rpc('get_public_pricing');
-      const pricing = parsePricingConfig(pricingRaw);
+    const { count } = await supabase.from('teams').select('id', { count: 'exact', head: true }).eq('org_id', orgId);
+    const { data: pricingRaw } = await supabase.rpc('get_public_pricing');
+    const pricing = parsePricingConfig(pricingRaw);
+
+    // Shared by both "never subscribed" and "subscription turned out to be
+    // stale/dead" below: nothing is actually being billed, so if team
+    // count has grown past the free tier, freeze rather than silently
+    // letting paid-tier usage continue unpaid. Freezing isn't a dead end
+    // here: the frozen banner's "お支払い手続きへ" button already starts a
+    // brand new Checkout whenever stripe_subscription_id is null, so this
+    // is effectively "send them to sign up again", not a block.
+    const freezeIfOverFreeTier = async (): Promise<boolean> => {
       if (stepsForCount(count || 0, pricing) > 0) {
         const service = serviceClient();
         const { data } = await service.from('orgs').update({ status: 'frozen' }).eq('id', orgId).select('name').single();
         if (data) await service.from('admin_audit_log').insert({ text: `「${data.name}」を凍結しました（無料枠を超えたが未契約）` });
+        return true;
       }
-      res.status(200).json({ skipped: true });
+      return false;
+    };
+
+    if (!org.stripe_subscription_id) {
+      // No subscription at all — never started one, or it's fully ended
+      // (e.g. an immediate Stripe-side cancellation, not just a scheduled
+      // downgrade-to-Free).
+      const frozen = await freezeIfOverFreeTier();
+      // frozen tells the caller (e.g. right after creating a team) to
+      // surface this immediately instead of it only showing up next time
+      // Settings happens to reload — this endpoint is otherwise called
+      // fire-and-forget with nothing checking its response.
+      res.status(200).json({ skipped: true, frozen });
       return;
     }
 
-    const { count } = await supabase.from('teams').select('id', { count: 'exact', head: true }).eq('org_id', orgId);
-    const { data: pricingRaw } = await supabase.rpc('get_public_pricing');
-    const pricing = parsePricingConfig(pricingRaw);
     const quantity = Math.max(1, stepsForCount(count || 0, pricing));
 
     const stripe = getStripe();
-    const subscription = await stripe.subscriptions.retrieve(org.stripe_subscription_id);
+    // Defensively re-verify the subscription is actually still live — a
+    // stale id here (webhook never fired, or Stripe-side inconsistency)
+    // would otherwise throw further down trying to update a subscription
+    // that no longer accepts changes, which silently fails since this
+    // whole endpoint is called fire-and-forget from the client and its
+    // error never reaches anyone. Treat it exactly like "no subscription".
+    const subscription = await stripe.subscriptions.retrieve(org.stripe_subscription_id).catch(() => null);
+    if (!subscription || subscription.status === 'canceled') {
+      await serviceClient().from('orgs').update({ stripe_subscription_id: null, billed_step: 0 }).eq('id', orgId);
+      const frozen = await freezeIfOverFreeTier();
+      res.status(200).json({ skipped: true, frozen });
+      return;
+    }
     const item = subscription.items.data[0];
     if (!item) { res.status(200).json({ skipped: true }); return; }
     const previousQuantity = item.quantity || 0;

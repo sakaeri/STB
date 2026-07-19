@@ -37,7 +37,7 @@ async function dataUrlToPublicUrl(path: string, dataUrl: string): Promise<string
   return `${data.publicUrl}?t=${Date.now()}`;
 }
 
-async function callBillingApi(path: string, orgId: string): Promise<{ url?: string; error?: string }> {
+async function callBillingApi(path: string, orgId: string): Promise<{ url?: string; error?: string; frozen?: boolean }> {
   const { data: sessionRes } = await supabase.auth.getSession();
   const token = sessionRes.session?.access_token;
   if (!token) return { error: 'ログインが必要です' };
@@ -51,9 +51,9 @@ async function callBillingApi(path: string, orgId: string): Promise<{ url?: stri
   return body;
 }
 
-function syncStripeQuantity(orgId: string | null) {
-  if (!orgId) return;
-  callBillingApi('/api/stripe/sync-quantity', orgId).catch((e) => console.error('syncStripeQuantity failed', e));
+function syncStripeQuantity(orgId: string | null): Promise<{ frozen?: boolean } | void> {
+  if (!orgId) return Promise.resolve();
+  return callBillingApi('/api/stripe/sync-quantity', orgId).catch((e) => { console.error('syncStripeQuantity failed', e); });
 }
 
 const ACTIVE_ORG_STORAGE_KEY = 'stb_active_org_id';
@@ -1123,7 +1123,16 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       if (andThenCheckout) {
         await actions.startCheckout();
       } else {
-        syncStripeQuantity(st.activeOrgId);
+        // Awaited (unlike the fire-and-forget delete-team path) so a stale
+        // subscription discovered here — nothing valid to bill against,
+        // hence a freeze — surfaces right away instead of the plan badge
+        // just quietly showing a higher price with nothing actually
+        // charged and no explanation why.
+        const result = await syncStripeQuantity(st.activeOrgId);
+        if (result?.frozen) {
+          await reloadActiveOrg();
+          alert('お支払い情報が確認できなかったため、この本部は一時的に凍結されました。設定画面の「お支払い手続きへ」からお支払いを完了してください。');
+        }
       }
     });
   }
