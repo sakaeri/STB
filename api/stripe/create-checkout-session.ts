@@ -42,17 +42,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // — see sync-quantity.ts — failed to charge, not a first-time signup):
     // starting a brand new Checkout session here would create a *second*
     // subscription rather than resolving the actual problem. Point them at
-    // the outstanding invoice instead.
+    // the outstanding invoice instead — but only if that subscription is
+    // actually still live. The webhook clears stripe_subscription_id when
+    // it's canceled (customer.subscription.deleted), but defensively check
+    // here too: a canceled subscription has no outstanding invoice to pay,
+    // and would otherwise dead-end with "no invoice found" forever.
     if (org.stripe_subscription_id && org.stripe_customer_id) {
       const stripe = getStripe();
-      const openInvoices = await stripe.invoices.list({ customer: org.stripe_customer_id, status: 'open', limit: 1 });
-      const openInvoice = openInvoices.data[0];
-      if (openInvoice?.hosted_invoice_url) {
-        res.status(200).json({ url: openInvoice.hosted_invoice_url });
+      const sub = await stripe.subscriptions.retrieve(org.stripe_subscription_id).catch(() => null);
+      if (sub && sub.status !== 'canceled') {
+        const openInvoices = await stripe.invoices.list({ customer: org.stripe_customer_id, status: 'open', limit: 1 });
+        const openInvoice = openInvoices.data[0];
+        if (openInvoice?.hosted_invoice_url) {
+          res.status(200).json({ url: openInvoice.hosted_invoice_url });
+          return;
+        }
+        res.status(400).json({ error: '未払いの請求が見つかりませんでした。ページを再読み込みしてから、もう一度お試しください。' });
         return;
       }
-      res.status(400).json({ error: '未払いの請求が見つかりませんでした。ページを再読み込みしてから、もう一度お試しください。' });
-      return;
+      // The subscription is gone (or Stripe no longer knows about it) —
+      // fall through to starting a fresh Checkout below.
+      await supabase.from('orgs').update({ stripe_subscription_id: null }).eq('id', orgId);
     }
 
     const { count } = await supabase.from('teams').select('id', { count: 'exact', head: true }).eq('org_id', orgId);

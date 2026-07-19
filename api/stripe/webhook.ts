@@ -86,7 +86,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription;
-        await setOrgStatus(sub.metadata?.org_id, 'frozen', '凍結');
+        const orgId = sub.metadata?.org_id;
+        // Clear stripe_subscription_id along with freezing — a canceled
+        // subscription can't be paid via an "outstanding invoice" (there
+        // isn't one), so create-checkout-session.ts needs to see this as
+        // "never subscribed" and start a fresh Checkout next time, not
+        // dead-end looking for an invoice that will never exist.
+        if (orgId) await supabase.from('orgs').update({ stripe_subscription_id: null }).eq('id', orgId);
+        await setOrgStatus(orgId, 'frozen', '凍結');
         break;
       }
       // A step-up's immediate ad-hoc invoice (see sync-quantity.ts) can fail
