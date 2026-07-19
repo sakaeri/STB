@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type {
-  AppState, Store, TrashItem, ConfirmDialogState, MemoModalState, Member, HqMember,
+  AppState, Store, Transaction, TrashItem, ConfirmDialogState, MemoModalState, Member, HqMember,
 } from '../types';
 import { createInitialState } from './mockData';
 import { supabase } from '../lib/supabase';
@@ -673,18 +673,48 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     },
     restoreTrashItem: async (item: TrashItem) => {
       if (item.type === 'team') {
-        const store = item.data as Store;
-        await supabase.from('teams').insert({
+        const raw = item.data as { store: Store; transactions: Transaction[]; memoTopics: AppState['memoTopics'] } | Store;
+        // Trash entries created before this bundling existed only ever
+        // held the store's own settings, not its data.
+        const store = 'store' in raw ? raw.store : raw;
+        const txList = 'transactions' in raw ? raw.transactions : [];
+        const topics = 'memoTopics' in raw ? raw.memoTopics : [];
+        const { data: newTeam, error } = await supabase.from('teams').insert({
           org_id: getState().activeOrgId!, name: store.name, owner_name: store.owner, bg_color: store.bg,
           use_royalty: store.useRoyalty !== false, royalty_mode: store.royaltyMode || 'rate', royalty_rate: store.royaltyRate,
           royalty_amount: store.royaltyAmount || 0, use_savings: !!store.useSavings, savings_mode: store.savingsMode || 'amount',
           savings: store.savings || 0, savings_rate: store.savingsRate || 0,
-        });
+        }).select('id').single();
+        if (error || !newTeam) { alert('店舗の復元に失敗しました'); return; }
+        if (txList.length) {
+          await supabase.from('transactions').insert(
+            txList.map((t) => ({ team_id: newTeam.id, type: t.type, title: t.title, amount: t.amount, date: t.date, photo_url: t.photo || null })),
+          );
+        }
+        for (const topic of topics) {
+          const { data: newTopic } = await supabase.from('memo_topics').insert({ org_id: getState().activeOrgId!, team_id: newTeam.id, name: topic.name }).select('id').single();
+          if (!newTopic) continue;
+          for (const entry of topic.entries) {
+            const { data: newEntry } = await supabase.from('memo_entries').insert({ topic_id: newTopic.id, name: entry.name }).select('id').single();
+            if (!newEntry || !entry.records.length) continue;
+            await supabase.from('memo_records').insert(
+              entry.records.map((r) => ({ entry_id: newEntry.id, label: r.label, text: r.text, date: r.date })),
+            );
+          }
+        }
       } else if (item.type === 'tx') {
         const d = item.data as { storeId: string; tx: AppState['transactions'][string][number] };
+        if (!getState().stores.some((s) => s.id === d.storeId)) {
+          alert('この取引の店舗はすでに削除されているため復元できません。');
+          return;
+        }
         await supabase.from('transactions').insert({ team_id: d.storeId, type: d.tx.type, title: d.tx.title, amount: d.tx.amount, date: d.tx.date, photo_url: d.tx.photo || null });
       } else if (item.type === 'memoTopic') {
         const t = item.data as AppState['memoTopics'][number];
+        if (t.storeId && !getState().stores.some((s) => s.id === t.storeId)) {
+          alert('このメモの店舗はすでに削除されているため復元できません。');
+          return;
+        }
         await supabase.from('memo_topics').insert({ org_id: getState().activeOrgId!, team_id: t.storeId || null, name: t.name });
       } else if (item.type === 'memoEntry') {
         const d = item.data as { topicId: string; entry: AppState['memoTopics'][number]['entries'][number] };
@@ -957,7 +987,17 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
   }
 
   function deleteTeam(store: Store) {
-    addTrash('team', store.name, store, store.id).then(() => {
+    const st = getState();
+    // Deleting the team row cascades away its transactions/memos in the
+    // database immediately — bundle a snapshot of them into the trash
+    // item itself, or restoring the team later would bring back an empty
+    // shell with none of its data.
+    const snapshot = {
+      store,
+      transactions: st.transactions[store.id] || [],
+      memoTopics: st.memoTopics.filter((t) => t.storeId === store.id),
+    };
+    addTrash('team', store.name, snapshot, store.id).then(() => {
       set((s) => ({ stores: s.stores.filter((s2) => s2.id !== store.id), selectedStoreId: null }));
       supabase.from('teams').delete().eq('id', store.id).then(({ error }) => {
         if (error) { console.error('deleteTeam failed', error); return; }
