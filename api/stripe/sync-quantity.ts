@@ -78,17 +78,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             amount,
             currency: 'jpy',
             description: `プラン変更（${previousQuantity} → ${quantity}ステップ）`,
+            metadata: { org_id: orgId },
           });
-          const invoice = await stripe.invoices.create({ customer: customerId, collection_method: 'charge_automatically' });
+          const invoice = await stripe.invoices.create({
+            customer: customerId,
+            collection_method: 'charge_automatically',
+            metadata: { org_id: orgId },
+          });
           if (invoice.id) {
             await stripe.invoices.finalizeInvoice(invoice.id);
             await stripe.invoices.pay(invoice.id);
           }
         } catch (invoiceErr) {
-          // Team creation and the quantity sync above already succeeded;
-          // don't fail the whole request over a billing hiccup (e.g. card
-          // decline) — surface it in logs for follow-up instead.
+          // The card was actually declined (or some other payment failure)
+          // for the extra step(s) just added — team creation and the
+          // quantity sync above already succeeded, so don't fail the whole
+          // request, but don't let the org keep running unpaid either.
+          // invoice.paid (webhook) unfreezes once it's actually settled
+          // (Stripe's automatic retries, or the customer paying the
+          // invoice directly from Stripe).
           console.error('sync-quantity: immediate step-up invoice failed', invoiceErr);
+          await serviceClient().from('orgs').update({ status: 'frozen' }).eq('id', orgId);
+          await serviceClient().from('admin_audit_log').insert({ text: `プラン変更の請求に失敗したため凍結しました（本部ID: ${orgId}）` });
         }
       }
     }

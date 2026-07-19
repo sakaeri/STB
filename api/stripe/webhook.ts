@@ -72,6 +72,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await setOrgStatus(sub.metadata?.org_id, 'frozen', '凍結');
         break;
       }
+      // A step-up's immediate ad-hoc invoice (see sync-quantity.ts) can fail
+      // synchronously there (already frozen at that point) or settle later
+      // via Stripe's own automatic retries — this unfreezes once it does.
+      // Gated to invoice.subscription == null so this never fires for the
+      // regular recurring subscription-cycle invoice, which is already
+      // handled via customer.subscription.updated above.
+      case 'invoice.paid': {
+        const invoice = event.data.object as Stripe.Invoice;
+        if (!invoice.subscription) await setOrgStatus(invoice.metadata?.org_id, 'active', '凍結解除');
+        break;
+      }
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object as Stripe.Invoice;
+        if (!invoice.subscription) await setOrgStatus(invoice.metadata?.org_id, 'frozen', '凍結');
+        break;
+      }
       default:
         break;
     }
