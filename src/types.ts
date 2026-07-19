@@ -55,6 +55,7 @@ export interface MemoRecord {
   label: string;
   text: string;
   date: string;
+  createdAt?: string;
   images?: string[];
   authorName?: string | null;
 }

@@ -178,7 +178,7 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
       entries: entries.map((e) => ({
         id: e.id, name: e.name,
         records: (e.memo_records || []).map((r) => ({
-          id: r.id, label: r.label, text: r.text, date: r.date,
+          id: r.id, label: r.label, text: r.text, date: r.date, createdAt: r.created_at,
           images: r.images || [], authorName: r.profiles?.name || null,
         })),
       })),

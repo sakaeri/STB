@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useStore } from '../../state/store.tsx';
-import type { MemoTopic } from '../../types';
+import type { MemoTopic, MemoRecord } from '../../types';
 import MemoAddModal from './MemoAddModal';
 import { myRole } from '../app/rowHelpers';
 
@@ -265,14 +265,20 @@ export default function MemoPage() {
                   const arr = byLabel.get(r.label);
                   if (arr) arr.push(r); else byLabel.set(r.label, [r]);
                 });
+                // Sorted by actual creation timestamp, not the date field —
+                // records created the same day (the common case, since
+                // there's no manual date entry anymore) would otherwise tie
+                // and not reliably land oldest-first / newest-first.
                 const groups = Array.from(byLabel.entries()).map(([label, records]) => ({
                   label,
-                  records: records.slice().sort((a, b) => a.date.localeCompare(b.date)),
+                  records: records.slice().sort((a, b) => (a.createdAt || a.date).localeCompare(b.createdAt || b.date)),
                 }));
+                // Whichever heading was updated most recently floats to the top.
                 groups.sort((a, b) => {
-                  const aLast = a.records[a.records.length - 1]?.date || '';
-                  const bLast = b.records[b.records.length - 1]?.date || '';
-                  return bLast.localeCompare(aLast);
+                  const lastRec = (recs: MemoRecord[]) => recs[recs.length - 1];
+                  const aLast = lastRec(a.records);
+                  const bLast = lastRec(b.records);
+                  return (bLast?.createdAt || bLast?.date || '').localeCompare(aLast?.createdAt || aLast?.date || '');
                 });
                 return groups.map((g) => (
                   <div key={g.label} style={{ background: '#fff', border: '1px solid #e7e9ed', borderRadius: 13, padding: '15px 17px' }}>
