@@ -30,12 +30,12 @@ export async function fetchMyOrgs(userId: string): Promise<Org[]> {
     supabase.from('team_members').select('role, teams(org_id)').eq('user_id', userId),
   ]);
   // Temporary diagnostic: a report of "0 orgs" after a reload despite the
-  // account clearly having one — logging the raw query results (including
-  // which userId was actually queried) to see whether this is an RLS/auth
-  // timing issue or something else.
+  // account clearly having one, even though orgMembersCount came back as 1
+  // — logging the raw row to see the actual shape of the embedded `orgs`
+  // field (e.g. PostgREST returning it as an array instead of an object).
   console.log('[diag] fetchMyOrgs', {
     userId,
-    orgMembersCount: orgMembersRes.data?.length ?? null,
+    orgMembersRaw: JSON.stringify(orgMembersRes.data),
     orgMembersError: orgMembersRes.error,
     teamMembersCount: teamMembersRes.data?.length ?? null,
     teamMembersError: teamMembersRes.error,
@@ -45,8 +45,11 @@ export async function fetchMyOrgs(userId: string): Promise<Org[]> {
 
   const byId = new Map<string, Org>();
   (orgMembersRes.data || []).forEach((row) => {
-    const r = row as unknown as { role: string; orgs: { id: string; name: string } | null };
-    if (r.orgs) byId.set(r.orgs.id, { id: r.orgs.id, name: r.orgs.name, role: r.role as Org['role'] });
+    const r = row as unknown as { role: string; orgs: { id: string; name: string } | { id: string; name: string }[] | null };
+    // PostgREST sometimes resolves a to-one embed as a single-element array
+    // rather than an object, depending on how it infers the relationship.
+    const org = Array.isArray(r.orgs) ? r.orgs[0] : r.orgs;
+    if (org) byId.set(org.id, { id: org.id, name: org.name, role: r.role as Org['role'] });
   });
 
   // team-only members (joined via an invite URL, never added to org_members
