@@ -51,7 +51,7 @@ async function callBillingApi(path: string, orgId: string): Promise<{ url?: stri
   return body;
 }
 
-function syncStripeQuantity(orgId: string | null): Promise<{ frozen?: boolean } | void> {
+function syncStripeQuantity(orgId: string | null): Promise<{ frozen?: boolean; error?: string } | void> {
   if (!orgId) return Promise.resolve();
   return callBillingApi('/api/stripe/sync-quantity', orgId).catch((e) => { console.error('syncStripeQuantity failed', e); });
 }
@@ -1129,9 +1129,12 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         // just quietly showing a higher price with nothing actually
         // charged and no explanation why.
         const result = await syncStripeQuantity(st.activeOrgId);
+        console.log('[syncStripeQuantity result]', result);
         if (result?.frozen) {
           await reloadActiveOrg();
           alert('お支払い情報が確認できなかったため、この本部は一時的に凍結されました。設定画面の「お支払い手続きへ」からお支払いを完了してください。');
+        } else if (result?.error) {
+          alert(`数量の同期でエラーが発生しました: ${result.error}`);
         }
       }
     });
