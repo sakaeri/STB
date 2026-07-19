@@ -30,4 +30,16 @@ export function clearPasswordRecoveryLink(): void {
   recoveryLinkOpened = false;
 }
 
-export const supabase = createClient(url, anonKey);
+export const supabase = createClient(url, anonKey, {
+  auth: {
+    // These are already supabase-js's defaults, set explicitly so the
+    // "stay signed in until an actual logout" behavior doesn't silently
+    // depend on defaults never changing: session (+ refresh token) is
+    // saved to localStorage and survives closing the tab/browser, and the
+    // access token refreshes itself in the background before it expires
+    // rather than ever needing a re-login while the app is in use.
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+});
