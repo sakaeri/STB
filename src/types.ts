@@ -33,6 +33,23 @@ export interface Transaction {
   date: string; // YYYY-MM-DD
   photo?: string | null;
   createdAt?: string; // ISO timestamp — when the row was actually entered, for recency sorting
+  source?: 'manual' | 'csv';
+}
+
+export interface BankCsvRow {
+  id: string; // client-side only, for React keys / editing
+  date: string;
+  description: string;
+  amount: number;
+  title: string;
+  kind: 'sales' | 'expense' | 'ignore';
+}
+
+export interface BankCsvImportState {
+  storeId: string;
+  fileName: string | null;
+  rows: BankCsvRow[];
+  parseError: string | null;
 }
 
 export interface Member {
@@ -275,6 +292,10 @@ export interface AppState {
   // entry (sales/expense) modal
   showEntry: boolean;
   entryDraft: EntryDraft | null;
+
+  // bank CSV import
+  bankCsvImport: BankCsvImportState | null;
+  bankCsvImportLoading: boolean;
 
   // fab
   showFabMenu: boolean;

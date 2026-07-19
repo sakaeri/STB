@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type {
-  AppState, Store, Transaction, TrashItem, ConfirmDialogState, MemoModalState, Member, HqMember, MemoTopic,
+  AppState, Store, Transaction, TrashItem, ConfirmDialogState, MemoModalState, Member, HqMember, MemoTopic, BankCsvRow,
 } from '../types';
 import { createInitialState } from './mockData';
 import { supabase, isPasswordRecoveryLink, clearPasswordRecoveryLink } from '../lib/supabase';
@@ -10,6 +10,7 @@ import {
   saveAppSettingsBilling, saveAppSettingsTerms, fetchPublicTerms, fetchPublicAppLogo, fetchPublicPricing,
 } from './adminData';
 import { planForCount, billedPlanFor, type PlanStep } from '../tokens';
+import { decodeCsvFile, parseCsvText, rowsFromCsvTable } from './bankCsv';
 
 type Patch = Partial<AppState> | ((s: AppState) => Partial<AppState>);
 
@@ -566,6 +567,60 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     deleteTx: async (storeId: string, id: string) => {
       set((s) => ({ transactions: { ...s.transactions, [storeId]: (s.transactions[storeId] || []).filter((t) => t.id !== id) } }));
       await supabase.from('transactions').delete().eq('id', id);
+    },
+
+    // ===== bank CSV import =====
+    openBankCsvImport: () => {
+      const st = getState();
+      const isHq = st.viewRole === 'hq';
+      const storeId = isHq ? st.stores[0]?.id : st.viewRole;
+      if (!storeId) return;
+      set({ bankCsvImport: { storeId, fileName: null, rows: [], parseError: null } });
+    },
+    closeBankCsvImport: () => set({ bankCsvImport: null }),
+    onBankCsvImportStoreId: (v: string) => set((s) => ({
+      bankCsvImport: s.bankCsvImport ? { ...s.bankCsvImport, storeId: v } : s.bankCsvImport,
+    })),
+    onBankCsvFile: async (file: File | null) => {
+      if (!file) return;
+      set((s) => (s.bankCsvImport ? { bankCsvImport: { ...s.bankCsvImport, fileName: file.name, rows: [], parseError: null } } : {}));
+      try {
+        const text = await decodeCsvFile(file);
+        const table = parseCsvText(text);
+        const { rows, error } = rowsFromCsvTable(table);
+        set((s) => (s.bankCsvImport ? { bankCsvImport: { ...s.bankCsvImport, rows, parseError: error } } : {}));
+      } catch (e) {
+        console.error('onBankCsvFile failed', e);
+        set((s) => (s.bankCsvImport ? { bankCsvImport: { ...s.bankCsvImport, parseError: 'ファイルの読み込みに失敗しました。' } } : {}));
+      }
+    },
+    onBankCsvRowKind: (id: string, kind: BankCsvRow['kind']) => set((s) => ({
+      bankCsvImport: s.bankCsvImport
+        ? { ...s.bankCsvImport, rows: s.bankCsvImport.rows.map((r) => (r.id === id ? { ...r, kind } : r)) }
+        : s.bankCsvImport,
+    })),
+    onBankCsvRowTitle: (id: string, title: string) => set((s) => ({
+      bankCsvImport: s.bankCsvImport
+        ? { ...s.bankCsvImport, rows: s.bankCsvImport.rows.map((r) => (r.id === id ? { ...r, title } : r)) }
+        : s.bankCsvImport,
+    })),
+    saveBankCsvImport: async () => {
+      const st = getState();
+      const imp = st.bankCsvImport;
+      if (!imp || !st.session) return;
+      const toSave = imp.rows.filter((r) => r.kind !== 'ignore');
+      if (!toSave.length) { set({ bankCsvImport: null }); return; }
+      set({ bankCsvImportLoading: true });
+      const { error } = await supabase.from('transactions').insert(
+        toSave.map((r) => ({
+          team_id: imp.storeId, type: r.kind as 'sales' | 'expense', title: r.title.trim() || (r.kind === 'sales' ? '売上' : '経費'),
+          amount: r.amount, date: r.date, created_by: st.session, source: 'csv',
+        })),
+      );
+      set({ bankCsvImportLoading: false });
+      if (error) { console.error('saveBankCsvImport failed', error); alert('取り込みに失敗しました'); return; }
+      set({ bankCsvImport: null });
+      await reloadActiveOrg();
     },
     requestDeleteTx: (storeId: string, tx: { id: string; title: string; amount: number; date: string }) => {
       openConfirm(`「${tx.title}」を削除`, `この記録をゴミ箱に移動します。金額：¥${Math.round(tx.amount).toLocaleString('ja-JP')}（${tx.date}）。`, async () => {

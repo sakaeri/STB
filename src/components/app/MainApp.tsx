@@ -13,6 +13,7 @@ import UpgradeModal from '../modals/UpgradeModal';
 import TxDetailModal from '../modals/TxDetailModal';
 import LogoEditorModal from '../modals/LogoEditorModal';
 import EntryModal from '../modals/EntryModal';
+import BankCsvImportModal from '../modals/BankCsvImportModal';
 import AddStoreModal from '../modals/AddStoreModal';
 import MemberInviteModal from '../modals/MemberInviteModal';
 
@@ -43,6 +44,7 @@ export default function MainApp() {
       <TxDetailModal />
       <LogoEditorModal />
       <EntryModal />
+      <BankCsvImportModal />
       <AddStoreModal />
       <MemberInviteModal />
     </div>

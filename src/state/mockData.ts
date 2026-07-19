@@ -57,6 +57,9 @@ export function createInitialState(): AppState {
     showEntry: false,
     entryDraft: null,
 
+    bankCsvImport: null,
+    bankCsvImportLoading: false,
+
     showFabMenu: false,
 
     activeOrgId: null,

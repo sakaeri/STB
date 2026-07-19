@@ -156,7 +156,10 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
   const transactions: Record<string, Transaction[]> = {};
   (txRes.data || []).forEach((row) => {
     const list = transactions[row.team_id] || (transactions[row.team_id] = []);
-    list.push({ id: row.id, type: row.type, title: row.title, amount: Number(row.amount), date: row.date, photo: row.photo_url, createdAt: row.created_at });
+    list.push({
+      id: row.id, type: row.type, title: row.title, amount: Number(row.amount), date: row.date, photo: row.photo_url,
+      createdAt: row.created_at, source: row.source === 'csv' ? 'csv' : 'manual',
+    });
   });
 
   const memoTopics: MemoTopic[] = topics.map((t) => {

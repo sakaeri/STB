@@ -47,11 +47,11 @@ export interface Database {
       transactions: {
         Row: {
           id: string; team_id: string; type: 'sales' | 'expense'; title: string; amount: number; date: string;
-          photo_url: string | null; created_by: string | null; created_at: string;
+          photo_url: string | null; created_by: string | null; created_at: string; source: string;
         };
         Insert: {
           id?: string; team_id: string; type: 'sales' | 'expense'; title?: string; amount: number; date: string;
-          photo_url?: string | null; created_by?: string | null;
+          photo_url?: string | null; created_by?: string | null; source?: string;
         };
         Update: Partial<Database['public']['Tables']['transactions']['Row']>;
       };
