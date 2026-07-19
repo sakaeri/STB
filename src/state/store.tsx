@@ -624,7 +624,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         await reloadActiveOrg();
       } else if (m.kind === 'record') {
         const label = (m.label || '').trim(); const text = (m.text || '').trim();
-        if (!label || !text || !m.entryId) return;
+        if (!label || !m.entryId) return;
         set({ memoModal: null });
         const images = await Promise.all(
           (m.images || []).map((dataUrl) => dataUrlToPublicUrl(`memo/${crypto.randomUUID()}`, dataUrl)),

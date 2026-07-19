@@ -276,7 +276,7 @@ export default function MemoPage() {
                         )}
                       </div>
                     </div>
-                    <div style={{ fontSize: 13.5, color: '#2a2f38', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{r.text}</div>
+                    {!!r.text && <div style={{ fontSize: 13.5, color: '#2a2f38', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{r.text}</div>}
                     {!!r.images?.length && (
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
                         {r.images.map((src, i) => (

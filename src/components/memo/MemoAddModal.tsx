@@ -29,7 +29,7 @@ export default function MemoAddModal() {
   const valid =
     mm.kind === 'topic' || mm.kind === 'entry'
       ? !!(mm.name && mm.name.trim())
-      : !!(mm.label && mm.label.trim() && mm.text && mm.text.trim());
+      : !!(mm.label && mm.label.trim());
 
   return (
     <div
@@ -121,7 +121,7 @@ export default function MemoAddModal() {
                   )}
                 </div>
                 <div>
-                  <label style={labelStyle}>内容</label>
+                  <label style={labelStyle}>内容（任意）</label>
                   <textarea
                     value={mm.text || ''}
                     onChange={(e) => actions.onMemoModalText(e.target.value)}
