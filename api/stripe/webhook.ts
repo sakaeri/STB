@@ -91,8 +91,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // subscription can't be paid via an "outstanding invoice" (there
         // isn't one), so create-checkout-session.ts needs to see this as
         // "never subscribed" and start a fresh Checkout next time, not
-        // dead-end looking for an invoice that will never exist.
-        if (orgId) await supabase.from('orgs').update({ stripe_subscription_id: null }).eq('id', orgId);
+        // dead-end looking for an invoice that will never exist. Also
+        // reset billed_step to 0: once canceled there's no longer any
+        // active billing to be "stuck" at, so the UI shouldn't keep
+        // showing (and offering to downgrade from) a stale higher plan.
+        if (orgId) await supabase.from('orgs').update({ stripe_subscription_id: null, billed_step: 0 }).eq('id', orgId);
         await setOrgStatus(orgId, 'frozen', '凍結');
         break;
       }
