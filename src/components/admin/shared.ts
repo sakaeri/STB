@@ -10,7 +10,11 @@ export function prefectureOf(address: string): string {
 }
 
 export function monthDataFor(org: AdminMockOrg, month: string): { teams: number; sales: number } {
-  return org.history[month] ?? { teams: org.teams, sales: org.monthlySales };
+  // A month with no history entry has no transactions at all, i.e. ¥0 —
+  // not "same as the current month" (org.monthlySales is always this
+  // month's total, so falling back to it made every unrecorded month look
+  // identical to the current one).
+  return org.history[month] ?? { teams: org.teams, sales: 0 };
 }
 
 export function maxAdminMonth(orgs: AdminMockOrg[]): string {
