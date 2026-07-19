@@ -1083,6 +1083,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     async function handleAuthChange(event: string, session: { user: { id: string } } | null) {
       console.time(`[perf] handleAuthChange ${event}`);
+      console.log('[diag] handleAuthChange', event, 'user id:', session?.user?.id);
       if (event === 'PASSWORD_RECOVERY') {
         set({ authView: 'reset', authError: '', resetPassword: '', resetPasswordConfirm: '' });
       }

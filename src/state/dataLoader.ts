@@ -29,6 +29,17 @@ export async function fetchMyOrgs(userId: string): Promise<Org[]> {
     supabase.from('org_members').select('role, orgs(id, name)').eq('user_id', userId),
     supabase.from('team_members').select('role, teams(org_id)').eq('user_id', userId),
   ]);
+  // Temporary diagnostic: a report of "0 orgs" after a reload despite the
+  // account clearly having one — logging the raw query results (including
+  // which userId was actually queried) to see whether this is an RLS/auth
+  // timing issue or something else.
+  console.log('[diag] fetchMyOrgs', {
+    userId,
+    orgMembersCount: orgMembersRes.data?.length ?? null,
+    orgMembersError: orgMembersRes.error,
+    teamMembersCount: teamMembersRes.data?.length ?? null,
+    teamMembersError: teamMembersRes.error,
+  });
   if (orgMembersRes.error) throw orgMembersRes.error;
   if (teamMembersRes.error) throw teamMembersRes.error;
 
