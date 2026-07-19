@@ -54,7 +54,14 @@ export default function ProfileModal() {
             </div>
             <div>
               <label style={labelStyle}>メールアドレス</label>
-              <input type="email" value={draft.email} onChange={(e) => actions.onOwnerProfileEmail(e.target.value)} style={inputStyle} />
+              <input
+                type="email"
+                value={draft.email}
+                onChange={(e) => actions.onOwnerProfileEmail(e.target.value)}
+                placeholder={state.ownerProfile.email}
+                style={inputStyle}
+              />
+              <div style={{ fontSize: 11, color: '#aab0b8', marginTop: 6 }}>変更する場合のみ、新しいメールアドレスを入力してください。</div>
             </div>
             <div>
               <label style={labelStyle}>パスワード（6文字以上）</label>

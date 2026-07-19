@@ -301,7 +301,10 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     // ===== profile =====
     openProfileModal: () => set((s) => ({ showProfileModal: true, profileEditing: false, profileDraft: s.ownerProfile })),
     closeProfileModal: () => set({ showProfileModal: false }),
-    openProfileEdit: () => set((s) => ({ profileEditing: true, profileDraft: { ...s.ownerProfile, password: '' }, profileSaved: false, profileError: '', profilePasswordVisible: false })),
+    // Email and password both start blank — like password, leaving email
+    // empty means "keep as-is"; this also stops browsers autofilling the
+    // saved password into what's meant to be a fresh "new password" field.
+    openProfileEdit: () => set((s) => ({ profileEditing: true, profileDraft: { ...s.ownerProfile, email: '', password: '' }, profileSaved: false, profileError: '', profilePasswordVisible: false })),
     cancelProfileEdit: () => set({ profileEditing: false }),
     onOwnerProfileName: (v: string) => set((s) => ({ profileDraft: { ...(s.profileDraft as NonNullable<AppState['profileDraft']>), name: v } })),
     onOwnerProfileEmail: (v: string) => set((s) => ({ profileDraft: { ...(s.profileDraft as NonNullable<AppState['profileDraft']>), email: v } })),
@@ -314,7 +317,8 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       if (d.password && d.password.length > 0 && d.password.length < 6) { set({ profileError: 'パスワードは6文字以上で入力してください' }); return; }
       const name = d.name.trim();
       const nameChanged = name !== st.ownerProfile.name;
-      const emailChanged = d.email.trim() !== st.ownerProfile.email;
+      const newEmail = d.email.trim();
+      const emailChanged = !!newEmail;
       const passwordChanged = !!d.password;
 
       if (nameChanged) {
@@ -322,7 +326,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         if (error) { set({ profileError: translateAuthError(error) }); return; }
       }
       if (emailChanged) {
-        const { error } = await supabase.auth.updateUser({ email: d.email.trim() });
+        const { error } = await supabase.auth.updateUser({ email: newEmail });
         if (error) { set({ profileError: translateAuthError(error) }); return; }
         set((s) => ({ emailChangeStep: 'code', profileEditing: false, profileError: '', ownerProfile: { ...s.ownerProfile, name } }));
         return;
