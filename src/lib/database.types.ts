@@ -66,9 +66,9 @@ export interface Database {
         Update: { name?: string };
       };
       memo_records: {
-        Row: { id: string; entry_id: string; label: string; text: string; date: string; created_at: string };
-        Insert: { id?: string; entry_id: string; label: string; text: string; date: string };
-        Update: { label?: string; text?: string; date?: string };
+        Row: { id: string; entry_id: string; label: string; text: string; date: string; images: string[]; created_by: string | null; created_at: string };
+        Insert: { id?: string; entry_id: string; label: string; text: string; date: string; images?: string[]; created_by?: string | null };
+        Update: { label?: string; text?: string; date?: string; images?: string[] };
       };
       trash_items: {
         Row: {

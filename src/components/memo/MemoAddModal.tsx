@@ -92,39 +92,73 @@ export default function MemoAddModal() {
             </div>
           )}
 
-          {mm.kind === 'record' && (
-            <>
-              <div>
-                <label style={labelStyle}>見出し</label>
-                <input
-                  type="text"
-                  value={mm.label || ''}
-                  onChange={(e) => actions.onMemoModalLabel(e.target.value)}
-                  placeholder="例：振込先、入院期間"
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>日付</label>
-                <input
-                  type="date"
-                  value={mm.date || ''}
-                  onChange={(e) => actions.onMemoModalDate(e.target.value)}
-                  style={{ ...inputStyle, padding: '11px 13px', fontSize: 14, color: '#3a4150' }}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>内容</label>
-                <textarea
-                  value={mm.text || ''}
-                  onChange={(e) => actions.onMemoModalText(e.target.value)}
-                  rows={4}
-                  placeholder="詳細を入力"
-                  style={{ ...inputStyle, padding: '11px 13px', fontSize: 14, lineHeight: 1.6, resize: 'vertical', fontFamily: 'inherit' }}
-                />
-              </div>
-            </>
-          )}
+          {mm.kind === 'record' && (() => {
+            const existingLabels = Array.from(new Set((entry?.records || []).map((r) => r.label).filter(Boolean)));
+            const showLabelPicker = existingLabels.length > 0;
+            const labelMode = mm.labelMode || (showLabelPicker ? 'existing' : 'new');
+            return (
+              <>
+                <div>
+                  <label style={labelStyle}>見出し</label>
+                  {showLabelPicker && (
+                    <select
+                      value={labelMode === 'new' ? '__new__' : (mm.label || '')}
+                      onChange={(e) => actions.onMemoModalLabelPick(e.target.value)}
+                      style={{ ...inputStyle, marginBottom: labelMode === 'new' ? 8 : 0 }}
+                    >
+                      <option value="__new__">＋ 新しい見出しを追加</option>
+                      {existingLabels.map((l) => <option key={l} value={l}>{l}</option>)}
+                    </select>
+                  )}
+                  {labelMode === 'new' && (
+                    <input
+                      type="text"
+                      value={mm.label || ''}
+                      onChange={(e) => actions.onMemoModalLabel(e.target.value)}
+                      placeholder="例：振込先、入院期間"
+                      style={inputStyle}
+                    />
+                  )}
+                </div>
+                <div>
+                  <label style={labelStyle}>内容</label>
+                  <textarea
+                    value={mm.text || ''}
+                    onChange={(e) => actions.onMemoModalText(e.target.value)}
+                    rows={4}
+                    placeholder="詳細を入力"
+                    style={{ ...inputStyle, padding: '11px 13px', fontSize: 14, lineHeight: 1.6, resize: 'vertical', fontFamily: 'inherit' }}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>画像（任意・複数可）</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {(mm.images || []).map((src, i) => (
+                      <div key={i} style={{ position: 'relative', width: 76, height: 76, borderRadius: 10, overflow: 'hidden', border: '1.5px solid #dfe3e8', flex: 'none' }}>
+                        <img src={src} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                        <button
+                          onClick={() => actions.onMemoModalRemoveImage(i)}
+                          style={{ position: 'absolute', top: 3, right: 3, width: 20, height: 20, borderRadius: 6, background: 'rgba(20,28,42,.55)', color: '#fff', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 76, height: 76, border: '1.5px dashed #d8dce2', borderRadius: 10, color: '#8a909a', fontSize: 22, cursor: 'pointer', background: '#fafbfc', flex: 'none' }}>
+                      ＋
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => { actions.onMemoModalAddImages(e.target.files); e.target.value = ''; }}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         <div style={{ padding: '0 24px 22px', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>

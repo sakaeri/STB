@@ -262,7 +262,9 @@ export default function MemoPage() {
                     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 6 }}>
                       <span style={{ fontWeight: 700, fontSize: 13.5, color: accent }}>{r.label}</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 'none' }}>
-                        <span style={{ fontSize: 11, color: '#aab0b8', whiteSpace: 'nowrap' }}>{dateFmt}</span>
+                        <span style={{ fontSize: 11, color: '#aab0b8', whiteSpace: 'nowrap' }}>
+                          {dateFmt}{r.authorName && ` ・ ${r.authorName}`}
+                        </span>
                         {memoEntryCanDelete && (
                           <button
                             className="fc-memo-delbtn"
@@ -275,6 +277,15 @@ export default function MemoPage() {
                       </div>
                     </div>
                     <div style={{ fontSize: 13.5, color: '#2a2f38', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{r.text}</div>
+                    {!!r.images?.length && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+                        {r.images.map((src, i) => (
+                          <a key={i} href={src} target="_blank" rel="noreferrer" style={{ width: 84, height: 84, borderRadius: 10, overflow: 'hidden', border: '1px solid #e7e9ed', flex: 'none', display: 'block' }}>
+                            <img src={src} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}

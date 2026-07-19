@@ -55,6 +55,8 @@ export interface MemoRecord {
   label: string;
   text: string;
   date: string;
+  images?: string[];
+  authorName?: string | null;
 }
 
 export interface MemoEntry {
@@ -191,8 +193,9 @@ export interface MemoModalState {
   hqOnly?: boolean;
   name?: string;
   label?: string;
+  labelMode?: 'new' | 'existing';
   text?: string;
-  date?: string;
+  images?: string[];
 }
 
 export interface ConfirmDialogState {

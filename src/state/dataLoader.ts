@@ -117,7 +117,7 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
     // Nested embed pulls topics + their entries + those entries' records in
     // one round trip instead of three sequential ones (each still scoped by
     // its own RLS policy).
-    supabase.from('memo_topics').select('*, memo_entries(*, memo_records(*))').eq('org_id', orgId),
+    supabase.from('memo_topics').select('*, memo_entries(*, memo_records(*, profiles(name)))').eq('org_id', orgId),
     supabase.from('trash_items').select('*').eq('org_id', orgId).order('deleted_at', { ascending: false }),
     teamIds.length
       ? supabase.from('confirmed_periods').select('*').in('team_id', teamIds)
@@ -162,7 +162,10 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
   const memoTopics: MemoTopic[] = topics.map((t) => {
     const row = t as unknown as {
       created_at: string;
-      memo_entries?: { id: string; name: string; created_at: string; memo_records?: { id: string; label: string; text: string; date: string; created_at: string }[] }[];
+      memo_entries?: {
+        id: string; name: string; created_at: string;
+        memo_records?: { id: string; label: string; text: string; date: string; created_at: string; images: string[] | null; profiles: { name: string } | null }[];
+      }[];
     };
     const entries = row.memo_entries || [];
     const lastActivityAt = [
@@ -174,7 +177,10 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
       id: t.id, name: t.name, storeId: t.team_id, hqOnly: !!t.hq_only, lastActivityAt,
       entries: entries.map((e) => ({
         id: e.id, name: e.name,
-        records: (e.memo_records || []).map((r) => ({ id: r.id, label: r.label, text: r.text, date: r.date })),
+        records: (e.memo_records || []).map((r) => ({
+          id: r.id, label: r.label, text: r.text, date: r.date,
+          images: r.images || [], authorName: r.profiles?.name || null,
+        })),
       })),
     };
   });

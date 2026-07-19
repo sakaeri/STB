@@ -573,7 +573,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     openMemoEntry: (entryId: string) => set((s) => ({ memoNav: { ...s.memoNav, entryId } })),
     openAddTopic: (defaultStoreId: string | null) => set({ memoModal: { kind: 'topic', name: '', storeId: defaultStoreId } }),
     openAddEntry: (topicId: string | null) => set({ memoModal: { kind: 'entry', topicId, name: '' } }),
-    openAddRecord: (topicId: string | null, entryId: string | null) => set({ memoModal: { kind: 'record', topicId, entryId, label: '', text: '', date: new Date().toISOString().slice(0, 10) } }),
+    openAddRecord: (topicId: string | null, entryId: string | null) => set({ memoModal: { kind: 'record', topicId, entryId, label: '', labelMode: 'new', text: '', images: [] } }),
     closeMemoModal: () => set({ memoModal: null }),
     // v is a team id, '' (全体 — shared with HQ + every team), or 'hq'
     // (本部のみ — HQ members only, hidden from every team). Both '' and
@@ -583,8 +583,27 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     })),
     onMemoModalName: (v: string) => set((s) => ({ memoModal: { ...(s.memoModal as MemoModalState), name: v } })),
     onMemoModalLabel: (v: string) => set((s) => ({ memoModal: { ...(s.memoModal as MemoModalState), label: v } })),
+    // v is '__new__' (switch to a free-text heading) or the text of an
+    // already-used heading within this entry (links the new record under it).
+    onMemoModalLabelPick: (v: string) => set((s) => ({
+      memoModal: v === '__new__'
+        ? { ...(s.memoModal as MemoModalState), labelMode: 'new', label: '' }
+        : { ...(s.memoModal as MemoModalState), labelMode: 'existing', label: v },
+    })),
     onMemoModalText: (v: string) => set((s) => ({ memoModal: { ...(s.memoModal as MemoModalState), text: v } })),
-    onMemoModalDate: (v: string) => set((s) => ({ memoModal: { ...(s.memoModal as MemoModalState), date: v } })),
+    onMemoModalAddImages: (files: FileList | null) => {
+      if (!files || !files.length) return;
+      Promise.all(Array.from(files).map((f) => new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(f);
+      }))).then((dataUrls) => {
+        set((s) => ({ memoModal: { ...(s.memoModal as MemoModalState), images: [...((s.memoModal as MemoModalState)?.images || []), ...dataUrls] } }));
+      });
+    },
+    onMemoModalRemoveImage: (idx: number) => set((s) => ({
+      memoModal: { ...(s.memoModal as MemoModalState), images: ((s.memoModal as MemoModalState)?.images || []).filter((_, i) => i !== idx) },
+    })),
     saveMemoModal: async () => {
       const st = getState();
       const m = st.memoModal;
@@ -607,7 +626,12 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         const label = (m.label || '').trim(); const text = (m.text || '').trim();
         if (!label || !text || !m.entryId) return;
         set({ memoModal: null });
-        const { error } = await supabase.from('memo_records').insert({ entry_id: m.entryId, label, text, date: m.date! });
+        const images = await Promise.all(
+          (m.images || []).map((dataUrl) => dataUrlToPublicUrl(`memo/${crypto.randomUUID()}`, dataUrl)),
+        );
+        const { error } = await supabase.from('memo_records').insert({
+          entry_id: m.entryId, label, text, date: new Date().toISOString().slice(0, 10), images, created_by: st.session,
+        });
         if (error) { console.error(error); return; }
         await reloadActiveOrg();
       }
@@ -735,7 +759,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
             const { data: newEntry } = await supabase.from('memo_entries').insert({ topic_id: newTopic.id, name: entry.name }).select('id').single();
             if (!newEntry || !entry.records.length) continue;
             await supabase.from('memo_records').insert(
-              entry.records.map((r) => ({ entry_id: newEntry.id, label: r.label, text: r.text, date: r.date })),
+              entry.records.map((r) => ({ entry_id: newEntry.id, label: r.label, text: r.text, date: r.date, images: r.images || [] })),
             );
           }
         }
@@ -774,7 +798,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         await supabase.from('memo_entries').insert({ topic_id: d.topicId, name: d.entry.name });
       } else if (item.type === 'memoRecord') {
         const d = item.data as { topicId: string; entryId: string; record: AppState['memoTopics'][number]['entries'][number]['records'][number] };
-        await supabase.from('memo_records').insert({ entry_id: d.entryId, label: d.record.label, text: d.record.text, date: d.record.date });
+        await supabase.from('memo_records').insert({ entry_id: d.entryId, label: d.record.label, text: d.record.text, date: d.record.date, images: d.record.images || [] });
       }
       // member/hqMember restoration needs a real account to re-link (email-based); not supported from trash data alone.
       await supabase.from('trash_items').delete().eq('id', item.id);
