@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { userClient, bearerToken } from '../_lib/supabase.js';
+import { userClient, serviceClient, bearerToken } from '../_lib/supabase.js';
 import { getStripe } from '../_lib/stripe.js';
 import { stepsForCount, parsePricingConfig } from '../_lib/pricing.js';
 
@@ -48,6 +48,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       items: [{ id: item.id, quantity }],
       proration_behavior: 'create_prorations',
     });
+
+    // Stripe only fires customer.subscription.updated when a value in the
+    // subscription actually changes — the floor-at-1 above means the
+    // quantity often *doesn't* change (e.g. 6 teams -> 5 both bill
+    // quantity 1), so the webhook can't be relied on to record this sync.
+    // Write it here directly instead.
+    await serviceClient().from('orgs').update({ billed_step: quantity }).eq('id', orgId);
 
     res.status(200).json({ ok: true, quantity });
   } catch (e) {
