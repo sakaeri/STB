@@ -156,14 +156,23 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
   const transactions: Record<string, Transaction[]> = {};
   (txRes.data || []).forEach((row) => {
     const list = transactions[row.team_id] || (transactions[row.team_id] = []);
-    list.push({ id: row.id, type: row.type, title: row.title, amount: Number(row.amount), date: row.date, photo: row.photo_url });
+    list.push({ id: row.id, type: row.type, title: row.title, amount: Number(row.amount), date: row.date, photo: row.photo_url, createdAt: row.created_at });
   });
 
   const memoTopics: MemoTopic[] = topics.map((t) => {
-    const row = t as unknown as { memo_entries?: { id: string; name: string; memo_records?: { id: string; label: string; text: string; date: string }[] }[] };
+    const row = t as unknown as {
+      created_at: string;
+      memo_entries?: { id: string; name: string; created_at: string; memo_records?: { id: string; label: string; text: string; date: string; created_at: string }[] }[];
+    };
+    const entries = row.memo_entries || [];
+    const lastActivityAt = [
+      row.created_at,
+      ...entries.map((e) => e.created_at),
+      ...entries.flatMap((e) => (e.memo_records || []).map((r) => r.created_at)),
+    ].sort().pop();
     return {
-      id: t.id, name: t.name, storeId: t.team_id, hqOnly: !!t.hq_only,
-      entries: (row.memo_entries || []).map((e) => ({
+      id: t.id, name: t.name, storeId: t.team_id, hqOnly: !!t.hq_only, lastActivityAt,
+      entries: entries.map((e) => ({
         id: e.id, name: e.name,
         records: (e.memo_records || []).map((r) => ({ id: r.id, label: r.label, text: r.text, date: r.date })),
       })),

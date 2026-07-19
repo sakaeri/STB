@@ -32,6 +32,7 @@ export interface Transaction {
   amount: number;
   date: string; // YYYY-MM-DD
   photo?: string | null;
+  createdAt?: string; // ISO timestamp — when the row was actually entered, for recency sorting
 }
 
 export interface Member {
@@ -67,6 +68,7 @@ export interface MemoTopic {
   name: string;
   storeId?: string | null;
   hqOnly?: boolean;
+  lastActivityAt?: string; // ISO timestamp — latest of the topic/its entries/their records, for recency sorting
   entries: MemoEntry[];
 }
 

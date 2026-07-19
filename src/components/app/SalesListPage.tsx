@@ -35,7 +35,19 @@ export default function SalesListPage() {
 
   const isHq = state.viewRole === 'hq';
   const unitLabel = state.unitLabel || '店舗';
-  const visible = isHq ? state.stores : state.stores.filter((s) => s.id === state.viewRole);
+  // Most recently active team (by its latest transaction's actual entry
+  // time, not the transaction's chosen date) floats to the top — stores
+  // with no activity yet keep their original relative order at the bottom.
+  const lastActivityFor = (storeId: string) => {
+    const tx = state.transactions[storeId];
+    if (!tx || !tx.length) return '';
+    let max = '';
+    for (const t of tx) if (t.createdAt && t.createdAt > max) max = t.createdAt;
+    return max;
+  };
+  const visible = (isHq ? state.stores : state.stores.filter((s) => s.id === state.viewRole))
+    .slice()
+    .sort((a, b) => lastActivityFor(b.id).localeCompare(lastActivityFor(a.id)));
 
   // ===== KPI totals =====
   let tSales = 0,

@@ -79,18 +79,23 @@ export default function MemoPage() {
   const memoLevel1 = !!curTopic && !curEntry;
   const memoLevel2 = !!curEntry;
 
+  // Most recently touched (topic itself, or any of its entries/records)
+  // floats to the top within each group.
+  const byRecency = (a: MemoTopic, b: MemoTopic) => (b.lastActivityAt || '').localeCompare(a.lastActivityAt || '');
+
   const groups = useMemo(() => {
     // hqOnly is a genuinely separate scope from the "全体" (shared with HQ
     // + every team) case, even though both have storeId: null — RLS hides
     // hqOnly topics from team members entirely, so this split only ever
     // shows up for HQ viewers anyway.
-    const hqOnlyGroup = { id: 'hqOnly', label: '本部のみ', items: memoTopics.filter((t) => !t.storeId && t.hqOnly) };
-    const allGroup = { id: 'all', label: '全体（本部＋全チーム）', items: memoTopics.filter((t) => !t.storeId && !t.hqOnly) };
+    const hqOnlyGroup = { id: 'hqOnly', label: '本部のみ', items: memoTopics.filter((t) => !t.storeId && t.hqOnly).sort(byRecency) };
+    const allGroup = { id: 'all', label: '全体（本部＋全チーム）', items: memoTopics.filter((t) => !t.storeId && !t.hqOnly).sort(byRecency) };
     const teamsInOrder = isHq ? stores : stores.filter((s) => s.id === viewRole);
     const teamGroups = teamsInOrder
-      .map((s) => ({ id: s.id, label: s.name, items: memoTopics.filter((t) => t.storeId === s.id) }))
+      .map((s) => ({ id: s.id, label: s.name, items: memoTopics.filter((t) => t.storeId === s.id).sort(byRecency) }))
       .filter((g) => g.items.length > 0);
     return [hqOnlyGroup, allGroup, ...teamGroups];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memoTopics, stores, isHq, viewRole]);
   const noMemoGroups = groups.every((g) => g.items.length === 0);
 
