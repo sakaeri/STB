@@ -8,6 +8,8 @@ export default function ConfirmModal() {
   const actionLabel = cd.actionLabel || '削除する';
   const isDestructive = actionLabel.includes('削除');
   const actionColor = isDestructive ? '#d6453d' : state.accent;
+  const needsCheckbox = cd.requireCheckbox !== false;
+  const canConfirm = !needsCheckbox || state.confirmChecked;
 
   return (
     <div
@@ -23,18 +25,20 @@ export default function ConfirmModal() {
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{cd.label}</h2>
           <p style={{ margin: '8px 0 0', fontSize: 12.5, color: '#8a909a', lineHeight: 1.7 }}>{cd.note}</p>
         </div>
-        <div style={{ padding: '16px 24px 4px' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 12.5, color: '#3a4150', fontWeight: 600, cursor: 'pointer' }}>
-            <input type="checkbox" checked={state.confirmChecked} onChange={actions.toggleConfirmChecked} style={{ width: 17, height: 17 }} />
-            確認しました
-          </label>
-        </div>
+        {needsCheckbox && (
+          <div style={{ padding: '16px 24px 4px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 12.5, color: '#3a4150', fontWeight: 600, cursor: 'pointer' }}>
+              <input type="checkbox" checked={state.confirmChecked} onChange={actions.toggleConfirmChecked} style={{ width: 17, height: 17 }} />
+              確認しました
+            </label>
+          </div>
+        )}
         <div style={{ padding: '16px 24px 22px', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
           <button onClick={actions.closeConfirm} style={{ height: 40, padding: '0 18px', borderRadius: 10, fontWeight: 700, fontSize: 13.5, color: '#6b7280', background: '#f0f2f5' }}>取消</button>
           <button
             onClick={actions.runConfirm}
-            disabled={!state.confirmChecked}
-            style={{ height: 40, padding: '0 22px', borderRadius: 10, fontWeight: 700, fontSize: 13.5, color: '#fff', background: actionColor, opacity: state.confirmChecked ? 1 : 0.5, cursor: state.confirmChecked ? 'pointer' : 'not-allowed' }}
+            disabled={!canConfirm}
+            style={{ height: 40, padding: '0 22px', borderRadius: 10, fontWeight: 700, fontSize: 13.5, color: '#fff', background: actionColor, opacity: canConfirm ? 1 : 0.5, cursor: canConfirm ? 'pointer' : 'not-allowed' }}
           >
             {actionLabel}
           </button>

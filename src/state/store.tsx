@@ -106,8 +106,8 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     await supabase.from('trash_items').insert({ org_id: st.activeOrgId, team_id: storeId || null, type, label, data: data as never });
   };
 
-  const openConfirm = (label: string, note: string, onConfirm: () => void, actionLabel?: string) => {
-    const cd: ConfirmDialogState = { label, note, onConfirm, actionLabel: actionLabel || '削除する' };
+  const openConfirm = (label: string, note: string, onConfirm: () => void, actionLabel?: string, requireCheckbox = true) => {
+    const cd: ConfirmDialogState = { label, note, onConfirm, actionLabel: actionLabel || '削除する', requireCheckbox };
     set({ confirmDelete: cd, confirmChecked: false });
   };
 
@@ -698,7 +698,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     runConfirm: () => {
       const st = getState();
       const cd = st.confirmDelete;
-      if (!cd || !st.confirmChecked) return;
+      if (!cd || (cd.requireCheckbox !== false && !st.confirmChecked)) return;
       cd.onConfirm();
       set({ confirmDelete: null, confirmChecked: false });
     },
@@ -804,6 +804,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         `次回の更新分から ${cand.label} になります。今すぐ変更しますか？`,
         () => actions.downgradePlan(),
         '変更する',
+        false,
       );
     },
     downgradePlan: async () => {

@@ -200,6 +200,7 @@ export interface ConfirmDialogState {
   note: string;
   onConfirm: () => void;
   actionLabel?: string;
+  requireCheckbox?: boolean;
 }
 
 export interface PendingUpgrade {
