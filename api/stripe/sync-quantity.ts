@@ -34,9 +34,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { count } = await supabase.from('teams').select('id', { count: 'exact', head: true }).eq('org_id', orgId);
     const { data: pricingRaw } = await supabase.rpc('get_public_pricing');
     const pricing = parsePricingConfig(pricingRaw);
-    // Once subscribed, never drop the billed quantity below 1 — a team
-    // count back within the free range doesn't auto-cancel the
-    // subscription (that's a separate, explicit unsubscribe action).
     const quantity = Math.max(1, stepsForCount(count || 0, pricing));
 
     const stripe = getStripe();
@@ -45,62 +42,59 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!item) { res.status(200).json({ skipped: true }); return; }
     const previousQuantity = item.quantity || 0;
 
+    // Only a genuine step-up auto-applies here. A decrease never lowers
+    // billing on its own — the owner has to press the explicit "◯◯円に
+    // 変更" button (downgrade-plan.ts) for that. Nothing to do otherwise.
+    if (quantity <= previousQuantity) {
+      res.status(200).json({ ok: true, skipped: 'not-an-increase' });
+      return;
+    }
+
     // 'none' rather than the default 'create_prorations': day-fraction
-    // proration on every single team create/delete (which can happen often
-    // and repeatedly within one billing period) piles up confusing
-    // partial-period credit/charge line items on the upcoming invoice.
+    // proration on every single team create piles up confusing
+    // partial-period charge line items on the upcoming invoice.
     await stripe.subscriptions.update(org.stripe_subscription_id, {
       items: [{ id: item.id, quantity }],
       proration_behavior: 'none',
     });
-
-    // Stripe only fires customer.subscription.updated when a value in the
-    // subscription actually changes — the floor-at-1 above means the
-    // quantity often *doesn't* change (e.g. 6 teams -> 5 both bill
-    // quantity 1), so the webhook can't be relied on to record this sync.
-    // Write it here directly instead.
     await serviceClient().from('orgs').update({ billed_step: quantity }).eq('id', orgId);
 
     // Crossing into a new paid step is billed for immediately, in full —
     // a flat step price, not a day-based fraction of the current period —
     // rather than silently deferring the higher amount to next renewal
     // (which is what 'none' above would otherwise do on its own).
-    // Decreases never trigger this: the floor-at-1 quantity already never
-    // drops, so there's nothing to refund/credit for going down.
-    if (quantity > previousQuantity) {
-      const addedSteps = quantity - previousQuantity;
-      const amount = addedSteps * pricing.pricePerStep;
-      const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id;
-      if (amount > 0 && customerId) {
-        try {
-          await stripe.invoiceItems.create({
-            customer: customerId,
-            amount,
-            currency: 'jpy',
-            description: `プラン変更（${previousQuantity} → ${quantity}ステップ）`,
-            metadata: { org_id: orgId },
-          });
-          const invoice = await stripe.invoices.create({
-            customer: customerId,
-            collection_method: 'charge_automatically',
-            metadata: { org_id: orgId },
-          });
-          if (invoice.id) {
-            await stripe.invoices.finalizeInvoice(invoice.id);
-            await stripe.invoices.pay(invoice.id);
-          }
-        } catch (invoiceErr) {
-          // The card was actually declined (or some other payment failure)
-          // for the extra step(s) just added — team creation and the
-          // quantity sync above already succeeded, so don't fail the whole
-          // request, but don't let the org keep running unpaid either.
-          // invoice.paid (webhook) unfreezes once it's actually settled
-          // (Stripe's automatic retries, or the customer paying the
-          // invoice directly from Stripe).
-          console.error('sync-quantity: immediate step-up invoice failed', invoiceErr);
-          await serviceClient().from('orgs').update({ status: 'frozen' }).eq('id', orgId);
-          await serviceClient().from('admin_audit_log').insert({ text: `プラン変更の請求に失敗したため凍結しました（本部ID: ${orgId}）` });
+    const addedSteps = quantity - previousQuantity;
+    const amount = addedSteps * pricing.pricePerStep;
+    const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id;
+    if (amount > 0 && customerId) {
+      try {
+        await stripe.invoiceItems.create({
+          customer: customerId,
+          amount,
+          currency: 'jpy',
+          description: `プラン変更（${previousQuantity} → ${quantity}ステップ）`,
+          metadata: { org_id: orgId },
+        });
+        const invoice = await stripe.invoices.create({
+          customer: customerId,
+          collection_method: 'charge_automatically',
+          metadata: { org_id: orgId },
+        });
+        if (invoice.id) {
+          await stripe.invoices.finalizeInvoice(invoice.id);
+          await stripe.invoices.pay(invoice.id);
         }
+      } catch (invoiceErr) {
+        // The card was actually declined (or some other payment failure)
+        // for the extra step(s) just added — team creation and the
+        // quantity sync above already succeeded, so don't fail the whole
+        // request, but don't let the org keep running unpaid either.
+        // invoice.paid (webhook) unfreezes once it's actually settled
+        // (Stripe's automatic retries, or the customer paying the
+        // invoice directly from Stripe).
+        console.error('sync-quantity: immediate step-up invoice failed', invoiceErr);
+        await serviceClient().from('orgs').update({ status: 'frozen' }).eq('id', orgId);
+        await serviceClient().from('admin_audit_log').insert({ text: `プラン変更の請求に失敗したため凍結しました（本部ID: ${orgId}）` });
       }
     }
 
