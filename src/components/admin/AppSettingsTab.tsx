@@ -168,7 +168,7 @@ export default function AppSettingsTab() {
             <input
               type="number"
               min={0}
-              value={state.pricingConfig.freeTeams}
+              value={state.pricingConfig.freeTeams || ''}
               onChange={(e) => actions.setPricingConfig({ freeTeams: Math.max(0, parseInt(e.target.value, 10) || 0) })}
               style={{ width: 64, border: '1.5px solid #dfe3e8', borderRadius: 8, padding: '7px 8px', fontSize: 12.5, textAlign: 'right', outline: 'none' }}
             />
@@ -176,7 +176,7 @@ export default function AppSettingsTab() {
             <input
               type="number"
               min={1}
-              value={state.pricingConfig.teamsPerStep}
+              value={state.pricingConfig.teamsPerStep || ''}
               onChange={(e) => actions.setPricingConfig({ teamsPerStep: Math.max(1, parseInt(e.target.value, 10) || 1) })}
               style={{ width: 64, border: '1.5px solid #dfe3e8', borderRadius: 8, padding: '7px 8px', fontSize: 12.5, textAlign: 'right', outline: 'none' }}
             />
@@ -185,7 +185,7 @@ export default function AppSettingsTab() {
               type="number"
               min={0}
               step={100}
-              value={state.pricingConfig.pricePerStep}
+              value={state.pricingConfig.pricePerStep || ''}
               onChange={(e) => actions.setPricingConfig({ pricePerStep: Math.max(0, parseInt(e.target.value, 10) || 0) })}
               style={{ width: 90, border: '1.5px solid #dfe3e8', borderRadius: 8, padding: '7px 8px', fontSize: 12.5, textAlign: 'right', outline: 'none' }}
             />
@@ -203,7 +203,7 @@ export default function AppSettingsTab() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <input
               type="number"
-              value={state.paymentGraceDays}
+              value={state.paymentGraceDays || ''}
               onChange={(e) => actions.onPaymentGraceDaysChange(parseInt(e.target.value, 10) || 0)}
               style={{ width: 80, border: '1.5px solid #dfe3e8', borderRadius: 8, padding: '7px 10px', fontSize: 12.5, textAlign: 'right', outline: 'none' }}
             />

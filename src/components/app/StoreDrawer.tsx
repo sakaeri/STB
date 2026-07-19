@@ -337,7 +337,7 @@ export default function StoreDrawer() {
                           type="number"
                           min={0}
                           step={0.5}
-                          value={store.royaltyRate}
+                          value={store.royaltyRate || ''}
                           onChange={(e) => up({ royaltyRate: Math.max(0, parseFloat(e.target.value) || 0) })}
                           style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14.5, fontWeight: 700, padding: '10px 0', fontVariantNumeric: 'tabular-nums', width: '100%', background: 'transparent' }}
                         />
@@ -349,7 +349,7 @@ export default function StoreDrawer() {
                         <input
                           type="number"
                           step={1000}
-                          value={store.royaltyAmount || 0}
+                          value={store.royaltyAmount || ''}
                           onChange={(e) => up({ royaltyAmount: Math.max(0, parseInt(e.target.value || '0', 10)) })}
                           style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14.5, fontWeight: 700, padding: '10px 0 10px 6px', fontVariantNumeric: 'tabular-nums', background: 'transparent' }}
                         />
@@ -381,7 +381,7 @@ export default function StoreDrawer() {
                         <input
                           type="number"
                           step={1000}
-                          value={store.savings || 0}
+                          value={store.savings || ''}
                           onChange={(e) => up({ savings: Math.max(0, parseInt(e.target.value || '0', 10)) })}
                           style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14.5, fontWeight: 700, padding: '10px 0 10px 6px', fontVariantNumeric: 'tabular-nums', background: 'transparent' }}
                         />
@@ -393,7 +393,7 @@ export default function StoreDrawer() {
                           type="number"
                           min={0}
                           step={0.5}
-                          value={store.savingsRate || 0}
+                          value={store.savingsRate || ''}
                           onChange={(e) => up({ savingsRate: Math.max(0, parseFloat(e.target.value) || 0) })}
                           style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14.5, fontWeight: 700, padding: '10px 0', fontVariantNumeric: 'tabular-nums', width: '100%', background: 'transparent' }}
                         />

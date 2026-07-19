@@ -108,7 +108,7 @@ export default function AddStoreModal() {
                         type="number"
                         min={0}
                         step={0.5}
-                        value={af.royaltyRate}
+                        value={af.royaltyRate || ''}
                         onChange={(e) => actions.setAddForm({ royaltyRate: Math.max(0, parseFloat(e.target.value) || 0) })}
                         style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, padding: '11px 0', fontVariantNumeric: 'tabular-nums', background: 'transparent' }}
                       />
@@ -120,7 +120,7 @@ export default function AddStoreModal() {
                       <input
                         type="number"
                         step={1000}
-                        value={af.royaltyAmount || 0}
+                        value={af.royaltyAmount || ''}
                         onChange={(e) => actions.setAddForm({ royaltyAmount: Math.max(0, parseInt(e.target.value || '0', 10)) })}
                         style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, padding: '11px 0 11px 7px', fontVariantNumeric: 'tabular-nums', background: 'transparent' }}
                       />
@@ -149,7 +149,7 @@ export default function AddStoreModal() {
                       <input
                         type="number"
                         step={1000}
-                        value={af.savings}
+                        value={af.savings || ''}
                         onChange={(e) => actions.setAddForm({ savings: Math.max(0, parseInt(e.target.value || '0', 10)) })}
                         style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, padding: '11px 0 11px 7px', fontVariantNumeric: 'tabular-nums', background: 'transparent' }}
                       />
@@ -161,7 +161,7 @@ export default function AddStoreModal() {
                         type="number"
                         min={0}
                         step={0.5}
-                        value={af.savingsRate || 0}
+                        value={af.savingsRate || ''}
                         onChange={(e) => actions.setAddForm({ savingsRate: Math.max(0, parseFloat(e.target.value) || 0) })}
                         style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, padding: '11px 0', fontVariantNumeric: 'tabular-nums', background: 'transparent' }}
                       />

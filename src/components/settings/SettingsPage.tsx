@@ -350,13 +350,13 @@ export default function SettingsPage() {
                     <div style={{ opacity: useRoyalty ? 1 : 0.4 }}>
                       {royaltyMode === 'rate' ? (
                         <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #dfe3e8', borderRadius: 10, padding: '0 14px', maxWidth: 180 }}>
-                          <input type="number" min={0} step={0.5} value={d.royaltyRate} onChange={(e) => actions.setDefaults({ royaltyRate: Math.max(0, parseFloat(e.target.value) || 0) })} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, padding: '11px 0', fontVariantNumeric: 'tabular-nums', background: 'transparent' }} />
+                          <input type="number" min={0} step={0.5} value={d.royaltyRate || ''} onChange={(e) => actions.setDefaults({ royaltyRate: Math.max(0, parseFloat(e.target.value) || 0) })} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, padding: '11px 0', fontVariantNumeric: 'tabular-nums', background: 'transparent' }} />
                           <span style={{ fontSize: 15, color: '#8a909a', fontWeight: 700 }}>%</span>
                         </div>
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #dfe3e8', borderRadius: 10, padding: '0 14px', maxWidth: 240 }}>
                           <span style={{ fontSize: 15, color: '#8a909a', fontWeight: 700 }}>¥</span>
-                          <input type="number" step={1000} value={d.royaltyAmount || 0} onChange={(e) => actions.setDefaults({ royaltyAmount: Math.max(0, parseInt(e.target.value || '0', 10)) })} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, padding: '11px 0 11px 7px', fontVariantNumeric: 'tabular-nums', background: 'transparent' }} />
+                          <input type="number" step={1000} value={d.royaltyAmount || ''} onChange={(e) => actions.setDefaults({ royaltyAmount: Math.max(0, parseInt(e.target.value || '0', 10)) })} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, padding: '11px 0 11px 7px', fontVariantNumeric: 'tabular-nums', background: 'transparent' }} />
                           <span style={{ fontSize: 11, color: '#aab0b8' }}>/月</span>
                         </div>
                       )}
@@ -377,12 +377,12 @@ export default function SettingsPage() {
                       {savingsMode === 'amount' ? (
                         <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #dfe3e8', borderRadius: 10, padding: '0 14px', maxWidth: 240 }}>
                           <span style={{ fontSize: 15, color: '#8a909a', fontWeight: 700 }}>¥</span>
-                          <input type="number" step={1000} value={d.savings} onChange={(e) => actions.setDefaults({ savings: Math.max(0, parseInt(e.target.value || '0', 10)) })} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, padding: '11px 0 11px 7px', fontVariantNumeric: 'tabular-nums', background: 'transparent' }} />
+                          <input type="number" step={1000} value={d.savings || ''} onChange={(e) => actions.setDefaults({ savings: Math.max(0, parseInt(e.target.value || '0', 10)) })} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, padding: '11px 0 11px 7px', fontVariantNumeric: 'tabular-nums', background: 'transparent' }} />
                           <span style={{ fontSize: 11, color: '#aab0b8' }}>/月</span>
                         </div>
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #dfe3e8', borderRadius: 10, padding: '0 14px', maxWidth: 180 }}>
-                          <input type="number" min={0} step={0.5} value={d.savingsRate || 0} onChange={(e) => actions.setDefaults({ savingsRate: Math.max(0, parseFloat(e.target.value) || 0) })} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, padding: '11px 0', fontVariantNumeric: 'tabular-nums', background: 'transparent' }} />
+                          <input type="number" min={0} step={0.5} value={d.savingsRate || ''} onChange={(e) => actions.setDefaults({ savingsRate: Math.max(0, parseFloat(e.target.value) || 0) })} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, padding: '11px 0', fontVariantNumeric: 'tabular-nums', background: 'transparent' }} />
                           <span style={{ fontSize: 15, color: '#8a909a', fontWeight: 700 }}>%</span>
                         </div>
                       )}
