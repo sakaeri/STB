@@ -66,6 +66,7 @@ export interface MemoTopic {
   id: string;
   name: string;
   storeId?: string | null;
+  hqOnly?: boolean;
   entries: MemoEntry[];
 }
 
@@ -185,6 +186,7 @@ export interface MemoModalState {
   topicId?: string | null;
   entryId?: string | null;
   storeId?: string | null;
+  hqOnly?: boolean;
   name?: string;
   label?: string;
   text?: string;

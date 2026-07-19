@@ -162,7 +162,7 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
   const memoTopics: MemoTopic[] = topics.map((t) => {
     const row = t as unknown as { memo_entries?: { id: string; name: string; memo_records?: { id: string; label: string; text: string; date: string }[] }[] };
     return {
-      id: t.id, name: t.name, storeId: t.team_id,
+      id: t.id, name: t.name, storeId: t.team_id, hqOnly: !!t.hq_only,
       entries: (row.memo_entries || []).map((e) => ({
         id: e.id, name: e.name,
         records: (e.memo_records || []).map((r) => ({ id: r.id, label: r.label, text: r.text, date: r.date })),

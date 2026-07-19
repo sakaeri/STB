@@ -61,17 +61,18 @@ export default function MemoAddModal() {
                 <div>
                   <label style={labelStyle}>対象チーム</label>
                   <select
-                    value={mm.storeId === null ? '' : mm.storeId || (state.stores[0]?.id ?? '')}
-                    onChange={(e) => actions.onMemoModalStoreId(e.target.value)}
+                    value={mm.storeId === null ? (mm.hqOnly ? 'hq' : '') : mm.storeId || (state.stores[0]?.id ?? '')}
+                    onChange={(e) => actions.onMemoModalScope(e.target.value)}
                     style={inputStyle}
                   >
-                    <option value="">全体（本部のみ・全チーム共通）</option>
+                    <option value="">全体（本部＋全チームで共有）</option>
+                    <option value="hq">本部のみ（チームには見えません）</option>
                     {state.stores.map((s) => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                   </select>
                   <div style={{ fontSize: 11, color: '#aab0b8', marginTop: 6 }}>
-                    「全体」を選ぶと本部・全チームで共有されます。特定のチームを選んだ場合も、作成後にオーナーが「全チーム共通」に変更できます。
+                    「全体」は本部・全チームで共有されます。「本部のみ」は本部だけが見られ、チームには表示されません。特定のチームを選んだ場合も、作成後にオーナーが「全チーム共通」に変更できます。
                   </div>
                 </div>
               )}

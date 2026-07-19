@@ -80,12 +80,17 @@ export default function MemoPage() {
   const memoLevel2 = !!curEntry;
 
   const groups = useMemo(() => {
-    const allGroup = { id: 'all', label: '全体', items: memoTopics.filter((t) => !t.storeId) };
+    // hqOnly is a genuinely separate scope from the "全体" (shared with HQ
+    // + every team) case, even though both have storeId: null — RLS hides
+    // hqOnly topics from team members entirely, so this split only ever
+    // shows up for HQ viewers anyway.
+    const hqOnlyGroup = { id: 'hqOnly', label: '本部のみ', items: memoTopics.filter((t) => !t.storeId && t.hqOnly) };
+    const allGroup = { id: 'all', label: '全体（本部＋全チーム）', items: memoTopics.filter((t) => !t.storeId && !t.hqOnly) };
     const teamsInOrder = isHq ? stores : stores.filter((s) => s.id === viewRole);
     const teamGroups = teamsInOrder
       .map((s) => ({ id: s.id, label: s.name, items: memoTopics.filter((t) => t.storeId === s.id) }))
       .filter((g) => g.items.length > 0);
-    return [allGroup, ...teamGroups];
+    return [hqOnlyGroup, allGroup, ...teamGroups];
   }, [memoTopics, stores, isHq, viewRole]);
   const noMemoGroups = groups.every((g) => g.items.length === 0);
 
@@ -137,8 +142,8 @@ export default function MemoPage() {
                       {g.items.map((t: MemoTopic) => {
                         const canPromote = role === 'オーナー' && !!t.storeId;
                         const canDelete = t.storeId ? canDeleteForStore(t.storeId) : canDeleteCompanyWide;
-                        const scopeLabel = t.storeId ? stores.find((s) => s.id === t.storeId)?.name || '' : '全体';
-                        const scopeColor = t.storeId ? '#2f8f6b' : '#9aa0a8';
+                        const scopeLabel = t.storeId ? stores.find((s) => s.id === t.storeId)?.name || '' : (t.hqOnly ? '本部のみ' : '全体');
+                        const scopeColor = t.storeId ? '#2f8f6b' : (t.hqOnly ? '#c2453d' : '#9aa0a8');
                         return (
                           <div key={t.id} className="fc-memo-row" onClick={() => actions.openMemoTopic(t.id)} style={rowStyle}>
                             <div style={{ width: 38, height: 38, borderRadius: 10, background: accent + '18', color: accent, fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>

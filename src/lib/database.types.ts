@@ -56,9 +56,9 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['transactions']['Row']>;
       };
       memo_topics: {
-        Row: { id: string; org_id: string; team_id: string | null; name: string; created_by: string | null; created_at: string };
-        Insert: { id?: string; org_id: string; team_id?: string | null; name: string; created_by?: string | null };
-        Update: { name?: string; team_id?: string | null };
+        Row: { id: string; org_id: string; team_id: string | null; hq_only: boolean; name: string; created_by: string | null; created_at: string };
+        Insert: { id?: string; org_id: string; team_id?: string | null; hq_only?: boolean; name: string; created_by?: string | null };
+        Update: { name?: string; team_id?: string | null; hq_only?: boolean };
       };
       memo_entries: {
         Row: { id: string; topic_id: string; name: string; created_at: string };

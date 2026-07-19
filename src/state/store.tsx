@@ -574,7 +574,12 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     openAddEntry: (topicId: string | null) => set({ memoModal: { kind: 'entry', topicId, name: '' } }),
     openAddRecord: (topicId: string | null, entryId: string | null) => set({ memoModal: { kind: 'record', topicId, entryId, label: '', text: '', date: new Date().toISOString().slice(0, 10) } }),
     closeMemoModal: () => set({ memoModal: null }),
-    onMemoModalStoreId: (v: string) => set((s) => ({ memoModal: { ...(s.memoModal as MemoModalState), storeId: v || null } })),
+    // v is a team id, '' (全体 — shared with HQ + every team), or 'hq'
+    // (本部のみ — HQ members only, hidden from every team). Both '' and
+    // 'hq' store as storeId: null; hqOnly is what tells them apart.
+    onMemoModalScope: (v: string) => set((s) => ({
+      memoModal: { ...(s.memoModal as MemoModalState), storeId: v === '' || v === 'hq' ? null : v, hqOnly: v === 'hq' },
+    })),
     onMemoModalName: (v: string) => set((s) => ({ memoModal: { ...(s.memoModal as MemoModalState), name: v } })),
     onMemoModalLabel: (v: string) => set((s) => ({ memoModal: { ...(s.memoModal as MemoModalState), label: v } })),
     onMemoModalText: (v: string) => set((s) => ({ memoModal: { ...(s.memoModal as MemoModalState), text: v } })),
@@ -587,7 +592,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         const name = (m.name || '').trim();
         if (!name) return;
         set({ memoModal: null });
-        const { error } = await supabase.from('memo_topics').insert({ org_id: st.activeOrgId, team_id: m.storeId || null, name, created_by: st.session });
+        const { error } = await supabase.from('memo_topics').insert({ org_id: st.activeOrgId, team_id: m.storeId || null, hq_only: !!m.hqOnly, name, created_by: st.session });
         if (error) { console.error(error); return; }
         await reloadActiveOrg();
       } else if (m.kind === 'entry') {
@@ -608,7 +613,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     },
     requestPromoteTopic: (topic: { id: string; name: string }) => {
       openConfirm(`「${topic.name}」を全体共有にする`, 'この項目を全チーム共通に変更します。他のすべてのチームから閲覧できるようになります。共有すべきでない情報が含まれていないか確認してください。', async () => {
-        await supabase.from('memo_topics').update({ team_id: null }).eq('id', topic.id);
+        await supabase.from('memo_topics').update({ team_id: null, hq_only: false }).eq('id', topic.id);
         await reloadActiveOrg();
       }, '共有する');
     },
@@ -751,7 +756,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
           alert('このメモの店舗はすでに削除されているため復元できません。');
           return;
         }
-        await supabase.from('memo_topics').insert({ org_id: getState().activeOrgId!, team_id: t.storeId || null, name: t.name });
+        await supabase.from('memo_topics').insert({ org_id: getState().activeOrgId!, team_id: t.storeId || null, hq_only: !!t.hqOnly, name: t.name });
       } else if (item.type === 'memoEntry') {
         const d = item.data as { topicId: string; entry: AppState['memoTopics'][number]['entries'][number] };
         await supabase.from('memo_entries').insert({ topic_id: d.topicId, name: d.entry.name });
