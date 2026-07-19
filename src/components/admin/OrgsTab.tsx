@@ -178,8 +178,10 @@ function Th({ children, align }: { children: ReactNode; align?: 'right' }) {
 function OrgRow({ org, month }: { org: AdminMockOrg; month: string }) {
   const { state, actions } = useStore();
   const { teams, sales } = monthDataFor(org, month);
-  const plan = planForCount(teams, state.pricingConfig);
   const isFrozen = org.status === 'frozen';
+  // Frozen orgs haven't completed Stripe payment, so no revenue is actually
+  // being collected — show ¥0 rather than the team-count-derived plan price.
+  const plan = isFrozen ? { label: '¥0/月（凍結中）', color: '#c2453d' } : planForCount(teams, state.pricingConfig);
   const showActionMenu = state.adminActionMenuOrgId === org.id;
   const showDetail = state.adminDetailOrgId === org.id;
 
