@@ -291,11 +291,11 @@ export default function SettingsPage() {
           <div style={{ padding: '20px 22px', display: 'flex', flexWrap: 'wrap', gap: 18 }}>
             <div style={{ flex: 1, minWidth: 180 }}>
               <label style={fieldLabelStyle}>拠点の呼び方（単数）</label>
-              <input type="text" value={unitLabel} onChange={(e) => actions.setUnitLabels(e.target.value, unitLabelPlural)} placeholder="例：店舗・支部・物件" style={{ ...inputStyle, maxWidth: 260 }} />
+              <input type="text" value={state.unitLabel || ''} onChange={(e) => actions.setUnitLabels(e.target.value, state.unitLabelPlural || '')} placeholder="例：店舗・支部・物件" style={{ ...inputStyle, maxWidth: 260 }} />
             </div>
             <div style={{ flex: 1, minWidth: 180 }}>
               <label style={fieldLabelStyle}>グループの呼び方（複数形）</label>
-              <input type="text" value={unitLabelPlural} onChange={(e) => actions.setUnitLabels(unitLabel, e.target.value)} placeholder="例：加盟店・支部・会員" style={{ ...inputStyle, maxWidth: 260 }} />
+              <input type="text" value={state.unitLabelPlural || ''} onChange={(e) => actions.setUnitLabels(state.unitLabel || '', e.target.value)} placeholder="例：加盟店・支部・会員" style={{ ...inputStyle, maxWidth: 260 }} />
             </div>
             <div style={{ width: '100%' }}>
               <button onClick={actions.closeUnitLabelEdit} style={{ height: 38, padding: '0 18px', borderRadius: 9, background: accentSoft(accent), color: accent, fontWeight: 700, fontSize: 12.5 }}>完了</button>

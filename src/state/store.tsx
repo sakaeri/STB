@@ -365,7 +365,15 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
 
     // ===== unit label =====
     setUnitLabels: (unit: string, plural: string) => set({ unitLabel: unit, unitLabelPlural: plural }),
-    openUnitLabelEdit: () => set({ editingUnitLabel: true }),
+    // Seed with the effective (fallback-applied) values so the edit
+    // inputs open already filled in — the inputs themselves then bind to
+    // the raw state directly (no fallback), so clearing the field to
+    // retype doesn't keep snapping back to the fallback text.
+    openUnitLabelEdit: () => set((s) => ({
+      editingUnitLabel: true,
+      unitLabel: s.unitLabel || '店舗',
+      unitLabelPlural: s.unitLabelPlural || '加盟店',
+    })),
     closeUnitLabelEdit: async () => {
       const st = getState();
       set({ editingUnitLabel: false });
