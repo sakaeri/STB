@@ -140,7 +140,7 @@ export default function MemoPage() {
                     <div style={{ fontSize: 11.5, fontWeight: 700, color: '#9aa0a8', marginBottom: 8, letterSpacing: '.02em' }}>{g.label}</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {g.items.map((t: MemoTopic) => {
-                        const canPromote = role === 'オーナー' && !!t.storeId;
+                        const canEditScope = role === 'オーナー' && isHq;
                         const canDelete = t.storeId ? canDeleteForStore(t.storeId) : canDeleteCompanyWide;
                         const scopeLabel = t.storeId ? stores.find((s) => s.id === t.storeId)?.name || '' : (t.hqOnly ? '本部のみ' : '全体');
                         const scopeColor = t.storeId ? '#2f8f6b' : (t.hqOnly ? '#c2453d' : '#9aa0a8');
@@ -155,14 +155,20 @@ export default function MemoPage() {
                                 {t.entries.length}件 ・ <span style={{ color: scopeColor, fontWeight: 700 }}>{scopeLabel}</span>
                               </div>
                             </div>
-                            {canPromote && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); actions.requestPromoteTopic(t); }}
-                                style={{ fontSize: 11, fontWeight: 700, color: '#5a6b9e', background: '#eef0f7', padding: '5px 9px', borderRadius: 7, flex: 'none' }}
-                                title="全チーム共通にします"
+                            {canEditScope && (
+                              <select
+                                value={t.storeId === null ? (t.hqOnly ? 'hq' : '') : t.storeId}
+                                onClick={(e) => e.stopPropagation()}
+                                onChange={(e) => { e.stopPropagation(); actions.changeMemoTopicScope(t, e.target.value); }}
+                                style={{ fontSize: 11, fontWeight: 700, color: '#5a6b9e', background: '#eef0f7', padding: '5px 8px', borderRadius: 7, flex: 'none', border: 'none', outline: 'none' }}
+                                title="共有範囲を変更"
                               >
-                                全体共有にする
-                              </button>
+                                <option value="">全体</option>
+                                <option value="hq">本部のみ</option>
+                                {stores.map((s) => (
+                                  <option key={s.id} value={s.id}>{s.name}</option>
+                                ))}
+                              </select>
                             )}
                             {canDelete && (
                               <button

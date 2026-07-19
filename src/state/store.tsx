@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type {
-  AppState, Store, Transaction, TrashItem, ConfirmDialogState, MemoModalState, Member, HqMember,
+  AppState, Store, Transaction, TrashItem, ConfirmDialogState, MemoModalState, Member, HqMember, MemoTopic,
 } from '../types';
 import { createInitialState } from './mockData';
 import { supabase } from '../lib/supabase';
@@ -611,11 +611,22 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         await reloadActiveOrg();
       }
     },
-    requestPromoteTopic: (topic: { id: string; name: string }) => {
-      openConfirm(`「${topic.name}」を全体共有にする`, 'この項目を全チーム共通に変更します。他のすべてのチームから閲覧できるようになります。共有すべきでない情報が含まれていないか確認してください。', async () => {
-        await supabase.from('memo_topics').update({ team_id: null, hq_only: false }).eq('id', topic.id);
+    // Any scope change is possible after the fact, not a one-way "share
+    // company-wide" promotion — e.g. undoing an accidental 全体共有 back
+    // down to a single team. v is a team id, '' (全体), or 'hq' (本部の
+    // み), matching onMemoModalScope's encoding.
+    changeMemoTopicScope: (topic: MemoTopic, v: string) => {
+      const apply = async () => {
+        const patch = v === '' ? { team_id: null, hq_only: false } : v === 'hq' ? { team_id: null, hq_only: true } : { team_id: v, hq_only: false };
+        await supabase.from('memo_topics').update(patch).eq('id', topic.id);
         await reloadActiveOrg();
-      }, '共有する');
+      };
+      const wasAlreadyShared = !topic.storeId && !topic.hqOnly;
+      if (v === '' && !wasAlreadyShared) {
+        openConfirm(`「${topic.name}」を全体共有にする`, 'この項目を全チーム共通に変更します。他のすべてのチームから閲覧できるようになります。共有すべきでない情報が含まれていないか確認してください。', apply, '共有する');
+      } else {
+        apply();
+      }
     },
     requestDeleteMemoTopic: (topic: { id: string; name: string; storeId?: string | null }) => {
       openConfirm(`「${topic.name}」を削除`, `項目「${topic.name}」とその中の詳細・記録をすべてゴミ箱に移動します。`, async () => {
