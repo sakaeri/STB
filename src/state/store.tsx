@@ -221,7 +221,8 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       const st = getState();
       const email = st.pendingAccountId || '';
       if (!email) return;
-      await supabase.auth.resend({ type: 'signup', email });
+      const emailRedirectTo = st.pendingInviteId ? `${window.location.origin}/invite/${st.pendingInviteId}` : undefined;
+      await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo } });
       flash('verifyResent', 2400);
     },
     goSignup: () => set({ authView: 'signup', authError: '', signupForm: { name: '', email: '', password: '' } }),
@@ -236,8 +237,16 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       if (!f.name.trim() || !f.email.trim() || !f.password.trim()) { set({ authError: 'すべての必須項目を入力してください' }); return; }
       if (f.password.length < 8) { set({ authError: 'パスワードは8文字以上で入力してください' }); return; }
       const email = f.email.trim();
+      // Without this, the confirmation email's link always points at the
+      // site's plain root — fine if it's opened in the same browser the
+      // signup happened in (the pending invite id is also mirrored to
+      // localStorage for that case), but opened from a phone's mail app or
+      // any other browser, that fallback doesn't exist and the invite is
+      // silently lost, landing the new account in ordinary HQ setup
+      // instead of joining what they were actually invited to.
+      const emailRedirectTo = st.pendingInviteId ? `${window.location.origin}/invite/${st.pendingInviteId}` : undefined;
       const { data, error } = await supabase.auth.signUp({
-        email, password: f.password, options: { data: { name: f.name.trim() } },
+        email, password: f.password, options: { data: { name: f.name.trim() }, emailRedirectTo },
       });
       if (error) { set({ authError: translateAuthError(error) }); return; }
       if (data.user && data.user.identities && data.user.identities.length === 0) {
