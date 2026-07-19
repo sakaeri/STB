@@ -44,9 +44,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const item = subscription.items.data[0];
     if (!item) { res.status(200).json({ skipped: true }); return; }
 
+    // 'none' rather than the default 'create_prorations': this fires on
+    // every single team create/delete, which can happen often and
+    // repeatedly within one billing period. Prorating each of those would
+    // pile up confusing partial-period credit/charge line items on the
+    // upcoming invoice; 'none' just lets the new quantity bill cleanly at
+    // its full amount starting the next renewal.
     await stripe.subscriptions.update(org.stripe_subscription_id, {
       items: [{ id: item.id, quantity }],
-      proration_behavior: 'create_prorations',
+      proration_behavior: 'none',
     });
 
     // Stripe only fires customer.subscription.updated when a value in the
