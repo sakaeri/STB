@@ -31,10 +31,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const { data: org, error: orgErr } = await supabase
-      .from('orgs').select('id, name, stripe_customer_id').eq('id', orgId).single();
+      .from('orgs').select('id, name, stripe_customer_id, stripe_subscription_id').eq('id', orgId).single();
     if (orgErr || !org) {
       console.error('create-checkout-session: orgs lookup failed', orgErr);
       res.status(404).json({ error: `本部が見つかりません${orgErr ? `（${orgErr.message}）` : ''}` });
+      return;
+    }
+
+    // Already subscribed (e.g. frozen because a step-up's immediate invoice
+    // — see sync-quantity.ts — failed to charge, not a first-time signup):
+    // starting a brand new Checkout session here would create a *second*
+    // subscription rather than resolving the actual problem. Point them at
+    // the outstanding invoice instead.
+    if (org.stripe_subscription_id && org.stripe_customer_id) {
+      const stripe = getStripe();
+      const openInvoices = await stripe.invoices.list({ customer: org.stripe_customer_id, status: 'open', limit: 1 });
+      const openInvoice = openInvoices.data[0];
+      if (openInvoice?.hosted_invoice_url) {
+        res.status(200).json({ url: openInvoice.hosted_invoice_url });
+        return;
+      }
+      res.status(400).json({ error: '未払いの請求が見つかりませんでした。ページを再読み込みしてから、もう一度お試しください。' });
       return;
     }
 
