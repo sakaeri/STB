@@ -687,12 +687,13 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     },
     restoreTrashItem: async (item: TrashItem) => {
       if (item.type === 'team') {
-        const raw = item.data as { store: Store; transactions: Transaction[]; memoTopics: AppState['memoTopics'] } | Store;
+        const raw = item.data as { store: Store; transactions: Transaction[]; memoTopics: AppState['memoTopics']; members: Member[] } | Store;
         // Trash entries created before this bundling existed only ever
         // held the store's own settings, not its data.
         const store = 'store' in raw ? raw.store : raw;
         const txList = 'transactions' in raw ? raw.transactions : [];
         const topics = 'memoTopics' in raw ? raw.memoTopics : [];
+        const members = 'members' in raw ? raw.members : [];
         const { data: newTeam, error } = await supabase.from('teams').insert({
           org_id: getState().activeOrgId!, name: store.name, owner_name: store.owner, bg_color: store.bg,
           use_royalty: store.useRoyalty !== false, royalty_mode: store.royaltyMode || 'rate', royalty_rate: store.royaltyRate,
@@ -703,6 +704,11 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         if (txList.length) {
           await supabase.from('transactions').insert(
             txList.map((t) => ({ team_id: newTeam.id, type: t.type, title: t.title, amount: t.amount, date: t.date, photo_url: t.photo || null })),
+          );
+        }
+        if (members.length) {
+          await supabase.from('team_members').insert(
+            members.map((m) => ({ team_id: newTeam.id, user_id: m.userId, role: m.role })),
           );
         }
         for (const topic of topics) {
@@ -1026,6 +1032,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       store,
       transactions: st.transactions[store.id] || [],
       memoTopics: st.memoTopics.filter((t) => t.storeId === store.id),
+      members: st.members.filter((m) => m.store === store.name),
     };
     addTrash('team', store.name, snapshot, store.id).then(() => {
       set((s) => ({ stores: s.stores.filter((s2) => s2.id !== store.id), selectedStoreId: null }));
