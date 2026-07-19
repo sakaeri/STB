@@ -102,7 +102,7 @@ export default function SettingsPage() {
   const plan = actions.effectivePlan();
   const downgradeCand = actions.downgradeCandidatePlan();
   const orgKey = state.activeOrgId ?? 'default';
-  const showDowngradePrompt = isHqView && !!downgradeCand && state.orgDowngradeDismissed[orgKey] !== state.stores.length;
+  const showDowngradePrompt = isHqView && isOwner && !!downgradeCand && state.orgDowngradeDismissed[orgKey] !== state.stores.length;
 
   const closingDayTxt = CLOSING_DAY_OPTIONS.find((o) => o.value === state.companyInfo.closingDay)?.label || '末日';
   const fiscalStartMonthTxt = FISCAL_MONTH_OPTIONS.find((o) => o.value === state.companyInfo.fiscalStartMonth)?.label || `${state.companyInfo.fiscalStartMonth}月`;
@@ -146,7 +146,7 @@ export default function SettingsPage() {
             <button onClick={actions.openCompanyInfoEdit} style={{ height: 32, padding: '0 14px', borderRadius: 9, background: accentSoft(accent), color: accent, fontWeight: 700, fontSize: 12.5, flex: 'none' }}>変更</button>
           )}
           {showDowngradePrompt && downgradeCand && (
-            <button onClick={actions.confirmDowngrade} title={`来月から${downgradeCand.label}に変更します`} style={{ fontSize: 11, fontWeight: 700, color: accent, background: accentSoft(accent), padding: '6px 10px', borderRadius: 8, flex: 'none' }}>{downgradeCand.label}に変更</button>
+            <button onClick={actions.confirmDowngrade} title={`次回更新分から${downgradeCand.label}に変更します`} style={{ fontSize: 11, fontWeight: 700, color: accent, background: accentSoft(accent), padding: '6px 10px', borderRadius: 8, flex: 'none' }}>{downgradeCand.label}に変更</button>
           )}
         </div>
         {canEditCompanyInfo && state.editingCompanyInfo ? (

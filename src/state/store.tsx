@@ -9,7 +9,7 @@ import {
   fetchAdminOrgs, fetchAuditLog, fetchAppSettings, addAuditLog,
   saveAppSettingsBilling, saveAppSettingsTerms, fetchPublicTerms, fetchPublicAppLogo, fetchPublicPricing,
 } from './adminData';
-import { billedPlanFor, type PlanStep } from '../tokens';
+import { planForCount, billedPlanFor, type PlanStep } from '../tokens';
 
 type Patch = Partial<AppState> | ((s: AppState) => Partial<AppState>);
 
@@ -77,9 +77,15 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     const st = getState();
     return billedPlanFor(activeTeamCount(), st.orgBilledStep, st.pricingConfig);
   };
-  // downgrades (removing teams) never prompt — only step-ups need the
-  // upgrade-confirmation + Stripe checkout/sync flow.
-  const downgradeCandidatePlan = (): PlanStep | null => null;
+  // Billing never auto-lowers (see billedPlanFor) — this detects when the
+  // live team count would justify a lower step than what's actually billed,
+  // so the owner can choose to switch down manually (downgradePlan below).
+  const downgradeCandidatePlan = (): PlanStep | null => {
+    const st = getState();
+    const billed = billedPlanFor(activeTeamCount(), st.orgBilledStep, st.pricingConfig);
+    const liveOnly = planForCount(activeTeamCount(), st.pricingConfig);
+    return liveOnly.step < billed.step ? liveOnly : null;
+  };
 
   const addTrash = async (type: TrashItem['type'], label: string, data: unknown, storeId?: string | null) => {
     const st = getState();
@@ -707,7 +713,23 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     },
 
     // ===== plan =====
-    confirmDowngrade: () => { /* no-op: billing/plan tracking isn't backed by real data yet */ },
+    confirmDowngrade: () => {
+      const cand = downgradeCandidatePlan();
+      if (!cand) return;
+      openConfirm(
+        'プランを変更',
+        `次回の更新分から ${cand.label} になります。今すぐ変更しますか？`,
+        () => actions.downgradePlan(),
+        '変更する',
+      );
+    },
+    downgradePlan: async () => {
+      const st = getState();
+      if (!st.activeOrgId) return;
+      const { error } = await callBillingApi('/api/stripe/downgrade-plan', st.activeOrgId);
+      if (error) { alert(error); return; }
+      await reloadActiveOrg();
+    },
     dismissDowngrade: () => { /* no-op */ },
 
     // ===== billing (Stripe) =====
