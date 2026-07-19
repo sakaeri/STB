@@ -153,7 +153,17 @@ export default function SettingsPage() {
               {plan.label} ・ {state.stores.length}{unitLabel}
             </span>
             {showDowngradePrompt && downgradeCand && (
-              <button onClick={actions.confirmDowngrade} title={`次回更新分から${downgradeCand.label}に変更します`} style={{ fontSize: 11, fontWeight: 700, color: accent, background: accentSoft(accent), padding: '6px 10px', borderRadius: 8, flex: 'none' }}>{downgradeCand.label}に変更</button>
+              <button
+                onClick={actions.confirmDowngrade}
+                disabled={state.planChangeLoading}
+                title={`次回更新分から${downgradeCand.label}に変更します`}
+                style={{ fontSize: 11, fontWeight: 700, color: accent, background: accentSoft(accent), padding: '6px 10px', borderRadius: 8, flex: 'none', opacity: state.planChangeLoading ? 0.6 : 1 }}
+              >
+                {state.planChangeLoading ? '変更中…' : `${downgradeCand.label}に変更`}
+              </button>
+            )}
+            {state.planChangeSaved && (
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#1f9d6b' }}>✓ 変更しました</span>
             )}
           </div>
         )}

@@ -105,6 +105,8 @@ export function createInitialState(): AppState {
 
     pendingUpgrade: null,
     billingCheckoutLoading: false,
+    planChangeLoading: false,
+    planChangeSaved: false,
 
     memoNav: { topicId: null, entryId: null },
     memoModal: null,

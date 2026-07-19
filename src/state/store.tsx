@@ -838,15 +838,21 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       // resolving with { error } — without this, that path throws inside
       // an unawaited async action and fails completely silently (no
       // alert, no state change), which is exactly the "nothing happens"
-      // symptom this action kept getting reported for.
+      // symptom this action kept getting reported for. The confirm dialog
+      // itself closes the instant it's confirmed, so without a loading
+      // state here there's nothing visible at all until the request
+      // finishes — easy to read as "it didn't do anything".
+      set({ planChangeLoading: true });
       try {
         const { error } = await callBillingApi('/api/stripe/downgrade-plan', st.activeOrgId);
         if (error) { alert(error); return; }
         await reloadActiveOrg();
-        alert('プランを変更しました。');
+        flash('planChangeSaved');
       } catch (e) {
         console.error('downgradePlan failed', e);
         alert('プラン変更に失敗しました。時間をおいて再度お試しください。');
+      } finally {
+        set({ planChangeLoading: false });
       }
     },
     dismissDowngrade: () => { /* no-op */ },
