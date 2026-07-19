@@ -1082,24 +1082,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
 
     async function handleAuthChange(event: string, session: { user: { id: string } } | null) {
-      console.time(`[perf] handleAuthChange ${event}`);
       if (event === 'PASSWORD_RECOVERY') {
         set({ authView: 'reset', authError: '', resetPassword: '', resetPasswordConfirm: '' });
       }
       if (!session) {
         set({ session: null, accounts: [], activeOrgId: null, stores: [], members: [], hqMembers: [], transactions: {}, memoTopics: [], trash: [] });
-        console.timeEnd(`[perf] handleAuthChange ${event}`);
         return;
       }
       // None of these three depend on each other's results — fetch them
       // together instead of as three sequential round trips.
-      console.time('[perf] profile+user+myOrgs');
       const [{ data: profile }, { data: userRes }, myOrgs] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', session.user.id).single(),
         supabase.auth.getUser(),
         fetchMyOrgs(session.user.id),
       ]);
-      console.timeEnd('[perf] profile+user+myOrgs');
       const email = userRes.user?.email || '';
       const verified = !!userRes.user?.email_confirmed_at;
       // s.activeOrgId is always null right after a fresh page load (client
@@ -1129,7 +1125,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       // value that was just set — no need to read it back at all.
       const target = resolvedOrgId;
       if (target) {
-        console.time('[perf] fetchOrgData');
         try {
           const orgData = await fetchOrgData(target);
           const isOrgMember = orgData.hqMembers.some((m) => m.userId === session.user.id);
@@ -1141,13 +1136,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         } catch (e) {
           console.error('initial org load failed', e);
         }
-        console.timeEnd('[perf] fetchOrgData');
       }
-      console.timeEnd(`[perf] handleAuthChange ${event}`);
-      if (profile?.is_admin) {
-        console.time('[perf] loadAdminOverview');
-        void actions.loadAdminOverview().finally(() => console.timeEnd('[perf] loadAdminOverview'));
-      }
+      if (profile?.is_admin) void actions.loadAdminOverview();
     }
 
     return () => { cancelled = true; sub.subscription.unsubscribe(); };
