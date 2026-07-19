@@ -43,29 +43,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { count } = await supabase.from('teams').select('id', { count: 'exact', head: true }).eq('org_id', orgId);
     const { data: pricingRaw } = await supabase.rpc('get_public_pricing');
     const pricing = parsePricingConfig(pricingRaw);
-    // Floor at 1 here too — this lowers billing to match the current team
-    // count, it doesn't cancel the subscription. A true ¥0 requires a
-    // separate, explicit unsubscribe.
-    const quantity = Math.max(1, stepsForCount(count || 0, pricing));
+    // Unfloored — this is the actual target the client showed and
+    // confirmed (downgradeCandidatePlan / the "◯◯に変更" button), which
+    // can genuinely be Free (step 0). sync-quantity.ts floors at 1 because
+    // *that* path runs automatically after every team change and must
+    // never silently cancel anything; this path is a one-off, confirmed,
+    // owner-initiated action, so 0 is allowed here.
+    const targetStep = stepsForCount(count || 0, pricing);
 
     const stripe = getStripe();
     const subscription = await stripe.subscriptions.retrieve(org.stripe_subscription_id);
     const item = subscription.items.data[0];
     if (!item) { res.status(400).json({ error: '契約情報が見つかりませんでした' }); return; }
 
-    // No proration: this takes effect for the next renewal, matching how
-    // step-downs already behave — only step-ups are billed immediately
-    // (see sync-quantity.ts).
-    await stripe.subscriptions.update(org.stripe_subscription_id, {
-      items: [{ id: item.id, quantity }],
-      proration_behavior: 'none',
-    });
+    if (targetStep === 0) {
+      // Stripe subscription items can't have quantity 0 — reaching true
+      // Free means ending the subscription, but not mid-period (already
+      // paid for): schedule it to lapse at the current period's end
+      // instead of canceling immediately.
+      await stripe.subscriptions.update(org.stripe_subscription_id, { cancel_at_period_end: true });
+    } else {
+      // No proration: this takes effect for the next renewal, matching
+      // how step-downs already behave — only step-ups are billed
+      // immediately (see sync-quantity.ts).
+      await stripe.subscriptions.update(org.stripe_subscription_id, {
+        items: [{ id: item.id, quantity: targetStep }],
+        proration_behavior: 'none',
+        cancel_at_period_end: false,
+      });
+    }
 
     const service = serviceClient();
-    await service.from('orgs').update({ billed_step: quantity }).eq('id', orgId);
-    await service.from('admin_audit_log').insert({ text: `本部が手動でプランを¥${(quantity * pricing.pricePerStep).toLocaleString('ja-JP')}/月に変更しました（本部ID: ${orgId}）` });
+    await service.from('orgs').update({ billed_step: targetStep }).eq('id', orgId);
+    const label = targetStep === 0 ? 'Free' : `¥${(targetStep * pricing.pricePerStep).toLocaleString('ja-JP')}/月`;
+    await service.from('admin_audit_log').insert({ text: `本部が手動でプランを${label}に変更しました（本部ID: ${orgId}）` });
 
-    res.status(200).json({ ok: true, quantity });
+    res.status(200).json({ ok: true, quantity: targetStep });
   } catch (e) {
     console.error('downgrade-plan failed', e);
     res.status(500).json({ error: 'プラン変更に失敗しました' });

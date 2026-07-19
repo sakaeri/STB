@@ -87,16 +87,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription;
         const orgId = sub.metadata?.org_id;
-        // Clear stripe_subscription_id along with freezing — a canceled
-        // subscription can't be paid via an "outstanding invoice" (there
-        // isn't one), so create-checkout-session.ts needs to see this as
-        // "never subscribed" and start a fresh Checkout next time, not
-        // dead-end looking for an invoice that will never exist. Also
-        // reset billed_step to 0: once canceled there's no longer any
-        // active billing to be "stuck" at, so the UI shouldn't keep
-        // showing (and offering to downgrade from) a stale higher plan.
+        // Clear stripe_subscription_id along with the status change — a
+        // canceled subscription can't be paid via an "outstanding invoice"
+        // (there isn't one), so create-checkout-session.ts needs to see
+        // this as "never subscribed" and start a fresh Checkout next time.
+        // Also reset billed_step to 0: once canceled there's no longer any
+        // active billing to be "stuck" at.
         if (orgId) await supabase.from('orgs').update({ stripe_subscription_id: null, billed_step: 0 }).eq('id', orgId);
-        await setOrgStatus(orgId, 'frozen', '凍結');
+        // Was this an actual payment problem, or a deliberate, requested
+        // cancellation (e.g. downgrade-plan.ts's cancel_at_period_end
+        // reaching its end, or the operator canceling directly in
+        // Stripe)? Only the former should freeze the org — a subscription
+        // that lapsed because the owner *chose* to drop to Free is a
+        // normal, non-punitive outcome and should leave the org usable.
+        const reason = sub.cancellation_details?.reason;
+        const isPaymentProblem = reason === 'payment_failed' || reason === 'payment_disputed';
+        await setOrgStatus(orgId, isPaymentProblem ? 'frozen' : 'active', isPaymentProblem ? '凍結' : '凍結解除（Freeプランへ移行）');
         break;
       }
       // A step-up's immediate ad-hoc invoice (see sync-quantity.ts) can fail
