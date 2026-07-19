@@ -1083,7 +1083,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     async function handleAuthChange(event: string, session: { user: { id: string } } | null) {
       console.time(`[perf] handleAuthChange ${event}`);
-      console.log('[diag] handleAuthChange', event, 'user id:', session?.user?.id);
       if (event === 'PASSWORD_RECOVERY') {
         set({ authView: 'reset', authError: '', resetPassword: '', resetPasswordConfirm: '' });
       }
@@ -1120,7 +1119,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }],
         activeOrgId: resolvedOrgId,
       });
-      const target = stateRef.current.activeOrgId;
+      // Not stateRef.current.activeOrgId here — the ref only reflects the
+      // new state once StoreProvider re-renders, which doesn't necessarily
+      // happen synchronously right after set() in this context (a Promise
+      // continuation, not a React event handler). Reading it immediately
+      // was a genuine race: sometimes the render had already flushed and
+      // it worked, sometimes it hadn't and this read back the old (null)
+      // value, skipping the org data fetch entirely. resolvedOrgId is the
+      // value that was just set — no need to read it back at all.
+      const target = resolvedOrgId;
       if (target) {
         console.time('[perf] fetchOrgData');
         try {

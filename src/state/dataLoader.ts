@@ -29,17 +29,6 @@ export async function fetchMyOrgs(userId: string): Promise<Org[]> {
     supabase.from('org_members').select('role, orgs(id, name)').eq('user_id', userId),
     supabase.from('team_members').select('role, teams(org_id)').eq('user_id', userId),
   ]);
-  // Temporary diagnostic: a report of "0 orgs" after a reload despite the
-  // account clearly having one, even though orgMembersCount came back as 1
-  // — logging the raw row to see the actual shape of the embedded `orgs`
-  // field (e.g. PostgREST returning it as an array instead of an object).
-  console.log('[diag] fetchMyOrgs', {
-    userId,
-    orgMembersRaw: JSON.stringify(orgMembersRes.data),
-    orgMembersError: orgMembersRes.error,
-    teamMembersCount: teamMembersRes.data?.length ?? null,
-    teamMembersError: teamMembersRes.error,
-  });
   if (orgMembersRes.error) throw orgMembersRes.error;
   if (teamMembersRes.error) throw teamMembersRes.error;
 
