@@ -89,7 +89,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
         if (invoice.id) {
           await stripe.invoices.finalizeInvoice(invoice.id);
-          await stripe.invoices.pay(invoice.id);
+          // Explicitly pass the subscription's own payment method rather
+          // than relying on the customer's default_payment_method being
+          // set — Checkout sets the former but not always the latter, and
+          // without either, pay() has nothing to charge and always fails.
+          const pmId = typeof subscription.default_payment_method === 'string'
+            ? subscription.default_payment_method
+            : subscription.default_payment_method?.id;
+          await stripe.invoices.pay(invoice.id, pmId ? { payment_method: pmId } : undefined);
         }
       } catch (invoiceErr) {
         // The card was actually declined (or some other payment failure)

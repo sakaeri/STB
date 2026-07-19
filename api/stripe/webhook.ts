@@ -52,6 +52,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription?.id;
         if (orgId && subscriptionId) {
           await supabase.from('orgs').update({ stripe_subscription_id: subscriptionId, status: 'active' }).eq('id', orgId);
+
+          // Checkout sets a default payment method on the *subscription*,
+          // but step-up ad-hoc invoices (sync-quantity.ts) bill the
+          // *customer* directly and resolve payment via the customer's own
+          // invoice_settings.default_payment_method — which Checkout does
+          // NOT set. Without this, every ad-hoc invoice has no payment
+          // method to charge and fails, freezing the org every time.
+          try {
+            const sub = await stripe.subscriptions.retrieve(subscriptionId);
+            const pmId = typeof sub.default_payment_method === 'string' ? sub.default_payment_method : sub.default_payment_method?.id;
+            const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
+            if (pmId && customerId) {
+              await stripe.customers.update(customerId, { invoice_settings: { default_payment_method: pmId } });
+            }
+          } catch (pmErr) {
+            console.error('checkout.session.completed: failed to set customer default payment method', pmErr);
+          }
         }
         break;
       }
