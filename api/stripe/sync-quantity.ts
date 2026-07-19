@@ -53,9 +53,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 'none' rather than the default 'create_prorations': day-fraction
     // proration on every single team create piles up confusing
     // partial-period charge line items on the upcoming invoice.
+    // cancel_at_period_end: false undoes a previously scheduled
+    // downgrade-to-Free (downgrade-plan.ts) — actively adding enough
+    // teams to trigger a real step-up is clear evidence of continued
+    // intent to use (and pay for) the service, so a stale scheduled
+    // cancellation shouldn't silently still take effect at period end.
     await stripe.subscriptions.update(org.stripe_subscription_id, {
       items: [{ id: item.id, quantity }],
       proration_behavior: 'none',
+      cancel_at_period_end: false,
     });
     await serviceClient().from('orgs').update({ billed_step: quantity }).eq('id', orgId);
 
