@@ -2,7 +2,7 @@ import { useState, type CSSProperties } from 'react';
 import { useStore } from '../../state/store.tsx';
 import { CLOSING_DAY_OPTIONS, FISCAL_MONTH_OPTIONS } from '../../state/calc';
 import { accentSoft, roleBg } from '../../tokens';
-import type { TrashItem } from '../../types';
+import type { Store, TrashItem } from '../../types';
 import { myRole } from '../app/rowHelpers';
 
 const cardStyle: CSSProperties = { background: '#fff', border: '1px solid #e7e9ed', borderRadius: 15, overflow: 'hidden' };
@@ -46,11 +46,18 @@ function trashTypeLabel(item: TrashItem, unitLabel: string): string {
   }
 }
 
-function trashDetail(item: TrashItem): string {
+function trashDetail(item: TrashItem, stores: Store[]): string {
+  // Which team a trashed entry belonged to isn't obvious once it's sitting
+  // in one flat list — prefix the team/store name (falling back to a note
+  // if that team's since been permanently gone) wherever item.storeId
+  // points at one.
+  const storeName = item.storeId ? stores.find((s) => s.id === item.storeId)?.name || '削除済みの店舗' : null;
+  const withStore = (s: string) => (storeName ? `${storeName} ・ ${s}` : s);
   try {
     if (item.type === 'team') {
-      const d = item.data as { owner?: string };
-      return d.owner ? `担当：${d.owner}` : '';
+      const raw = item.data as { store: { owner?: string } } | { owner?: string };
+      const owner = 'store' in raw ? raw.store?.owner : raw.owner;
+      return owner ? `担当：${owner}` : '';
     }
     if (item.type === 'member') {
       const d = item.data as { store: string; role: string };
@@ -62,19 +69,19 @@ function trashDetail(item: TrashItem): string {
     }
     if (item.type === 'memoTopic') {
       const d = item.data as { entries: unknown[] };
-      return `${d.entries.length}件の詳細`;
+      return withStore(`${d.entries.length}件の詳細`);
     }
     if (item.type === 'memoEntry') {
       const d = item.data as { entry: { records: unknown[] } };
-      return `${d.entry.records.length}件の記録`;
+      return withStore(`${d.entry.records.length}件の記録`);
     }
     if (item.type === 'memoRecord') {
       const d = item.data as { record: { text: string } };
-      return d.record.text;
+      return withStore(d.record.text);
     }
     if (item.type === 'tx') {
       const d = item.data as { tx: { type: string; amount: number; date: string } };
-      return `${d.tx.type === 'sales' ? '売上' : '経費'} ・ ¥${Math.round(d.tx.amount).toLocaleString('ja-JP')} ・ ${d.tx.date}`;
+      return withStore(`${d.tx.type === 'sales' ? '売上' : '経費'} ・ ¥${Math.round(d.tx.amount).toLocaleString('ja-JP')} ・ ${d.tx.date}`);
     }
   } catch { /* noop */ }
   return '';
@@ -415,7 +422,7 @@ export default function SettingsPage() {
                 <div style={{ width: 32, height: 32, borderRadius: 9, flex: 'none', background: '#eef0f3', color: meta.color, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{meta.icon}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.label}</div>
-                  <div style={{ fontSize: 11, color: '#9aa0a8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{trashDetail(item)}</div>
+                  <div style={{ fontSize: 11, color: '#9aa0a8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{trashDetail(item, state.stores)}</div>
                   <div style={{ fontSize: 10.5, color: '#c3c8d0', marginTop: 2 }}>{trashTypeLabel(item, unitLabel)} ・ {daysAgo}日前削除 ・ 残り{daysLeft}日</div>
                 </div>
                 {state.isMobile ? (
