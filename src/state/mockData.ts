@@ -98,7 +98,6 @@ export function createInitialState(): AppState {
 
     editingCompanyInfo: false,
     companyNameError: false,
-    editingUnitLabel: false,
     editingHqDefaults: false,
 
     confirmDelete: null,

@@ -98,7 +98,6 @@ export default function SettingsPage() {
   const isOwner = role === 'オーナー';
   const isOwnerOrAdmin = role === 'オーナー' || role === '管理者';
   const unitLabel = state.unitLabel || '店舗';
-  const unitLabelPlural = state.unitLabelPlural || '加盟店';
 
   const canEditCompanyInfo = isHqView && isOwner;
   const canManageHqMembers = isOwner;
@@ -166,6 +165,11 @@ export default function SettingsPage() {
               {state.companyNameError && <div style={{ fontSize: 11.5, color: '#d6453d', marginTop: 6 }}>会社名を入力してください</div>}
             </div>
             <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 16 }}>
+              <label style={fieldLabelStyle}>拠点の呼び方</label>
+              <input type="text" value={state.unitLabel || ''} onChange={(e) => actions.onUnitLabel(e.target.value)} placeholder="例：店舗・支部・物件" style={{ ...inputStyle, maxWidth: 260 }} />
+              <div style={{ fontSize: 11, color: '#aab0b8', marginTop: 8, lineHeight: 1.6 }}>業態に合わせて呼び方を変更できます（例：FC＝店舗／協会＝支部／不動産＝物件）</div>
+            </div>
+            <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 16 }}>
               <label style={fieldLabelStyle}>本部所在地</label>
               <input type="text" value={state.companyInfo.address} onChange={(e) => actions.onCompanyAddress(e.target.value)} placeholder="例：東京都渋谷区〇〇1-2-3" style={{ ...inputStyle, maxWidth: 400 }} />
             </div>
@@ -210,6 +214,7 @@ export default function SettingsPage() {
         ) : (
           <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div><div style={roTitleStyle}>本部名</div><div style={roValueStyle}>{state.companyInfo.name || '—'}</div></div>
+            <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 14 }}><div style={roTitleStyle}>拠点の呼び方</div><div style={roValueStyle}>{unitLabel}</div></div>
             <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 14 }}><div style={roTitleStyle}>本部所在地</div><div style={roValueStyle}>{state.companyInfo.address || '—'}</div></div>
             <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 14 }}><div style={roTitleStyle}>代表者名</div><div style={roValueStyle}>{state.companyInfo.rep || '—'}</div></div>
             <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 14 }}><div style={roTitleStyle}>締め日</div><div style={roValueStyle}>{closingDayTxt}</div></div>
@@ -275,39 +280,6 @@ export default function SettingsPage() {
           </div>
         </section>
       )}
-
-      {/* 呼び名の設定 */}
-      <section style={cardStyle}>
-        <div style={cardHeaderStyle}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 style={cardTitleStyle}>呼び名の設定</h2>
-            <p style={cardSubStyle}>業態に合わせて呼び方を変更できます（例：FC＝店舗／協会＝支部／不動産＝物件）</p>
-          </div>
-          {isOwner && !state.editingUnitLabel && (
-            <button onClick={actions.openUnitLabelEdit} style={{ height: 32, padding: '0 14px', borderRadius: 9, background: accentSoft(accent), color: accent, fontWeight: 700, fontSize: 12.5, flex: 'none' }}>変更</button>
-          )}
-        </div>
-        {isOwner && state.editingUnitLabel ? (
-          <div style={{ padding: '20px 22px', display: 'flex', flexWrap: 'wrap', gap: 18 }}>
-            <div style={{ flex: 1, minWidth: 180 }}>
-              <label style={fieldLabelStyle}>拠点の呼び方（単数）</label>
-              <input type="text" value={state.unitLabel || ''} onChange={(e) => actions.setUnitLabels(e.target.value, state.unitLabelPlural || '')} placeholder="例：店舗・支部・物件" style={{ ...inputStyle, maxWidth: 260 }} />
-            </div>
-            <div style={{ flex: 1, minWidth: 180 }}>
-              <label style={fieldLabelStyle}>グループの呼び方（複数形）</label>
-              <input type="text" value={state.unitLabelPlural || ''} onChange={(e) => actions.setUnitLabels(state.unitLabel || '', e.target.value)} placeholder="例：加盟店・支部・会員" style={{ ...inputStyle, maxWidth: 260 }} />
-            </div>
-            <div style={{ width: '100%' }}>
-              <button onClick={actions.closeUnitLabelEdit} style={{ height: 38, padding: '0 18px', borderRadius: 9, background: accentSoft(accent), color: accent, fontWeight: 700, fontSize: 12.5 }}>完了</button>
-            </div>
-          </div>
-        ) : (
-          <div style={{ padding: '20px 22px', display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-            <div><div style={roTitleStyle}>拠点の呼び方（単数）</div><div style={roValueStyle}>{unitLabel}</div></div>
-            <div><div style={roTitleStyle}>グループの呼び方（複数形）</div><div style={roValueStyle}>{unitLabelPlural}</div></div>
-          </div>
-        )}
-      </section>
 
       {/* 新規{unitLabel}のデフォルト設定 */}
       {isHqView && isOwner && (
@@ -491,7 +463,7 @@ export default function SettingsPage() {
             <div style={{ padding: '16px 22px', display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{ flex: 1, fontSize: 12.5, color: '#6b7280', lineHeight: 1.7 }}>
                 本部を削除すると、この管理簿のすべてのデータが失われ、元に戻せません。
-                {state.stores.length > 0 && `先にすべての${unitLabelPlural}（${unitLabel}）を削除または移動してください。`}
+                {state.stores.length > 0 && `先にすべての${unitLabel}を削除または移動してください。`}
               </div>
               <button
                 onClick={actions.requestDeleteHq}

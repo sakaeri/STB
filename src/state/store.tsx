@@ -364,26 +364,19 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     cancelEmailChange: () => set({ emailChangeStep: null, profileEditing: false }),
 
     // ===== unit label =====
-    setUnitLabels: (unit: string, plural: string) => set({ unitLabel: unit, unitLabelPlural: plural }),
-    // Seed with the effective (fallback-applied) values so the edit
-    // inputs open already filled in — the inputs themselves then bind to
-    // the raw state directly (no fallback), so clearing the field to
-    // retype doesn't keep snapping back to the fallback text.
-    openUnitLabelEdit: () => set((s) => ({
-      editingUnitLabel: true,
-      unitLabel: s.unitLabel || '店舗',
-      unitLabelPlural: s.unitLabelPlural || '加盟店',
-    })),
-    closeUnitLabelEdit: async () => {
-      const st = getState();
-      set({ editingUnitLabel: false });
-      if (st.activeOrgId) {
-        await supabase.from('orgs').update({ unit_label: st.unitLabel, unit_label_plural: st.unitLabelPlural }).eq('id', st.activeOrgId);
-      }
-    },
+    // Kept as a single concept (singular/plural distinction removed per
+    // user feedback — most businesses use the same word for both, and
+    // having two fields was just confusing). unitLabelPlural is still
+    // written alongside so it stays in sync in the DB, but nothing in
+    // the UI reads it separately anymore.
+    onUnitLabel: (v: string) => set({ unitLabel: v, unitLabelPlural: v }),
 
     // ===== company info =====
-    openCompanyInfoEdit: () => set({ editingCompanyInfo: true }),
+    // Seed the unit label with its effective (fallback-applied) value so
+    // the edit input opens already filled in — it's then bound directly
+    // to the raw state (no fallback) so clearing it to retype doesn't
+    // snap back to the fallback text.
+    openCompanyInfoEdit: () => set((s) => ({ editingCompanyInfo: true, unitLabel: s.unitLabel || '店舗' })),
     closeCompanyInfoEdit: async () => {
       const st = getState();
       if (!(st.companyInfo.name || '').trim()) { set({ companyNameError: true }); return; }
@@ -392,7 +385,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         const c = st.companyInfo;
         await supabase.from('orgs').update({
           name: c.name, address: c.address, rep: c.rep, closing_day: c.closingDay, fiscal_start_month: c.fiscalStartMonth,
-          daily_closing_enabled: c.dailyClosingEnabled,
+          daily_closing_enabled: c.dailyClosingEnabled, unit_label: st.unitLabel, unit_label_plural: st.unitLabel,
         }).eq('id', st.activeOrgId);
         set({ hqNameOverride: c.name });
       }

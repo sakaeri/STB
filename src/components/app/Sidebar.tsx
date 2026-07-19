@@ -9,10 +9,10 @@ export default function Sidebar() {
   if (state.isMobile) return null;
 
   const accent = state.accent;
-  const unitLabelPlural = state.unitLabelPlural || '加盟店';
+  const unitLabel = state.unitLabel || '店舗';
   const isHq = state.viewRole === 'hq';
   const viewStore = isHq ? null : state.stores.find((s) => s.id === state.viewRole) || null;
-  const roleCaption = isHq ? `本部（全${unitLabelPlural}）` : viewStore ? `${viewStore.name}（${unitLabelPlural}）` : unitLabelPlural;
+  const roleCaption = isHq ? `本部（全${unitLabel}）` : viewStore ? `${viewStore.name}（${unitLabel}）` : unitLabel;
   const brandLogoUrl = state.logoMap['app-logo'] || state.logoMap['operator-logo'] || null;
 
   const navStyle = (active: boolean): CSSProperties => ({

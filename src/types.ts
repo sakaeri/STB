@@ -317,7 +317,6 @@ export interface AppState {
   // company/hq settings editing flags
   editingCompanyInfo: boolean;
   companyNameError: boolean;
-  editingUnitLabel: boolean;
   editingHqDefaults: boolean;
 
   // trash / confirm
