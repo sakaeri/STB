@@ -1165,7 +1165,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     async function handleAuthChange(event: string, session: { user: { id: string } } | null) {
       if (event === 'PASSWORD_RECOVERY') {
+        // This event still carries a real session (Supabase signs the
+        // user in temporarily so updateUser() can set the new password),
+        // but falling through into the normal session/org load below
+        // would set state.session and send them straight into the main
+        // app instead of the "set a new password" form — since App.tsx
+        // routes on state.session alone, not authView.
         set({ authView: 'reset', authError: '', resetPassword: '', resetPasswordConfirm: '' });
+        return;
       }
       if (!session) {
         set({ session: null, accounts: [], activeOrgId: null, stores: [], members: [], hqMembers: [], transactions: {}, memoTopics: [], trash: [] });
