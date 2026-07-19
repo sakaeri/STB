@@ -716,6 +716,22 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
             );
           }
         }
+        // Other still-pending trash items (e.g. a transaction deleted
+        // *before* the team itself was) still reference the old team id,
+        // which no longer exists — repoint them at the newly recreated
+        // team so restoring them doesn't keep failing with "this team's
+        // been deleted" now that it's back.
+        const oldTeamId = store.id;
+        if (oldTeamId) {
+          const { data: dangling } = await supabase.from('trash_items').select('id, type, data').eq('team_id', oldTeamId).neq('id', item.id);
+          for (const dItem of dangling || []) {
+            const patch: { team_id: string; data?: unknown } = { team_id: newTeam.id };
+            if ((dItem.type === 'tx' || dItem.type === 'memoTopic') && dItem.data && typeof dItem.data === 'object') {
+              patch.data = { ...(dItem.data as object), storeId: newTeam.id };
+            }
+            await supabase.from('trash_items').update(patch).eq('id', dItem.id);
+          }
+        }
       } else if (item.type === 'tx') {
         const d = item.data as { storeId: string; tx: AppState['transactions'][string][number] };
         if (!getState().stores.some((s) => s.id === d.storeId)) {

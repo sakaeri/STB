@@ -76,7 +76,7 @@ export interface Database {
           deleted_by: string | null; deleted_at: string;
         };
         Insert: { id?: string; org_id: string; team_id?: string | null; type: string; label: string; data: unknown; deleted_by?: string | null };
-        Update: never;
+        Update: { team_id?: string | null; data?: unknown };
       };
       confirmed_periods: {
         Row: { team_id: string; period: string; confirmed_by: string | null; confirmed_at: string };
