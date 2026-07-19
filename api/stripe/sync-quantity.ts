@@ -43,13 +43,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const subscription = await stripe.subscriptions.retrieve(org.stripe_subscription_id);
     const item = subscription.items.data[0];
     if (!item) { res.status(200).json({ skipped: true }); return; }
+    const previousQuantity = item.quantity || 0;
 
-    // 'none' rather than the default 'create_prorations': this fires on
-    // every single team create/delete, which can happen often and
-    // repeatedly within one billing period. Prorating each of those would
-    // pile up confusing partial-period credit/charge line items on the
-    // upcoming invoice; 'none' just lets the new quantity bill cleanly at
-    // its full amount starting the next renewal.
+    // 'none' rather than the default 'create_prorations': day-fraction
+    // proration on every single team create/delete (which can happen often
+    // and repeatedly within one billing period) piles up confusing
+    // partial-period credit/charge line items on the upcoming invoice.
     await stripe.subscriptions.update(org.stripe_subscription_id, {
       items: [{ id: item.id, quantity }],
       proration_behavior: 'none',
@@ -61,6 +60,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // quantity 1), so the webhook can't be relied on to record this sync.
     // Write it here directly instead.
     await serviceClient().from('orgs').update({ billed_step: quantity }).eq('id', orgId);
+
+    // Crossing into a new paid step is billed for immediately, in full —
+    // a flat step price, not a day-based fraction of the current period —
+    // rather than silently deferring the higher amount to next renewal
+    // (which is what 'none' above would otherwise do on its own).
+    // Decreases never trigger this: the floor-at-1 quantity already never
+    // drops, so there's nothing to refund/credit for going down.
+    if (quantity > previousQuantity) {
+      const addedSteps = quantity - previousQuantity;
+      const amount = addedSteps * pricing.pricePerStep;
+      const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer.id;
+      if (amount > 0 && customerId) {
+        try {
+          await stripe.invoiceItems.create({
+            customer: customerId,
+            amount,
+            currency: 'jpy',
+            description: `プラン変更（${previousQuantity} → ${quantity}ステップ）`,
+          });
+          const invoice = await stripe.invoices.create({ customer: customerId, collection_method: 'charge_automatically' });
+          if (invoice.id) {
+            await stripe.invoices.finalizeInvoice(invoice.id);
+            await stripe.invoices.pay(invoice.id);
+          }
+        } catch (invoiceErr) {
+          // Team creation and the quantity sync above already succeeded;
+          // don't fail the whole request over a billing hiccup (e.g. card
+          // decline) — surface it in logs for follow-up instead.
+          console.error('sync-quantity: immediate step-up invoice failed', invoiceErr);
+        }
+      }
+    }
 
     res.status(200).json({ ok: true, quantity });
   } catch (e) {
