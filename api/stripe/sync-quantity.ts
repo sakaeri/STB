@@ -78,6 +78,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const invoice = await stripe.invoices.create({
           customer: customerId,
           collection_method: 'charge_automatically',
+          // Defaults to 'exclude' if omitted — without this, the invoice
+          // item just created above is left out, so the invoice comes back
+          // empty and nothing actually gets charged. The pending item then
+          // just sits there and gets swept into the *next* real renewal
+          // invoice instead, silently defeating the entire point of
+          // billing the step-up immediately.
+          pending_invoice_items_behavior: 'include',
           metadata: { org_id: orgId },
         });
         if (invoice.id) {
