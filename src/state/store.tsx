@@ -1015,13 +1015,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    supabase.auth.getSession().then(({ data }) => {
-      if (cancelled) return;
-      if (data.session) void handleAuthChange('INITIAL_SESSION', data.session);
-    });
     void actions.loadPublicTerms();
     void actions.loadPublicBranding();
     void actions.loadPublicPricing();
+    // onAuthStateChange already fires once immediately on subscribe with
+    // the current session (event 'INITIAL_SESSION') — a separate manual
+    // getSession() call here used to run the same expensive profile/org
+    // fetch sequence a second time, in parallel, on every load.
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (cancelled) return;
       void handleAuthChange(event, session);
