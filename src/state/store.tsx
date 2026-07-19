@@ -3,7 +3,7 @@ import type {
   AppState, Store, Transaction, TrashItem, ConfirmDialogState, MemoModalState, Member, HqMember, MemoTopic,
 } from '../types';
 import { createInitialState } from './mockData';
-import { supabase } from '../lib/supabase';
+import { supabase, isPasswordRecoveryLink, clearPasswordRecoveryLink } from '../lib/supabase';
 import { fetchMyOrgs, fetchOrgData, createOrgWithFirstTeam } from './dataLoader';
 import {
   fetchAdminOrgs, fetchAuditLog, fetchAppSettings, addAuditLog,
@@ -212,6 +212,9 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       if (p1 !== p2) { set({ authError: 'パスワードが一致しません' }); return; }
       const { error } = await supabase.auth.updateUser({ password: p1 });
       if (error) { set({ authError: translateAuthError(error) }); return; }
+      // Otherwise a real login right after this would still get forced
+      // back to the reset view by the same guard that got them here.
+      clearPasswordRecoveryLink();
       set({ authView: 'login', authError: '', resetPassword: '', resetPasswordConfirm: '' });
     },
     doResendVerify: async () => {
@@ -1164,13 +1167,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
 
     async function handleAuthChange(event: string, session: { user: { id: string } } | null) {
-      if (event === 'PASSWORD_RECOVERY') {
-        // This event still carries a real session (Supabase signs the
-        // user in temporarily so updateUser() can set the new password),
-        // but falling through into the normal session/org load below
-        // would set state.session and send them straight into the main
-        // app instead of the "set a new password" form — since App.tsx
-        // routes on state.session alone, not authView.
+      if (event === 'PASSWORD_RECOVERY' || isPasswordRecoveryLink()) {
+        // onAuthStateChange always fires an INITIAL_SESSION event first
+        // (synchronously as part of subscribing), and only afterward the
+        // actual PASSWORD_RECOVERY one (Supabase schedules it via
+        // setTimeout inside its own init) — so on a fresh load from a
+        // reset-password email link, INITIAL_SESSION arrives with the
+        // recovery session already attached and would otherwise be
+        // treated as a normal login before PASSWORD_RECOVERY ever gets a
+        // chance to say otherwise. isPasswordRecoveryLink() is captured
+        // straight from the URL before Supabase can touch it, so it
+        // catches this on the very first event, event name aside.
         set({ authView: 'reset', authError: '', resetPassword: '', resetPasswordConfirm: '' });
         return;
       }
