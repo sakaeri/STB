@@ -144,18 +144,20 @@ export default function SettingsPage() {
             <h2 style={cardTitleStyle}>本部（会社）情報</h2>
             <p style={cardSubStyle}>この{unitLabel}が属する本部の情報です。</p>
           </div>
-          {isHqView && (
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fff', background: plan.color, padding: '6px 12px', borderRadius: 8, flex: 'none' }}>
-              {plan.label} ・ {state.stores.length}{unitLabel}
-            </span>
-          )}
           {canEditCompanyInfo && !state.editingCompanyInfo && (
             <button onClick={actions.openCompanyInfoEdit} style={{ height: 32, padding: '0 14px', borderRadius: 9, background: accentSoft(accent), color: accent, fontWeight: 700, fontSize: 12.5, flex: 'none' }}>変更</button>
           )}
-          {showDowngradePrompt && downgradeCand && (
-            <button onClick={actions.confirmDowngrade} title={`次回更新分から${downgradeCand.label}に変更します`} style={{ fontSize: 11, fontWeight: 700, color: accent, background: accentSoft(accent), padding: '6px 10px', borderRadius: 8, flex: 'none' }}>{downgradeCand.label}に変更</button>
-          )}
         </div>
+        {isHqView && (
+          <div style={{ padding: '14px 22px 0', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fff', background: plan.color, padding: '6px 12px', borderRadius: 8, flex: 'none' }}>
+              {plan.label} ・ {state.stores.length}{unitLabel}
+            </span>
+            {showDowngradePrompt && downgradeCand && (
+              <button onClick={actions.confirmDowngrade} title={`次回更新分から${downgradeCand.label}に変更します`} style={{ fontSize: 11, fontWeight: 700, color: accent, background: accentSoft(accent), padding: '6px 10px', borderRadius: 8, flex: 'none' }}>{downgradeCand.label}に変更</button>
+            )}
+          </div>
+        )}
         {canEditCompanyInfo && state.editingCompanyInfo ? (
           <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 18 }}>
             <div>
