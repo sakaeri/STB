@@ -35,8 +35,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { data: org, error: orgErr } = await supabase
       .from('orgs').select('id, stripe_subscription_id').eq('id', orgId).single();
-    if (orgErr || !org || !org.stripe_subscription_id) {
-      res.status(400).json({ error: '契約情報が見つかりませんでした' });
+    if (orgErr || !org) {
+      res.status(400).json({ error: '本部情報が見つかりませんでした' });
       return;
     }
 
@@ -51,10 +51,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // owner-initiated action, so 0 is allowed here.
     const targetStep = stepsForCount(count || 0, pricing);
 
+    if (!org.stripe_subscription_id) {
+      // Nothing is actually being billed right now (never subscribed, or
+      // a past cancellation left billed_step stale) — there's no Stripe
+      // subscription to adjust, so just correct the stored step directly
+      // instead of erroring out with "no contract found" for an action
+      // that, from the owner's point of view, is simply "go to Free".
+      const service = serviceClient();
+      await service.from('orgs').update({ billed_step: targetStep }).eq('id', orgId);
+      const label = targetStep === 0 ? 'Free' : `¥${(targetStep * pricing.pricePerStep).toLocaleString('ja-JP')}/月`;
+      await service.from('admin_audit_log').insert({ text: `本部が手動でプランを${label}に変更しました（契約なし・本部ID: ${orgId}）` });
+      res.status(200).json({ ok: true, quantity: targetStep });
+      return;
+    }
+
     const stripe = getStripe();
-    const subscription = await stripe.subscriptions.retrieve(org.stripe_subscription_id);
-    const item = subscription.items.data[0];
-    if (!item) { res.status(400).json({ error: '契約情報が見つかりませんでした' }); return; }
+    // Defensively re-verify the subscription is actually still live (the
+    // webhook clears stripe_subscription_id on cancellation, but a stale
+    // id or a Stripe-side inconsistency shouldn't hard-fail this action —
+    // fall back to the "nothing to adjust" path above instead).
+    const subscription = await stripe.subscriptions.retrieve(org.stripe_subscription_id).catch(() => null);
+    const item = subscription && subscription.status !== 'canceled' ? subscription.items.data[0] : null;
+    if (!item) {
+      const service = serviceClient();
+      await service.from('orgs').update({ stripe_subscription_id: null, billed_step: targetStep }).eq('id', orgId);
+      const label = targetStep === 0 ? 'Free' : `¥${(targetStep * pricing.pricePerStep).toLocaleString('ja-JP')}/月`;
+      await service.from('admin_audit_log').insert({ text: `本部が手動でプランを${label}に変更しました（契約なし・本部ID: ${orgId}）` });
+      res.status(200).json({ ok: true, quantity: targetStep });
+      return;
+    }
 
     if (targetStep === 0) {
       // Stripe subscription items can't have quantity 0 — reaching true

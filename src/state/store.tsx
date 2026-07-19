@@ -834,9 +834,20 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     downgradePlan: async () => {
       const st = getState();
       if (!st.activeOrgId) return;
-      const { error } = await callBillingApi('/api/stripe/downgrade-plan', st.activeOrgId);
-      if (error) { alert(error); return; }
-      await reloadActiveOrg();
+      // callBillingApi can reject outright (network failure) rather than
+      // resolving with { error } — without this, that path throws inside
+      // an unawaited async action and fails completely silently (no
+      // alert, no state change), which is exactly the "nothing happens"
+      // symptom this action kept getting reported for.
+      try {
+        const { error } = await callBillingApi('/api/stripe/downgrade-plan', st.activeOrgId);
+        if (error) { alert(error); return; }
+        await reloadActiveOrg();
+        alert('プランを変更しました。');
+      } catch (e) {
+        console.error('downgradePlan failed', e);
+        alert('プラン変更に失敗しました。時間をおいて再度お試しください。');
+      }
     },
     dismissDowngrade: () => { /* no-op */ },
 
