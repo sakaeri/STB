@@ -301,7 +301,6 @@ export interface AppState {
   profileEditing: boolean;
   profileSaved: boolean;
   profileError: string;
-  profilePasswordVisible: boolean;
   showProfileModal: boolean;
   emailChangeStep: 'code' | null;
   emailChangeCodeInput: string;

@@ -89,7 +89,6 @@ export function createInitialState(): AppState {
     profileEditing: false,
     profileSaved: false,
     profileError: '',
-    profilePasswordVisible: false,
     showProfileModal: false,
     emailChangeStep: null,
     emailChangeCodeInput: '',

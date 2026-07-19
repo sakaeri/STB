@@ -65,17 +65,13 @@ export default function ProfileModal() {
             </div>
             <div>
               <label style={labelStyle}>パスワード（6文字以上）</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={state.profilePasswordVisible ? 'text' : 'password'}
-                  value={draft.password}
-                  onChange={(e) => actions.onOwnerProfilePassword(e.target.value)}
-                  style={{ ...inputStyle, padding: '10px 52px 10px 12px' }}
-                />
-                <button onClick={actions.toggleProfilePasswordVisible} style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', width: 42, height: 30, borderRadius: 7, color: '#8a909a', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {state.profilePasswordVisible ? '隠す' : '表示'}
-                </button>
-              </div>
+              <input
+                type="text"
+                value={draft.password}
+                onChange={(e) => actions.onOwnerProfilePassword(e.target.value)}
+                placeholder="変更する場合のみ入力してください"
+                style={inputStyle}
+              />
             </div>
             {state.profileError && <div style={errorBannerStyle}>{state.profileError}</div>}
             <div style={{ display: 'flex', gap: 10 }}>

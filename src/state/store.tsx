@@ -304,12 +304,11 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     // Email and password both start blank — like password, leaving email
     // empty means "keep as-is"; this also stops browsers autofilling the
     // saved password into what's meant to be a fresh "new password" field.
-    openProfileEdit: () => set((s) => ({ profileEditing: true, profileDraft: { ...s.ownerProfile, email: '', password: '' }, profileSaved: false, profileError: '', profilePasswordVisible: false })),
+    openProfileEdit: () => set((s) => ({ profileEditing: true, profileDraft: { ...s.ownerProfile, email: '', password: '' }, profileSaved: false, profileError: '' })),
     cancelProfileEdit: () => set({ profileEditing: false }),
     onOwnerProfileName: (v: string) => set((s) => ({ profileDraft: { ...(s.profileDraft as NonNullable<AppState['profileDraft']>), name: v } })),
     onOwnerProfileEmail: (v: string) => set((s) => ({ profileDraft: { ...(s.profileDraft as NonNullable<AppState['profileDraft']>), email: v } })),
     onOwnerProfilePassword: (v: string) => set((s) => ({ profileDraft: { ...(s.profileDraft as NonNullable<AppState['profileDraft']>), password: v } })),
-    toggleProfilePasswordVisible: () => set((s) => ({ profilePasswordVisible: !s.profilePasswordVisible })),
     saveOwnerProfile: async () => {
       const st = getState();
       const d = st.profileDraft;
