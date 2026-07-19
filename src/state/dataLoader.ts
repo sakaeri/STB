@@ -13,6 +13,7 @@ export interface LoadedOrgData {
   unitLabelPlural: string | null;
   orgStatus: 'active' | 'frozen';
   hasStripeSubscription: boolean;
+  orgBilledStep: number;
   stores: Store[];
   hqMembers: HqMember[];
   members: Member[];
@@ -189,6 +190,7 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
     unitLabel: orgRow.unit_label, unitLabelPlural: orgRow.unit_label_plural,
     orgStatus: orgRow.status as 'active' | 'frozen',
     hasStripeSubscription: !!orgRow.stripe_subscription_id,
+    orgBilledStep: Number(orgRow.billed_step) || 0,
     stores, hqMembers, members, transactions, memoTopics, trash, confirmedPeriods, logoMap,
   };
 }

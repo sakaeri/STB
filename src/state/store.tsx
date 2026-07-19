@@ -9,7 +9,7 @@ import {
   fetchAdminOrgs, fetchAuditLog, fetchAppSettings, addAuditLog,
   saveAppSettingsBilling, saveAppSettingsTerms, fetchPublicTerms, fetchPublicAppLogo, fetchPublicPricing,
 } from './adminData';
-import { planForCount, type PlanStep } from '../tokens';
+import { planForCount, billedPlanFor, type PlanStep } from '../tokens';
 
 type Patch = Partial<AppState> | ((s: AppState) => Partial<AppState>);
 
@@ -73,7 +73,10 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
   };
 
   const activeTeamCount = () => getState().stores.length;
-  const effectivePlan = () => planForCount(activeTeamCount(), getState().pricingConfig);
+  const effectivePlan = () => {
+    const st = getState();
+    return billedPlanFor(activeTeamCount(), st.orgBilledStep, st.pricingConfig);
+  };
   // downgrades (removing teams) never prompt — only step-ups need the
   // upgrade-confirmation + Stripe checkout/sync flow.
   const downgradeCandidatePlan = (): PlanStep | null => null;

@@ -3,7 +3,7 @@
 // dataLoader.ts since it queries across every org, gated by profiles.is_admin
 // via RLS admin-bypass policies rather than org/team membership.
 import { supabase } from '../lib/supabase';
-import { planForCount, DEFAULT_PRICING, type PricingConfig } from '../tokens';
+import { billedPlanFor, DEFAULT_PRICING, type PricingConfig } from '../tokens';
 import { currentPeriodKey } from './calc';
 import type { AdminMockOrg, AuditLogEntry } from '../types';
 
@@ -19,7 +19,7 @@ export interface AdminSettingsData {
 export async function fetchAdminOrgs(pricing: PricingConfig = DEFAULT_PRICING): Promise<AdminMockOrg[]> {
   const { data: orgs, error: orgsErr } = await supabase
     .from('orgs')
-    .select('id, name, rep, reading, address, status, created_at')
+    .select('id, name, rep, reading, address, status, created_at, billed_step')
     .order('created_at', { ascending: true });
   if (orgsErr) throw orgsErr;
 
@@ -53,10 +53,11 @@ export async function fetchAdminOrgs(pricing: PricingConfig = DEFAULT_PRICING): 
     const history: AdminMockOrg['history'] = {};
     monthMap.forEach((sales, month) => { history[month] = { teams: teamCount, sales }; });
     if (!history[nowKey]) history[nowKey] = { teams: teamCount, sales: 0 };
+    const billedStep = Number(o.billed_step) || 0;
     return {
       id: o.id, name: o.name, rep: o.rep, reading: o.reading || '',
       teams: teamCount, monthlySales: history[nowKey].sales,
-      plan: planForCount(teamCount, pricing).label, status: o.status as 'active' | 'frozen',
+      plan: billedPlanFor(teamCount, billedStep, pricing).label, billedStep, status: o.status as 'active' | 'frozen',
       joinedAt: (o.created_at as string).slice(0, 10), address: o.address, history,
     };
   });

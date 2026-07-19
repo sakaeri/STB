@@ -30,6 +30,7 @@ export function createInitialState(): AppState {
     unitLabelPlural: null,
     orgStatus: 'active',
     hasStripeSubscription: false,
+    orgBilledStep: 0,
 
     stores: [],
     members: [],

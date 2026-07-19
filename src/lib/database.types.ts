@@ -19,6 +19,7 @@ export interface Database {
           created_by: string | null; created_at: string; status: 'active' | 'frozen'; reading: string;
           stripe_customer_id: string | null; stripe_subscription_id: string | null;
           daily_closing_enabled: boolean;
+          billed_step: number;
         };
         Insert: Partial<Database['public']['Tables']['orgs']['Row']> & { name: string };
         Update: Partial<Database['public']['Tables']['orgs']['Row']>;

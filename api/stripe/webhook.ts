@@ -55,10 +55,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         break;
       }
+      case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const sub = event.data.object as Stripe.Subscription;
         const orgId = sub.metadata?.org_id;
         const active = sub.status === 'active' || sub.status === 'trialing';
+        if (orgId) {
+          const quantity = sub.items.data[0]?.quantity ?? 0;
+          await supabase.from('orgs').update({ billed_step: quantity }).eq('id', orgId);
+        }
         await setOrgStatus(orgId, active ? 'active' : 'frozen', active ? '凍結解除' : '凍結');
         break;
       }

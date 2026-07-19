@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useStore } from '../../state/store.tsx';
-import { planForCount } from '../../tokens';
+import { billedPlanFor } from '../../tokens';
 import { adminMatchesSearch } from '../../state/calc';
 import { adminMonthLabel, monthDataFor, prefectureOf } from './shared';
 import type { AdminMockOrg } from '../../types';
@@ -16,7 +16,7 @@ export default function OrgsTab() {
   const statFrozenCount = orgs.filter((o) => o.status === 'frozen').length;
   const statBillingTotal = orgs
     .filter((o) => o.status === 'active')
-    .reduce((sum, o) => sum + planForCount(monthDataFor(o, month).teams, state.pricingConfig).price, 0);
+    .reduce((sum, o) => sum + billedPlanFor(monthDataFor(o, month).teams, o.billedStep, state.pricingConfig).price, 0);
 
   const prefOptions = Array.from(new Set(orgs.map((o) => prefectureOf(o.address)))).sort();
 
@@ -181,7 +181,7 @@ function OrgRow({ org, month }: { org: AdminMockOrg; month: string }) {
   const isFrozen = org.status === 'frozen';
   // Frozen orgs haven't completed Stripe payment, so no revenue is actually
   // being collected — show ¥0 rather than the team-count-derived plan price.
-  const plan = isFrozen ? { label: '¥0/月（凍結中）', color: '#c2453d' } : planForCount(teams, state.pricingConfig);
+  const plan = isFrozen ? { label: '¥0/月（凍結中）', color: '#c2453d' } : billedPlanFor(teams, org.billedStep, state.pricingConfig);
   const showActionMenu = state.adminActionMenuOrgId === org.id;
   const showDetail = state.adminDetailOrgId === org.id;
 

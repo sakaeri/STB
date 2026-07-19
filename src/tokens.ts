@@ -90,8 +90,7 @@ export function stepsForCount(n: number, pricing: PricingConfig): number {
   return Math.max(0, Math.ceil((n - pricing.freeTeams) / pricing.teamsPerStep));
 }
 
-export function planForCount(n: number, pricing: PricingConfig = DEFAULT_PRICING): PlanStep {
-  const step = stepsForCount(n, pricing);
+export function planForStep(step: number, pricing: PricingConfig = DEFAULT_PRICING): PlanStep {
   const price = step * pricing.pricePerStep;
   return {
     step,
@@ -99,6 +98,19 @@ export function planForCount(n: number, pricing: PricingConfig = DEFAULT_PRICING
     label: step === 0 ? 'Free' : `¥${price.toLocaleString('ja-JP')}/月`,
     color: step === 0 ? '#8a909a' : '#1f7a5a',
   };
+}
+
+export function planForCount(n: number, pricing: PricingConfig = DEFAULT_PRICING): PlanStep {
+  return planForStep(stepsForCount(n, pricing), pricing);
+}
+
+// Stripe's billed subscription quantity never auto-drops once a team count
+// decrease brings an org back within an already-paid tier (or the free
+// tier) — only an explicit unsubscribe does that (see
+// api/stripe/sync-quantity.ts). So the plan actually being charged is
+// never less than what the live team count alone would imply.
+export function billedPlanFor(teamCount: number, billedStep: number, pricing: PricingConfig = DEFAULT_PRICING): PlanStep {
+  return planForStep(Math.max(stepsForCount(teamCount, pricing), billedStep), pricing);
 }
 
 export const radius = {

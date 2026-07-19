@@ -142,6 +142,7 @@ export interface AdminMockOrg {
   teams: number;
   monthlySales: number;
   plan: string;
+  billedStep: number;
   status: 'active' | 'frozen';
   joinedAt: string;
   address: string;
@@ -234,6 +235,7 @@ export interface AppState {
   unitLabelPlural: string | null;
   orgStatus: 'active' | 'frozen';
   hasStripeSubscription: boolean;
+  orgBilledStep: number;
 
   // data
   stores: Store[];
