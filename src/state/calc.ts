@@ -129,6 +129,35 @@ export function periodDataPrev(
   return monthData(store, year, month - 1, transactions);
 }
 
+// The raw transactions behind periodData()'s totals, for CSV/PDF exports
+// that need line-item detail rather than just the aggregate numbers.
+export function periodTransactions(
+  store: Store,
+  aggUnit: string,
+  month: number,
+  year: number,
+  periodDate: string,
+  transactions: Record<string, Transaction[]>,
+): Transaction[] {
+  const tx = transactions[store.id] || [];
+  let filtered: Transaction[];
+  if (aggUnit === 'year') {
+    filtered = tx.filter((t) => parseInt(t.date.slice(0, 4), 10) === year);
+  } else if (aggUnit === 'week') {
+    const from = mondayOf(periodDate);
+    const to = addDays(from, 6);
+    filtered = tx.filter((t) => t.date >= from && t.date <= to);
+  } else if (aggUnit === 'day') {
+    filtered = tx.filter((t) => t.date === periodDate);
+  } else {
+    const totalMonths = year * 12 + month;
+    const yr = Math.floor(totalMonths / 12);
+    const mi = ((totalMonths % 12) + 12) % 12;
+    filtered = tx.filter((t) => parseInt(t.date.slice(0, 4), 10) === yr && parseInt(t.date.slice(5, 7), 10) - 1 === mi);
+  }
+  return [...filtered].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+}
+
 export function toHiragana(str: string): string {
   return (str || '').replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60)).toLowerCase();
 }

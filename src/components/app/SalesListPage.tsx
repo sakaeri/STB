@@ -5,12 +5,14 @@ import { useStore } from '../../state/store.tsx';
 import {
   periodData,
   periodDataPrev,
+  periodTransactions,
   periodLabel,
   closingDayPassedForCurrentMonth,
   targetPeriodKey,
   targetPeriodLabel,
   yesterdayKey,
   yesterdayLabel,
+  yen,
 } from '../../state/calc';
 import { buildRow, isPeriodConfirmed } from './rowHelpers';
 import KpiCards from './KpiCards';
@@ -101,6 +103,11 @@ export default function SalesListPage() {
   const frozen = state.orgStatus === 'frozen' && isHq;
   const openStore = (id: string) => actions.openStoreDrawer(id);
 
+  const csvField = (v: string | number) => {
+    const s = String(v);
+    return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+
   const doExportCsv = () => {
     const header = [unitLabel, '売上', '経費', '粗利', 'ロイヤリティ', '貯蓄'];
     const lines = [header.join(',')];
@@ -108,6 +115,16 @@ export default function SalesListPage() {
       const d = periodData(s, state.aggUnit, state.month, state.year || 2026, state.periodDate, state.transactions);
       lines.push([s.name, d.sales, d.expense, d.profit, d.royalty, d.savings].join(','));
     });
+
+    lines.push('');
+    lines.push(['取引明細', '日付', '種別', '内容', '金額'].map(csvField).join(','));
+    visible.forEach((s) => {
+      const tx = periodTransactions(s, state.aggUnit, state.month, state.year || 2026, state.periodDate, state.transactions);
+      tx.forEach((t) => {
+        lines.push([s.name, t.date, t.type === 'sales' ? '売上' : '経費', t.title, t.amount].map(csvField).join(','));
+      });
+    });
+
     const unitTag = ({ day: '日別', week: '週別', month: '月別', year: '年間' } as Record<string, string>)[state.aggUnit] || state.aggUnit;
     const csv = '\uFEFF' + lines.join('\r\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -444,6 +461,32 @@ export default function SalesListPage() {
                     <td style={{ borderBottom: '1px solid #ccc', padding: '5px 8px' }}>{r.savingsFmt}</td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+
+            <h2 style={{ fontSize: 13, fontWeight: 700, margin: '18px 0 8px' }}>取引明細</h2>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10.5 }}>
+              <thead>
+                <tr>
+                  {[unitLabel, '日付', '種別', '内容', '金額'].map((h) => (
+                    <th key={h} style={{ textAlign: 'left', borderBottom: '1.5px solid #000', padding: '4px 6px' }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {visible.flatMap((s) =>
+                  periodTransactions(s, state.aggUnit, state.month, state.year || 2026, state.periodDate, state.transactions).map((t) => (
+                    <tr key={t.id}>
+                      <td style={{ borderBottom: '1px solid #ccc', padding: '4px 6px' }}>{s.name}</td>
+                      <td style={{ borderBottom: '1px solid #ccc', padding: '4px 6px' }}>{t.date}</td>
+                      <td style={{ borderBottom: '1px solid #ccc', padding: '4px 6px' }}>{t.type === 'sales' ? '売上' : '経費'}</td>
+                      <td style={{ borderBottom: '1px solid #ccc', padding: '4px 6px' }}>{t.title}</td>
+                      <td style={{ borderBottom: '1px solid #ccc', padding: '4px 6px' }}>{yen(t.amount)}</td>
+                    </tr>
+                  )),
+                )}
               </tbody>
             </table>
           </div>,
