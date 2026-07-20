@@ -3,7 +3,7 @@
 // large amount of query/mapping code doesn't crowd out the action logic.
 import { supabase } from '../lib/supabase';
 import type {
-  Store, Member, HqMember, Transaction, MemoTopic, TrashItem, CompanyInfo, Defaults, Org,
+  Store, Member, HqMember, Transaction, EntryPreset, MemoTopic, TrashItem, CompanyInfo, Defaults, Org,
 } from '../types';
 
 export interface LoadedOrgData {
@@ -18,6 +18,7 @@ export interface LoadedOrgData {
   hqMembers: HqMember[];
   members: Member[];
   transactions: Record<string, Transaction[]>;
+  entryPresets: Record<string, EntryPreset[]>;
   memoTopics: MemoTopic[];
   trash: TrashItem[];
   confirmedPeriods: Record<string, boolean>;
@@ -106,13 +107,16 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
   const teamIds = teams.map((t) => t.id);
   const teamNameById = new Map(teams.map((t) => [t.id, t.name]));
 
-  const [orgMembersRes, teamMembersRes, txRes, topicsRes, trashRes, confirmedRes] = await Promise.all([
+  const [orgMembersRes, teamMembersRes, txRes, presetsRes, topicsRes, trashRes, confirmedRes] = await Promise.all([
     supabase.from('org_members').select('id, user_id, role, profiles(name)').eq('org_id', orgId),
     teamIds.length
       ? supabase.from('team_members').select('id, user_id, team_id, role, profiles(name)').in('team_id', teamIds)
       : Promise.resolve({ data: [], error: null }),
     teamIds.length
       ? supabase.from('transactions').select('*').in('team_id', teamIds).order('date', { ascending: false })
+      : Promise.resolve({ data: [], error: null }),
+    teamIds.length
+      ? supabase.from('entry_presets').select('*').in('team_id', teamIds).order('created_at', { ascending: true })
       : Promise.resolve({ data: [], error: null }),
     // Nested embed pulls topics + their entries + those entries' records in
     // one round trip instead of three sequential ones (each still scoped by
@@ -126,6 +130,7 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
   if (orgMembersRes.error) throw orgMembersRes.error;
   if (teamMembersRes.error) throw teamMembersRes.error;
   if (txRes.error) throw txRes.error;
+  if (presetsRes.error) throw presetsRes.error;
   if (topicsRes.error) throw topicsRes.error;
   if (trashRes.error) throw trashRes.error;
   if (confirmedRes.error) throw confirmedRes.error;
@@ -160,6 +165,12 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
       id: row.id, type: row.type, title: row.title, amount: Number(row.amount), date: row.date, photo: row.photo_url,
       createdAt: row.created_at, source: row.source === 'csv' ? 'csv' : 'manual',
     });
+  });
+
+  const entryPresets: Record<string, EntryPreset[]> = {};
+  (presetsRes.data || []).forEach((row) => {
+    const list = entryPresets[row.team_id] || (entryPresets[row.team_id] = []);
+    list.push({ id: row.id, type: row.type, title: row.title, amount: Number(row.amount) });
   });
 
   const memoTopics: MemoTopic[] = topics.map((t) => {
@@ -212,6 +223,6 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
     orgStatus: orgRow.status as 'active' | 'frozen',
     hasStripeSubscription: !!orgRow.stripe_subscription_id,
     orgBilledStep: Number(orgRow.billed_step) || 0,
-    stores, hqMembers, members, transactions, memoTopics, trash, confirmedPeriods, logoMap,
+    stores, hqMembers, members, transactions, entryPresets, memoTopics, trash, confirmedPeriods, logoMap,
   };
 }

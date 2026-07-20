@@ -48,6 +48,9 @@ export default function EntryModal() {
   const amountNum = parseInt(draft.amount, 10) || 0;
   const valid = amountNum > 0;
 
+  const presets = (state.entryPresets[draft.storeId] || []).filter((p) => p.type === draft.type);
+  const presetExists = presets.some((p) => p.title === titleLocal.trim() && p.amount === amountNum);
+
   // Only fold the in-progress amount into the preview if its date actually
   // falls within the month being displayed — the date field is editable,
   // so it doesn't always match.
@@ -107,6 +110,30 @@ export default function EntryModal() {
                 width:100% on mobile — give it a natural, fixed width instead. */}
             <input type="date" value={draft.date} onChange={(e) => actions.onEntryDate(e.target.value)} style={{ ...inputStyle, width: 168 }} />
           </div>
+          {presets.length > 0 && (
+            <div>
+              <label style={labelStyle}>よく使う項目</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {presets.map((p) => (
+                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 4, border: '1.5px solid #dfe3e8', borderRadius: 9, background: '#fafbfc' }}>
+                    <button
+                      onClick={() => { setTitleLocal(p.title); actions.onEntryAmount(String(p.amount)); }}
+                      style={{ padding: '7px 4px 7px 11px', fontSize: 12.5, fontWeight: 700, color: '#3a4150' }}
+                    >
+                      {p.title} <span style={{ color: '#8a909a', fontWeight: 500 }}>¥{Math.round(p.amount).toLocaleString('ja-JP')}</span>
+                    </button>
+                    <button
+                      onClick={() => actions.deleteEntryPreset(draft.storeId, p.id)}
+                      title="削除"
+                      style={{ padding: '7px 9px 7px 2px', fontSize: 11, color: '#c3c8d0' }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <div>
             <label style={labelStyle}>項目名</label>
             <input
@@ -129,6 +156,14 @@ export default function EntryModal() {
                 style={{ flex: 1, border: 'none', outline: 'none', fontSize: 19, fontWeight: 700, padding: '13px 0 13px 8px', fontVariantNumeric: 'tabular-nums', background: 'transparent' }}
               />
             </div>
+            {titleLocal.trim() && amountNum > 0 && !presetExists && (
+              <button
+                onClick={() => actions.saveEntryPreset(draft.storeId, draft.type, titleLocal, amountNum)}
+                style={{ marginTop: 8, fontSize: 11.5, fontWeight: 700, color: state.accent }}
+              >
+                ＋ この内容を「よく使う項目」に保存
+              </button>
+            )}
           </div>
           <div>
             <label style={labelStyle}>写真（任意）</label>

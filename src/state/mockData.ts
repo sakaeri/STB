@@ -36,6 +36,7 @@ export function createInitialState(): AppState {
     members: [],
     hqMembers: [],
     transactions: {},
+    entryPresets: {},
     memoTopics: [],
     trash: [],
     companyInfo: { name: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4, dailyClosingEnabled: false },

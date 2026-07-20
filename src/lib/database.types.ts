@@ -55,6 +55,11 @@ export interface Database {
         };
         Update: Partial<Database['public']['Tables']['transactions']['Row']>;
       };
+      entry_presets: {
+        Row: { id: string; team_id: string; type: 'sales' | 'expense'; title: string; amount: number; created_at: string };
+        Insert: { id?: string; team_id: string; type: 'sales' | 'expense'; title: string; amount: number };
+        Update: never;
+      };
       memo_topics: {
         Row: { id: string; org_id: string; team_id: string | null; hq_only: boolean; name: string; created_by: string | null; created_at: string };
         Insert: { id?: string; org_id: string; team_id?: string | null; hq_only?: boolean; name: string; created_by?: string | null };

@@ -576,6 +576,19 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       await supabase.from('transactions').delete().eq('id', id);
     },
 
+    // ===== entry presets (よく使う項目) =====
+    saveEntryPreset: async (storeId: string, type: 'sales' | 'expense', title: string, amount: number) => {
+      const t = title.trim();
+      if (!t || amount <= 0) return;
+      const { error } = await supabase.from('entry_presets').insert({ team_id: storeId, type, title: t, amount });
+      if (error) { console.error('saveEntryPreset failed', error); return; }
+      await reloadActiveOrg();
+    },
+    deleteEntryPreset: async (storeId: string, id: string) => {
+      set((s) => ({ entryPresets: { ...s.entryPresets, [storeId]: (s.entryPresets[storeId] || []).filter((p) => p.id !== id) } }));
+      await supabase.from('entry_presets').delete().eq('id', id);
+    },
+
     // ===== bank CSV import =====
     // One CSV can mix multiple teams' money (e.g. an HQ account that
     // collects every store's sales and pays payroll centrally) — so this

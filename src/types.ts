@@ -36,6 +36,13 @@ export interface Transaction {
   source?: 'manual' | 'csv';
 }
 
+export interface EntryPreset {
+  id: string;
+  type: 'sales' | 'expense';
+  title: string;
+  amount: number;
+}
+
 export interface BankCsvRow {
   id: string; // client-side only, for React keys / editing
   date: string;
@@ -151,6 +158,7 @@ export interface OrgSnapshot {
   members: Member[];
   hqMembers: HqMember[];
   transactions: Record<string, Transaction[]>;
+  entryPresets: Record<string, EntryPreset[]>;
   memoTopics: MemoTopic[];
   trash: TrashItem[];
   companyInfo: CompanyInfo;
@@ -278,6 +286,7 @@ export interface AppState {
   members: Member[];
   hqMembers: HqMember[];
   transactions: Record<string, Transaction[]>;
+  entryPresets: Record<string, EntryPreset[]>;
   memoTopics: MemoTopic[];
   trash: TrashItem[];
   companyInfo: CompanyInfo;
