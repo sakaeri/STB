@@ -116,21 +116,21 @@ export function rowsFromCsvTable(table: string[][]): { rows: BankCsvRow[]; error
     const description = descCol !== -1 ? (cells[descCol] || '').trim() : '';
 
     let amount = 0;
-    let kind: BankCsvRow['kind'] = 'ignore';
+    let bankKind: BankCsvRow['bankKind'] = 'deposit';
     if (depositCol !== -1 && parseAmount(cells[depositCol] || '') > 0) {
       amount = parseAmount(cells[depositCol]);
-      kind = 'sales';
+      bankKind = 'deposit';
     } else if (withdrawalCol !== -1 && parseAmount(cells[withdrawalCol] || '') > 0) {
       amount = parseAmount(cells[withdrawalCol]);
-      kind = 'expense';
+      bankKind = 'withdrawal';
     } else if (amountCol !== -1) {
       const raw = parseAmount(cells[amountCol] || '');
       amount = Math.abs(raw);
-      kind = raw >= 0 ? 'sales' : 'expense';
+      bankKind = raw >= 0 ? 'deposit' : 'withdrawal';
     }
     if (amount <= 0) return;
 
-    rows.push({ id: `csv-${i}-${date}-${amount}`, date, description, amount, title: description || (kind === 'sales' ? '売上' : '経費'), kind });
+    rows.push({ id: `csv-${i}-${date}-${amount}`, date, description, amount, title: description || '', bankKind, checked: false });
   });
 
   if (rows.length === 0) return { rows: [], error: '取り込める明細が見つかりませんでした。' };

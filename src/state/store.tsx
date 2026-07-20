@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type {
-  AppState, Store, Transaction, TrashItem, ConfirmDialogState, MemoModalState, Member, HqMember, MemoTopic, BankCsvRow,
+  AppState, Store, Transaction, TrashItem, ConfirmDialogState, MemoModalState, Member, HqMember, MemoTopic,
 } from '../types';
 import { createInitialState } from './mockData';
 import { supabase, isPasswordRecoveryLink, clearPasswordRecoveryLink } from '../lib/supabase';
@@ -570,16 +570,24 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     },
 
     // ===== bank CSV import =====
+    // One CSV can mix multiple teams' money (e.g. an HQ account that
+    // collects every store's sales and pays payroll centrally) — so this
+    // works in batches: pick a team + 売上/経費 up top, tick the rows that
+    // belong to that batch, confirm (saves + removes them from the pending
+    // list below), then repeat with a different team/type for the rest.
     openBankCsvImport: () => {
       const st = getState();
       const isHq = st.viewRole === 'hq';
       const storeId = isHq ? st.stores[0]?.id : st.viewRole;
       if (!storeId) return;
-      set({ bankCsvImport: { storeId, fileName: null, rows: [], parseError: null } });
+      set({ bankCsvImport: { fileName: null, rows: [], parseError: null, batchStoreId: storeId, batchKind: 'sales' } });
     },
     closeBankCsvImport: () => set({ bankCsvImport: null }),
-    onBankCsvImportStoreId: (v: string) => set((s) => ({
-      bankCsvImport: s.bankCsvImport ? { ...s.bankCsvImport, storeId: v } : s.bankCsvImport,
+    onBankCsvBatchStoreId: (v: string) => set((s) => ({
+      bankCsvImport: s.bankCsvImport ? { ...s.bankCsvImport, batchStoreId: v } : s.bankCsvImport,
+    })),
+    onBankCsvBatchKind: (v: 'sales' | 'expense') => set((s) => ({
+      bankCsvImport: s.bankCsvImport ? { ...s.bankCsvImport, batchKind: v } : s.bankCsvImport,
     })),
     onBankCsvFile: async (file: File | null) => {
       if (!file) return;
@@ -594,32 +602,36 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         set((s) => (s.bankCsvImport ? { bankCsvImport: { ...s.bankCsvImport, parseError: 'ファイルの読み込みに失敗しました。' } } : {}));
       }
     },
-    onBankCsvRowKind: (id: string, kind: BankCsvRow['kind']) => set((s) => ({
+    onBankCsvRowChecked: (id: string, checked: boolean) => set((s) => ({
       bankCsvImport: s.bankCsvImport
-        ? { ...s.bankCsvImport, rows: s.bankCsvImport.rows.map((r) => (r.id === id ? { ...r, kind } : r)) }
+        ? { ...s.bankCsvImport, rows: s.bankCsvImport.rows.map((r) => (r.id === id ? { ...r, checked } : r)) }
         : s.bankCsvImport,
+    })),
+    onBankCsvCheckAll: (checked: boolean) => set((s) => ({
+      bankCsvImport: s.bankCsvImport ? { ...s.bankCsvImport, rows: s.bankCsvImport.rows.map((r) => ({ ...r, checked })) } : s.bankCsvImport,
     })),
     onBankCsvRowTitle: (id: string, title: string) => set((s) => ({
       bankCsvImport: s.bankCsvImport
         ? { ...s.bankCsvImport, rows: s.bankCsvImport.rows.map((r) => (r.id === id ? { ...r, title } : r)) }
         : s.bankCsvImport,
     })),
-    saveBankCsvImport: async () => {
+    confirmBankCsvBatch: async () => {
       const st = getState();
       const imp = st.bankCsvImport;
       if (!imp || !st.session) return;
-      const toSave = imp.rows.filter((r) => r.kind !== 'ignore');
-      if (!toSave.length) { set({ bankCsvImport: null }); return; }
+      const toSave = imp.rows.filter((r) => r.checked);
+      if (!toSave.length) return;
       set({ bankCsvImportLoading: true });
       const { error } = await supabase.from('transactions').insert(
         toSave.map((r) => ({
-          team_id: imp.storeId, type: r.kind as 'sales' | 'expense', title: r.title.trim() || (r.kind === 'sales' ? '売上' : '経費'),
+          team_id: imp.batchStoreId, type: imp.batchKind, title: r.title.trim() || (imp.batchKind === 'sales' ? '売上' : '経費'),
           amount: r.amount, date: r.date, created_by: st.session, source: 'csv',
         })),
       );
       set({ bankCsvImportLoading: false });
-      if (error) { console.error('saveBankCsvImport failed', error); alert('取り込みに失敗しました'); return; }
-      set({ bankCsvImport: null });
+      if (error) { console.error('confirmBankCsvBatch failed', error); alert('取り込みに失敗しました'); return; }
+      const savedIds = new Set(toSave.map((r) => r.id));
+      set((s) => (s.bankCsvImport ? { bankCsvImport: { ...s.bankCsvImport, rows: s.bankCsvImport.rows.filter((r) => !savedIds.has(r.id)) } } : {}));
       await reloadActiveOrg();
     },
     requestDeleteTx: (storeId: string, tx: { id: string; title: string; amount: number; date: string }) => {

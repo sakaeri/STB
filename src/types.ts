@@ -42,14 +42,22 @@ export interface BankCsvRow {
   description: string;
   amount: number;
   title: string;
-  kind: 'sales' | 'expense' | 'ignore';
+  bankKind: 'deposit' | 'withdrawal'; // which CSV column it came from — display hint only, doesn't drive saving
+  checked: boolean;
 }
 
+// One CSV can mix multiple teams' transactions (e.g. an HQ account that
+// collects every store's sales and pays payroll centrally) — so saving
+// works in batches: pick a team + 売上/経費, tick the rows that belong to
+// that batch, confirm (saves + removes them from the pending list), then
+// repeat with a different team/type for the rest. A single-team CSV is
+// just one or two of these rounds.
 export interface BankCsvImportState {
-  storeId: string;
   fileName: string | null;
-  rows: BankCsvRow[];
+  rows: BankCsvRow[]; // still-pending, unsaved rows
   parseError: string | null;
+  batchStoreId: string;
+  batchKind: 'sales' | 'expense';
 }
 
 export interface Member {
