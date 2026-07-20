@@ -615,7 +615,27 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         ? { ...s.bankCsvImport, rows: s.bankCsvImport.rows.map((r) => (r.id === id ? { ...r, title } : r)) }
         : s.bankCsvImport,
     })),
-    confirmBankCsvBatch: async () => {
+    // Wrong-team mistakes here mean manually deleting and redoing a whole
+    // batch afterward — worth a confirm step naming exactly what's about
+    // to be registered before it's actually written.
+    confirmBankCsvBatch: () => {
+      const st = getState();
+      const imp = st.bankCsvImport;
+      if (!imp) return;
+      const toSave = imp.rows.filter((r) => r.checked);
+      if (!toSave.length) return;
+      const storeName = st.stores.find((s) => s.id === imp.batchStoreId)?.name || '';
+      const total = toSave.reduce((a, r) => a + r.amount, 0);
+      const kindLabel = imp.batchKind === 'sales' ? '売上' : '経費';
+      openConfirm(
+        'この内容で登録しますか？',
+        `${storeName}の${kindLabel}として ${toSave.length}件・¥${Math.round(total).toLocaleString('ja-JP')} を登録します。`,
+        () => actions.saveBankCsvBatch(),
+        '登録する',
+        false,
+      );
+    },
+    saveBankCsvBatch: async () => {
       const st = getState();
       const imp = st.bankCsvImport;
       if (!imp || !st.session) return;
@@ -629,7 +649,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         })),
       );
       set({ bankCsvImportLoading: false });
-      if (error) { console.error('confirmBankCsvBatch failed', error); alert('取り込みに失敗しました'); return; }
+      if (error) { console.error('saveBankCsvBatch failed', error); alert('取り込みに失敗しました'); return; }
       const savedIds = new Set(toSave.map((r) => r.id));
       set((s) => (s.bankCsvImport ? { bankCsvImport: { ...s.bankCsvImport, rows: s.bankCsvImport.rows.filter((r) => !savedIds.has(r.id)) } } : {}));
       await reloadActiveOrg();
