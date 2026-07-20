@@ -24,9 +24,13 @@ export function computeRoyalty(store: Store, sales: number): number {
   return Math.round((sales * (store.royaltyRate || 0)) / 100 / 1000) * 1000;
 }
 
-export function computeSavings(store: Store, sales: number): number {
+// Rate mode is a % of profit *before* savings (sales minus expense minus
+// royalty) — savings is treated as a bonus set-aside on top of the normal
+// profit figure, not another cost baked into how "profit" itself is
+// derived from sales.
+export function computeSavings(store: Store, preSavingsProfit: number): number {
   if (!store.useSavings) return 0;
-  if ((store.savingsMode || 'amount') === 'rate') return Math.round((sales * (store.savingsRate || 0)) / 100 / 1000) * 1000;
+  if ((store.savingsMode || 'amount') === 'rate') return Math.round((preSavingsProfit * (store.savingsRate || 0)) / 100 / 1000) * 1000;
   return store.savings || 0;
 }
 
@@ -53,8 +57,9 @@ export function monthData(store: Store, year: number, m: number, transactions: R
   const sales = salesTx.reduce((a, t) => a + t.amount, 0);
   const expense = expTx.reduce((a, t) => a + t.amount, 0);
   const royalty = computeRoyalty(store, sales);
-  const savings = computeSavings(store, sales);
-  const profit = sales - expense - royalty - savings;
+  const preSavingsProfit = sales - expense - royalty;
+  const savings = computeSavings(store, preSavingsProfit);
+  const profit = preSavingsProfit - savings;
   return { sales, expense, profit, royalty, savings, hasSavings: !!store.useSavings, isManual: true };
 }
 
