@@ -541,7 +541,6 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     closeEntry: () => set({ showEntry: false, entryDraft: null }),
     onEntryStoreId: (v: string) => set((s) => ({ entryDraft: s.entryDraft ? { ...s.entryDraft, storeId: v } : s.entryDraft })),
     onEntryDate: (v: string) => set((s) => ({ entryDraft: s.entryDraft ? { ...s.entryDraft, date: v } : s.entryDraft })),
-    onEntryTitle: (v: string) => set((s) => ({ entryDraft: s.entryDraft ? { ...s.entryDraft, title: v } : s.entryDraft })),
     onEntryAmount: (v: string) => set((s) => ({ entryDraft: s.entryDraft ? { ...s.entryDraft, amount: v } : s.entryDraft })),
     onEntryPhoto: (file: File | null) => {
       if (!file) return;
@@ -550,15 +549,23 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       reader.readAsDataURL(file);
     },
     onRemovePhoto: () => set((s) => ({ entryDraft: s.entryDraft ? { ...s.entryDraft, photo: null } : s.entryDraft })),
-    saveEntry: async () => {
+    // titleOverride lets the modal keep the title field as purely local
+    // component state while typing (global state updates on every
+    // keystroke were heavy enough, once there's a lot of sales-list data
+    // to recompute, to interrupt Japanese IME composition) and only hand
+    // it off here at save time, instead of round-tripping through global
+    // state (and its "read back via getState() in the same tick" race —
+    // set() doesn't apply synchronously) on every character.
+    saveEntry: async (titleOverride?: string) => {
       const st = getState();
       const d = st.entryDraft;
       if (!d || !st.session) return;
       const amount = Math.max(0, parseInt(d.amount, 10) || 0);
       if (!amount) return;
+      const title = (titleOverride ?? d.title).trim() || (d.type === 'sales' ? '売上' : '経費');
       set({ showEntry: false, entryDraft: null });
       const { error } = await supabase.from('transactions').insert({
-        team_id: d.storeId, type: d.type, title: d.title.trim() || (d.type === 'sales' ? '売上' : '経費'),
+        team_id: d.storeId, type: d.type, title,
         amount, date: d.date, photo_url: d.photo || null, created_by: st.session,
       });
       if (error) { console.error('saveEntry failed', error); return; }

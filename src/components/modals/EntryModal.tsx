@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useStore } from '../../state/store.tsx';
 import { yen } from '../../state/calc';
 
@@ -16,6 +17,14 @@ const inputStyle: React.CSSProperties = {
 
 export default function EntryModal() {
   const { state, actions } = useStore();
+  const [titleLocal, setTitleLocal] = useState('');
+  // Kept local while typing rather than pushed through global state on
+  // every keystroke — the modal stays mounted while closed (returns
+  // null), so this re-syncs from the fresh draft each time it opens.
+  useEffect(() => {
+    if (state.showEntry && state.entryDraft) setTitleLocal(state.entryDraft.title);
+  }, [state.showEntry]);
+
   if (!state.showEntry || !state.entryDraft) return null;
   const draft = state.entryDraft;
 
@@ -70,11 +79,26 @@ export default function EntryModal() {
           {isHq && (
             <div>
               <label style={labelStyle}>{unitLabel}</label>
-              <select value={draft.storeId} onChange={(e) => actions.onEntryStoreId(e.target.value)} style={inputStyle}>
-                {state.stores.map((o) => (
-                  <option key={o.id} value={o.id}>{o.name}</option>
-                ))}
-              </select>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {state.stores.map((o) => {
+                  const active = draft.storeId === o.id;
+                  return (
+                    <button
+                      key={o.id}
+                      onClick={() => actions.onEntryStoreId(o.id)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 9,
+                        border: `1.5px solid ${active ? state.accent : '#dfe3e8'}`,
+                        background: active ? state.accent + '18' : '#fff',
+                        color: active ? state.accent : '#3a4150', fontWeight: 700, fontSize: 12.5,
+                      }}
+                    >
+                      <span style={{ fontSize: 13 }}>{active ? '◎' : '○'}</span>
+                      {o.name}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
           <div>
@@ -87,8 +111,8 @@ export default function EntryModal() {
             <label style={labelStyle}>項目名</label>
             <input
               type="text"
-              value={draft.title}
-              onChange={(e) => actions.onEntryTitle(e.target.value)}
+              value={titleLocal}
+              onChange={(e) => setTitleLocal(e.target.value)}
               placeholder={titlePlaceholder}
               style={{ ...inputStyle, padding: '12px 14px', fontSize: 14.5 }}
             />
@@ -141,7 +165,7 @@ export default function EntryModal() {
             取消
           </button>
           <button
-            onClick={actions.saveEntry}
+            onClick={() => actions.saveEntry(titleLocal)}
             style={{ height: 40, padding: '0 22px', borderRadius: 10, fontWeight: 700, fontSize: 13.5, color: '#fff', background: typeColor, boxShadow: '0 2px 6px rgba(20,40,80,.2)', opacity: valid ? 1 : 0.5 }}
           >
             保存
