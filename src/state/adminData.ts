@@ -36,6 +36,19 @@ export async function fetchAdminOrgs(pricing: PricingConfig = DEFAULT_PRICING): 
     : { data: [], error: null };
   if (txErr) throw txErr;
 
+  // Separate from the sales-only query above (that one intentionally
+  // excludes expenses) — CSV import can produce either type, so this just
+  // asks "does this org have any CSV-sourced row at all" across both.
+  const { data: csvTxs, error: csvTxErr } = teamIds.length
+    ? await supabase.from('transactions').select('team_id').eq('source', 'csv').in('team_id', teamIds)
+    : { data: [], error: null };
+  if (csvTxErr) throw csvTxErr;
+  const orgsUsingCsvImport = new Set<string>();
+  (csvTxs || []).forEach((tx) => {
+    const orgId = teamOrgById.get(tx.team_id);
+    if (orgId) orgsUsingCsvImport.add(orgId);
+  });
+
   const salesByOrgMonth = new Map<string, Map<string, number>>();
   (txs || []).forEach((tx) => {
     const orgId = teamOrgById.get(tx.team_id);
@@ -59,6 +72,7 @@ export async function fetchAdminOrgs(pricing: PricingConfig = DEFAULT_PRICING): 
       teams: teamCount, monthlySales: history[nowKey].sales,
       plan: billedPlanFor(teamCount, billedStep, pricing).label, billedStep, status: o.status as 'active' | 'frozen',
       joinedAt: (o.created_at as string).slice(0, 10), address: o.address, history,
+      usesCsvImport: orgsUsingCsvImport.has(o.id),
     };
   });
 }

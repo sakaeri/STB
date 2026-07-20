@@ -19,6 +19,11 @@ export default function OrgsTab() {
   const statBillingTotal = orgs
     .filter((o) => o.status === 'active')
     .reduce((sum, o) => sum + billedPlanFor(monthDataFor(o, month).teams, o.billedStep, state.pricingConfig).price, 0);
+  // Adoption, not volume — "has this org used CSV import at all", not what
+  // share of its transactions came from it. Meant as a rough signal for
+  // whether a full bank API integration is worth building (see 銀行API連携
+  // discussion — the working number floated was around 60% adoption).
+  const statCsvUsageRate = statOrgCount ? Math.round((orgs.filter((o) => o.usesCsvImport).length / statOrgCount) * 100) : 0;
 
   const monthAuditLog = state.auditLog.filter((log) => log.ts.slice(0, 7) === month);
 
@@ -40,11 +45,12 @@ export default function OrgsTab() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 14 }}>
         <StatCard label="登録本部数" value={statOrgCount.toLocaleString('ja-JP')} />
         <StatCard label="合計チーム数" value={statTeamCount.toLocaleString('ja-JP')} />
         <StatCard label="凍結中の本部" value={statFrozenCount.toLocaleString('ja-JP')} color="#c2453d" />
         <StatCard label="課金合計金額（月額）" value={`¥${statBillingTotal.toLocaleString('ja-JP')}`} color={state.accent} />
+        <StatCard label="銀行CSV取り込み利用率" value={`${statCsvUsageRate}%`} color={statCsvUsageRate >= 60 ? '#1f9d6b' : undefined} />
       </div>
 
       <div style={{ background: '#fff', border: '1px solid #e7e9ed', borderRadius: 15, overflow: 'hidden' }}>

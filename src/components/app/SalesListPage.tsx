@@ -14,7 +14,7 @@ import {
   yesterdayLabel,
   yen,
 } from '../../state/calc';
-import { buildRow, isPeriodConfirmed, myRole, canCreateRole } from './rowHelpers';
+import { buildRow, isPeriodConfirmed } from './rowHelpers';
 import KpiCards from './KpiCards';
 import SalesTable from './SalesTable';
 import SalesCards from './SalesCards';
@@ -113,7 +113,6 @@ export default function SalesListPage() {
   // Only the HQ (aggregate) view is restricted when frozen — a team
   // member looking at only their own store is unaffected.
   const frozen = state.orgStatus === 'frozen' && isHq;
-  const canImport = canCreateRole(myRole(state));
   const openStore = (id: string) => actions.openStoreDrawer(id);
 
   const csvField = (v: string | number) => {
@@ -386,18 +385,6 @@ export default function SalesListPage() {
             </button>
           </div>
           <div style={{ marginLeft: 'auto' }} />
-          {canImport && !frozen && (
-            <button
-              onClick={actions.openBankCsvImport}
-              style={{
-                height: 29, padding: '0 14px', borderRadius: 8, background: '#fff', color: '#3a4150',
-                border: `1px solid ${colors.border}`, fontWeight: 700, fontSize: 12,
-                display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center', cursor: 'pointer',
-              }}
-            >
-              🏦 CSV取り込み
-            </button>
-          )}
           <button
             onClick={doExportCsv}
             disabled={frozen}

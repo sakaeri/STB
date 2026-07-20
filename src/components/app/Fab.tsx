@@ -78,6 +78,15 @@ export default function Fab() {
                 >
                   経費を入力
                 </button>
+                <button
+                  onClick={() => {
+                    actions.closeFabMenu();
+                    actions.openBankCsvImport();
+                  }}
+                  style={menuBtnStyle('#3a4150')}
+                >
+                  銀行CSVを取り込む
+                </button>
               </>
             )}
           </div>

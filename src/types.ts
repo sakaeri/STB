@@ -171,6 +171,7 @@ export interface AdminMockOrg {
   joinedAt: string;
   address: string;
   history: Record<string, { teams: number; sales: number }>;
+  usesCsvImport: boolean;
 }
 
 export interface HqSetupForm {
