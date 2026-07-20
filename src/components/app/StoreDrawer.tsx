@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useStore } from '../../state/store.tsx';
 import { periodData, periodLabel, yen } from '../../state/calc';
 import { accentSoft, colors, roleBg } from '../../tokens';
@@ -16,6 +17,7 @@ import type { Role } from '../../types';
 
 export default function StoreDrawer() {
   const { state, actions } = useStore();
+  const [txListOpen, setTxListOpen] = useState(false);
 
   if (!state.selectedStoreId) return null;
   const store = state.stores.find((s) => s.id === state.selectedStoreId);
@@ -205,7 +207,17 @@ export default function StoreDrawer() {
 
           {/* 取引明細（今月） */}
           <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 18 }}>
-            <div style={{ fontSize: 12.5, fontWeight: 700, color: '#3a4150', marginBottom: 13 }}>今月の取引明細</div>
+            <button
+              onClick={() => setTxListOpen((v) => !v)}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', marginBottom: txListOpen ? 13 : 0, textAlign: 'left' }}
+            >
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: '#3a4150' }}>今月の取引明細</span>
+              <span style={{ fontSize: 11.5, color: colors.faint2 }}>
+                売上{storeTx.filter((t) => t.type === 'sales').length}件・経費{storeTx.filter((t) => t.type === 'expense').length}件
+              </span>
+              <span style={{ marginLeft: 'auto', fontSize: 11, color: colors.faint3, transform: txListOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>▾</span>
+            </button>
+            {txListOpen && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {storeTx.map((t) => {
                 const typeBg = t.type === 'sales' ? '#e4f5ee' : '#fbe7ec';
@@ -269,6 +281,7 @@ export default function StoreDrawer() {
                 </div>
               )}
             </div>
+            )}
           </div>
 
           {/* 店舗設定 */}
