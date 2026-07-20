@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '../../state/store.tsx';
 import { periodData, periodLabel, yen } from '../../state/calc';
 import { accentSoft, colors, roleBg } from '../../tokens';
@@ -18,6 +18,10 @@ import type { Role } from '../../types';
 export default function StoreDrawer() {
   const { state, actions } = useStore();
   const [txListOpen, setTxListOpen] = useState(false);
+  // The drawer stays mounted (just renders null) while closed, so local
+  // state would otherwise carry over — still expanded from last time —
+  // the next time it opens, for the same store or a different one.
+  useEffect(() => { setTxListOpen(false); }, [state.selectedStoreId]);
 
   if (!state.selectedStoreId) return null;
   const store = state.stores.find((s) => s.id === state.selectedStoreId);
