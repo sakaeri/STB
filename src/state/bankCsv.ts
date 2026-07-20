@@ -18,13 +18,22 @@ function findColumn(headers: string[], candidates: string[]): number {
   return headers.findIndex((h) => candidates.some((c) => h.includes(c)));
 }
 
-// Bank CSVs almost always use YYYY/MM/DD, YYYY-MM-DD, or YYYY.MM.DD —
-// normalize whichever shows up to the YYYY-MM-DD the rest of the app uses.
+// Bank CSVs show up as YYYY/MM/DD, YYYY-MM-DD, YYYY.MM.DD, or — GMOあおぞら
+//銀行's own CSV export among others — a plain unseparated YYYYMMDD.
+// Normalize whichever shows up to the YYYY-MM-DD the rest of the app uses.
 function normalizeDate(raw: string): string | null {
-  const m = raw.trim().match(/^(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})$/);
-  if (!m) return null;
-  const [, y, mo, d] = m;
-  return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  const trimmed = raw.trim();
+  const sep = trimmed.match(/^(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})$/);
+  if (sep) {
+    const [, y, mo, d] = sep;
+    return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  }
+  const plain = trimmed.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (plain) {
+    const [, y, mo, d] = plain;
+    return `${y}-${mo}-${d}`;
+  }
+  return null;
 }
 
 function parseAmount(raw: string): number {
