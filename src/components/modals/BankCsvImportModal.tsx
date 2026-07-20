@@ -1,10 +1,6 @@
 import { useStore } from '../../state/store.tsx';
 
 const labelStyle: React.CSSProperties = { fontSize: 12.5, fontWeight: 700, color: '#46505e', display: 'block', marginBottom: 8 };
-const inputStyle: React.CSSProperties = {
-  width: '100%', border: '1.5px solid #dfe3e8', borderRadius: 11, padding: '11px 13px',
-  fontSize: 14, fontWeight: 500, color: '#3a4150', outline: 'none', background: '#fff',
-};
 
 function kindBtnStyle(active: boolean, color: string): React.CSSProperties {
   return {
@@ -68,9 +64,26 @@ export default function BankCsvImportModal() {
                 {isHq && (
                   <div>
                     <label style={{ ...labelStyle, marginBottom: 6 }}>対象{unitLabel}</label>
-                    <select value={imp.batchStoreId} onChange={(e) => actions.onBankCsvBatchStoreId(e.target.value)} style={inputStyle}>
-                      {state.stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {state.stores.map((s) => {
+                        const active = imp.batchStoreId === s.id;
+                        return (
+                          <button
+                            key={s.id}
+                            onClick={() => actions.onBankCsvBatchStoreId(s.id)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 9,
+                              border: `1.5px solid ${active ? state.accent : '#dfe3e8'}`,
+                              background: active ? state.accent + '18' : '#fff',
+                              color: active ? state.accent : '#3a4150', fontWeight: 700, fontSize: 12.5,
+                            }}
+                          >
+                            <span style={{ fontSize: 13 }}>{active ? '◎' : '○'}</span>
+                            {s.name}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
                 <div>
