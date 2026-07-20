@@ -11,11 +11,11 @@ export function yenShort(n: number): string {
 }
 
 export function barColor(a: number): string {
-  return a >= 0.15 ? '#1f9d6b' : a >= 0.05 ? '#d99a2b' : '#d6453d';
+  return a >= 0 ? '#1f9d6b' : '#d6453d';
 }
 
 export function chipBg(a: number): string {
-  return a >= 0.15 ? '#e4f5ee' : a >= 0.05 ? '#fbf1dc' : '#fbe7e5';
+  return a >= 0 ? '#e4f5ee' : '#fbe7e5';
 }
 
 export function computeRoyalty(store: Store, sales: number): number {
