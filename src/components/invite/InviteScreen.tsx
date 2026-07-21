@@ -19,13 +19,6 @@ export default function InviteScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingInviteId]);
 
-  useEffect(() => {
-    if (state.session && pendingInviteId && inviteInfo?.valid && !state.inviteRedeeming && !state.inviteError) {
-      void actions.redeemPendingInvite();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.session, inviteInfo]);
-
   if (!state.session) {
     return (
       <div style={{ position: 'relative' }}>
@@ -60,13 +53,39 @@ export default function InviteScreen() {
   const invalidReason = inviteInfo && !inviteInfo.valid ? inviteReasonText(inviteInfo.reason) : null;
   const errorText = state.inviteError || invalidReason;
 
+  // Already logged in: confirm before joining, rather than silently
+  // redeeming the instant the invite loads — unlike the not-logged-in
+  // flow above (where logging in/signing up is itself the "yes, I want
+  // this" action), a casual or accidental tap on the link here has no
+  // such signal, so joining shouldn't happen without an explicit choice.
+  if (inviteInfo?.valid && !state.inviteRedeeming && !errorText) {
+    return (
+      <div style={outerStyle}>
+        <div style={cardStyle(400)}>
+          <div style={headerStyle}>
+            <h1 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>
+              {inviteInfo.scope === 'org' ? `「${inviteInfo.orgName}」への招待` : `「${inviteInfo.teamName}」への招待`}
+            </h1>
+          </div>
+          <div style={{ padding: '8px 28px 28px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div style={{ fontSize: 12.5, color: '#6b7280', textAlign: 'center', lineHeight: 1.7 }}>
+              {inviteInfo.orgName} に「{inviteInfo.role}」として参加しますか？
+            </div>
+            <button onClick={actions.redeemPendingInvite} style={primaryButtonStyle(state.accent)}>参加する</button>
+            <button onClick={actions.dismissInvite} style={{ fontSize: 12.5, color: '#8a909a', textAlign: 'center' }}>キャンセル</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const title = errorText ? '参加できませんでした' : state.inviteRedeeming ? '参加処理中です…' : '読み込み中…';
+
   return (
     <div style={outerStyle}>
       <div style={cardStyle(400)}>
         <div style={headerStyle}>
-          <h1 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>
-            {errorText ? '参加できませんでした' : '参加処理中です…'}
-          </h1>
+          <h1 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>{title}</h1>
         </div>
         <div style={{ padding: '8px 28px 28px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           {errorText && (
