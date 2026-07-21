@@ -1144,8 +1144,25 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         const { data, error } = await supabase.rpc('redeem_invite', { p_id: st.pendingInviteId });
         if (error) throw error;
         const result = data as { orgId: string; teamId: string };
-        const myOrgs = await fetchMyOrgs(st.session);
-        set((s) => ({ accounts: s.accounts.map((a) => (a.id === s.session ? { ...a, hqCreated: true, orgs: myOrgs } : a)) }));
+        // Fetches its own full profile/org snapshot (post-redemption)
+        // rather than assuming handleAuthChange already populated an
+        // accounts entry to update — it's deliberately skipped doing that
+        // itself while a pending invite exists (see handleAuthChange),
+        // precisely so this is the one place resolving the session.
+        const [{ data: profile }, { data: userRes }, myOrgs] = await Promise.all([
+          supabase.from('profiles').select('*').eq('id', st.session).single(),
+          supabase.auth.getUser(),
+          fetchMyOrgs(st.session),
+        ]);
+        const email = userRes.user?.email || '';
+        const verified = !!userRes.user?.email_confirmed_at;
+        set((s) => {
+          const acc = { id: s.session as string, name: profile?.name || '', email, password: '', verified, hqCreated: true, orgs: myOrgs, isAdmin: !!profile?.is_admin };
+          return {
+            ownerProfile: { name: acc.name, email, password: '' },
+            accounts: s.accounts.some((a) => a.id === s.session) ? s.accounts.map((a) => (a.id === s.session ? acc : a)) : [...s.accounts, acc],
+          };
+        });
         try { localStorage.removeItem('fc_pendingInvite'); } catch { /* noop */ }
         window.history.replaceState({}, '', '/');
         set({ pendingInviteId: null, inviteInfo: null, inviteRedeeming: false });
@@ -1311,6 +1328,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
       if (!session) {
         set({ session: null, accounts: [], activeOrgId: null, stores: [], members: [], hqMembers: [], transactions: {}, memoTopics: [], trash: [] });
+        return;
+      }
+      if (getState().pendingInviteId) {
+        // Let InviteScreen's own redeemPendingInvite() be the one and only
+        // place that resolves this session — it fetches profile/org data
+        // itself, *after* redeeming. This handler's own fetch below is
+        // computed from *before* redemption (myOrgs doesn't include the
+        // invited org/team yet), and the two run concurrently once session
+        // appears — if this one's set() happens to land after redemption's
+        // does, it clobbers hqCreated/orgs back to the pre-redemption
+        // snapshot, bouncing a brand-new invited signup into ordinary HQ
+        // setup, or an already-logged-in user back to whichever org they
+        // were in before, instead of the one they were just added to.
+        set({ session: session.user.id });
         return;
       }
       // None of these three depend on each other's results — fetch them
