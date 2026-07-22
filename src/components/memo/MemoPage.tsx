@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useStore } from '../../state/store.tsx';
 import type { MemoTopic, MemoRecord } from '../../types';
 import MemoAddModal from './MemoAddModal';
@@ -66,6 +66,7 @@ export default function MemoPage() {
   const { memoTopics, memoNav, viewRole, stores, accent } = state;
   const isHq = viewRole === 'hq';
   const role = myRole(state);
+  const [memoSearch, setMemoSearch] = useState('');
 
   const canDeleteCompanyWide = role === 'オーナー';
   const canDeleteForStore = (storeId: string) =>
@@ -78,6 +79,10 @@ export default function MemoPage() {
   const memoLevel0 = !curTopic;
   const memoLevel1 = !!curTopic && !curEntry;
   const memoLevel2 = !!curEntry;
+
+  useEffect(() => {
+    if (!memoLevel0) setMemoSearch('');
+  }, [memoLevel0]);
 
   // Most recently touched (topic itself, or any of its entries/records)
   // floats to the top within each group.
@@ -98,6 +103,52 @@ export default function MemoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memoTopics, stores, isHq, viewRole]);
   const noMemoGroups = groups.every((g) => g.items.length === 0);
+
+  const query = memoSearch.trim().toLowerCase();
+  const searching = query.length > 0;
+  interface MemoSearchHit {
+    key: string;
+    topicId: string;
+    entryId: string | null;
+    topicName: string;
+    entryName?: string;
+    snippet: string;
+    scopeLabel: string;
+  }
+  const searchResults = useMemo(() => {
+    if (!query) return [] as MemoSearchHit[];
+    const hits: MemoSearchHit[] = [];
+    groups.forEach((g) => {
+      g.items.forEach((t) => {
+        const scopeLabel = t.storeId ? stores.find((s) => s.id === t.storeId)?.name || '' : (t.hqOnly ? '本部のみ' : '全体');
+        if (t.name.toLowerCase().includes(query)) {
+          hits.push({ key: `t-${t.id}`, topicId: t.id, entryId: null, topicName: t.name, snippet: '', scopeLabel });
+        }
+        t.entries.forEach((e) => {
+          if (e.name.toLowerCase().includes(query)) {
+            hits.push({ key: `e-${e.id}`, topicId: t.id, entryId: e.id, topicName: t.name, entryName: e.name, snippet: '', scopeLabel });
+          }
+          e.records.forEach((r) => {
+            const labelHit = r.label.toLowerCase().includes(query);
+            const textHit = (r.text || '').toLowerCase().includes(query);
+            if (labelHit || textHit) {
+              hits.push({
+                key: `r-${r.id}`,
+                topicId: t.id,
+                entryId: e.id,
+                topicName: t.name,
+                entryName: e.name,
+                snippet: labelHit ? r.label : (r.text || '').slice(0, 60),
+                scopeLabel,
+              });
+            }
+          });
+        });
+      });
+    });
+    return hits;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groups, query]);
 
   const memoEntryCanDelete = curTopic ? (curTopic.storeId ? canDeleteForStore(curTopic.storeId) : canDeleteCompanyWide) : false;
 
@@ -128,7 +179,13 @@ export default function MemoPage() {
         {/* level 0: topics */}
         {memoLevel0 && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+              <input
+                value={memoSearch}
+                onChange={(e) => setMemoSearch(e.target.value)}
+                placeholder="キーワードで検索"
+                style={{ flex: 1, height: 36, padding: '0 12px', borderRadius: 10, border: '1px solid #e7e9ed', fontSize: 13 }}
+              />
               {canCreate && (
                 <button
                   onClick={() => actions.openAddTopic(isHq ? (stores[0]?.id ?? null) : viewRole)}
@@ -138,66 +195,95 @@ export default function MemoPage() {
                 </button>
               )}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {groups.map((g) =>
-                g.items.length === 0 ? null : (
-                  <div key={g.id}>
-                    <div style={{ fontSize: 11.5, fontWeight: 700, color: '#9aa0a8', marginBottom: 8, letterSpacing: '.02em' }}>{g.label}</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {g.items.map((t: MemoTopic) => {
-                        const canEditScope = role === 'オーナー' && isHq;
-                        const canDelete = t.storeId ? canDeleteForStore(t.storeId) : canDeleteCompanyWide;
-                        const scopeLabel = t.storeId ? stores.find((s) => s.id === t.storeId)?.name || '' : (t.hqOnly ? '本部のみ' : '全体');
-                        const scopeColor = t.storeId ? '#2f8f6b' : (t.hqOnly ? '#c2453d' : '#9aa0a8');
-                        return (
-                          <div key={t.id} className="fc-memo-row" onClick={() => actions.openMemoTopic(t.id)} style={rowStyle}>
-                            <div style={{ width: 38, height: 38, borderRadius: 10, background: accent + '18', color: accent, fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
-                              {t.name.charAt(0)}
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontWeight: 700, fontSize: 14.5 }}>{t.name}</div>
-                              <div style={{ fontSize: 12, color: '#9aa0a8', marginTop: 2 }}>
-                                {t.entries.length}件 ・ <span style={{ color: scopeColor, fontWeight: 700 }}>{scopeLabel}</span>
-                              </div>
-                            </div>
-                            {canEditScope && (
-                              <select
-                                value={t.storeId === null ? (t.hqOnly ? 'hq' : '') : t.storeId}
-                                onClick={(e) => e.stopPropagation()}
-                                onChange={(e) => { e.stopPropagation(); actions.changeMemoTopicScope(t, e.target.value); }}
-                                style={{ fontSize: 11, fontWeight: 700, color: '#5a6b9e', background: '#eef0f7', padding: '5px 8px', borderRadius: 7, flex: 'none', border: 'none', outline: 'none' }}
-                                title="共有範囲を変更"
-                              >
-                                <option value="">全体</option>
-                                <option value="hq">本部のみ</option>
-                                {stores.map((s) => (
-                                  <option key={s.id} value={s.id}>{s.name}</option>
-                                ))}
-                              </select>
-                            )}
-                            {canDelete && (
-                              <button
-                                className="fc-memo-delbtn"
-                                onClick={(e) => { e.stopPropagation(); actions.requestDeleteMemoTopic(t); }}
-                                style={delBtnStyle}
-                              >
-                                ✕
-                              </button>
-                            )}
-                            <span style={{ color: '#c3c8d0', fontSize: 16 }}>›</span>
-                          </div>
-                        );
-                      })}
+            {searching ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {searchResults.map((h) => (
+                  <div
+                    key={h.key}
+                    className="fc-memo-row"
+                    onClick={() => {
+                      actions.openMemoTopic(h.topicId);
+                      if (h.entryId) actions.openMemoEntry(h.entryId);
+                    }}
+                    style={rowStyle}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 11.5, color: '#9aa0a8', marginBottom: 3 }}>
+                        {h.topicName}{h.entryName ? ` › ${h.entryName}` : ''} ・ <span style={{ fontWeight: 700 }}>{h.scopeLabel}</span>
+                      </div>
+                      <div style={{ fontWeight: 700, fontSize: 14.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {h.snippet || h.entryName || h.topicName}
+                      </div>
                     </div>
+                    <span style={{ color: '#c3c8d0', fontSize: 16 }}>›</span>
                   </div>
-                ),
-              )}
-              {noMemoGroups && (
-                <div style={emptyCardStyle}>
-                  まだ項目がありません。「＋項目を追加」から作成できます。<br />例：スタッフ情報、設備・什器、契約書類
-                </div>
-              )}
-            </div>
+                ))}
+                {searchResults.length === 0 && (
+                  <div style={emptyCardStyle}>「{memoSearch}」に一致する項目が見つかりませんでした。</div>
+                )}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {groups.map((g) =>
+                  g.items.length === 0 ? null : (
+                    <div key={g.id}>
+                      <div style={{ fontSize: 11.5, fontWeight: 700, color: '#9aa0a8', marginBottom: 8, letterSpacing: '.02em' }}>{g.label}</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {g.items.map((t: MemoTopic) => {
+                          const canEditScope = role === 'オーナー' && isHq;
+                          const canDelete = t.storeId ? canDeleteForStore(t.storeId) : canDeleteCompanyWide;
+                          const scopeLabel = t.storeId ? stores.find((s) => s.id === t.storeId)?.name || '' : (t.hqOnly ? '本部のみ' : '全体');
+                          const scopeColor = t.storeId ? '#2f8f6b' : (t.hqOnly ? '#c2453d' : '#9aa0a8');
+                          return (
+                            <div key={t.id} className="fc-memo-row" onClick={() => actions.openMemoTopic(t.id)} style={rowStyle}>
+                              <div style={{ width: 38, height: 38, borderRadius: 10, background: accent + '18', color: accent, fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+                                {t.name.charAt(0)}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontWeight: 700, fontSize: 14.5 }}>{t.name}</div>
+                                <div style={{ fontSize: 12, color: '#9aa0a8', marginTop: 2 }}>
+                                  {t.entries.length}件 ・ <span style={{ color: scopeColor, fontWeight: 700 }}>{scopeLabel}</span>
+                                </div>
+                              </div>
+                              {canEditScope && (
+                                <select
+                                  value={t.storeId === null ? (t.hqOnly ? 'hq' : '') : t.storeId}
+                                  onClick={(e) => e.stopPropagation()}
+                                  onChange={(e) => { e.stopPropagation(); actions.changeMemoTopicScope(t, e.target.value); }}
+                                  style={{ fontSize: 11, fontWeight: 700, color: '#5a6b9e', background: '#eef0f7', padding: '5px 8px', borderRadius: 7, flex: 'none', border: 'none', outline: 'none' }}
+                                  title="共有範囲を変更"
+                                >
+                                  <option value="">全体</option>
+                                  <option value="hq">本部のみ</option>
+                                  {stores.map((s) => (
+                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                  ))}
+                                </select>
+                              )}
+                              {canDelete && (
+                                <button
+                                  className="fc-memo-delbtn"
+                                  onClick={(e) => { e.stopPropagation(); actions.requestDeleteMemoTopic(t); }}
+                                  style={delBtnStyle}
+                                >
+                                  ✕
+                                </button>
+                              )}
+                              <span style={{ color: '#c3c8d0', fontSize: 16 }}>›</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ),
+                )}
+                {noMemoGroups && (
+                  <div style={emptyCardStyle}>
+                    まだ項目がありません。「＋項目を追加」から作成できます。<br />例：スタッフ情報、設備・什器、契約書類
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
 
