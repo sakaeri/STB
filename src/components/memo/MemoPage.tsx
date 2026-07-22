@@ -63,7 +63,7 @@ const emptyCardStyle: React.CSSProperties = {
 
 export default function MemoPage() {
   const { state, actions } = useStore();
-  const { memoTopics, memoNav, viewRole, stores, accent } = state;
+  const { memoTopics, memoNav, viewRole, stores, accent, isMobile } = state;
   const isHq = viewRole === 'hq';
   const role = myRole(state);
   const [memoSearch, setMemoSearch] = useState('');
@@ -179,17 +179,17 @@ export default function MemoPage() {
         {/* level 0: topics */}
         {memoLevel0 && (
           <>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 8, marginBottom: 10 }}>
               <input
                 value={memoSearch}
                 onChange={(e) => setMemoSearch(e.target.value)}
                 placeholder="キーワードで検索"
-                style={{ flex: 1, height: 36, padding: '0 12px', borderRadius: 10, border: '1px solid #e7e9ed', fontSize: 13 }}
+                style={{ flex: 1, minWidth: 0, height: 36, padding: '0 12px', borderRadius: 10, border: '1px solid #e7e9ed', fontSize: 13 }}
               />
               {canCreate && (
                 <button
                   onClick={() => actions.openAddTopic(isHq ? (stores[0]?.id ?? null) : viewRole)}
-                  style={addBtnStyle(accent)}
+                  style={{ ...addBtnStyle(accent), flex: 'none', justifyContent: isMobile ? 'center' : undefined }}
                 >
                   <span style={{ fontSize: 16, fontWeight: 400 }}>＋</span>項目を追加
                 </button>
