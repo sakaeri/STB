@@ -99,7 +99,12 @@ export default function MemoPage() {
     const teamGroups = teamsInOrder
       .map((s) => ({ id: s.id, label: s.name, items: memoTopics.filter((t) => t.storeId === s.id).sort(byRecency) }))
       .filter((g) => g.items.length > 0);
-    return [hqOnlyGroup, allGroup, ...teamGroups];
+    // Groups themselves float to the top by whichever one was touched most
+    // recently (its top item, since items within a group are already
+    // sorted by byRecency), not a fixed 本部のみ→全体→チーム order.
+    return [hqOnlyGroup, allGroup, ...teamGroups].sort(
+      (a, b) => (b.items[0]?.lastActivityAt || '').localeCompare(a.items[0]?.lastActivityAt || ''),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memoTopics, stores, isHq, viewRole]);
   const noMemoGroups = groups.every((g) => g.items.length === 0);
