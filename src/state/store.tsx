@@ -510,14 +510,27 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       const path = `${id}-${Date.now()}`;
       dataUrlToPublicUrl(path, dataUrl).then(async (publicUrl) => {
         set((s) => ({ logoMap: { ...s.logoMap, [id]: publicUrl } }));
+        // .select() after the update forces the row back through the
+        // SELECT RLS policy — with only .update(), an RLS mismatch (e.g.
+        // is_admin() false) silently affects 0 rows and returns no error,
+        // so the upload would "succeed" while the DB value never changes
+        // and nothing ever tells the user why.
+        let res: { error: { message: string } | null; data: unknown[] | null } | null = null;
         if (isTeam) {
-          await supabase.from('teams').update({ logo_url: publicUrl }).eq('id', id);
+          res = await supabase.from('teams').update({ logo_url: publicUrl }).eq('id', id).select('id');
         } else if (id === 'operator-logo') {
-          await supabase.from('app_settings').update({ logo_url: publicUrl }).eq('id', 1);
+          res = await supabase.from('app_settings').update({ logo_url: publicUrl }).eq('id', 1).select('id');
         } else if (id === 'app-logo' && st.activeOrgId) {
-          await supabase.from('orgs').update({ logo_url: publicUrl }).eq('id', st.activeOrgId);
+          res = await supabase.from('orgs').update({ logo_url: publicUrl }).eq('id', st.activeOrgId).select('id');
         }
-      }).catch((e) => console.error('logo upload failed', e));
+        if (res?.error) throw res.error;
+        if (res && (!res.data || res.data.length === 0)) {
+          throw new Error('保存できませんでした（権限がない可能性があります）');
+        }
+      }).catch((e) => {
+        console.error('logo upload failed', e);
+        alert('ロゴの保存に失敗しました。' + ((e as Error).message || ''));
+      });
     },
 
     requestDeleteTeam: (store: Store) => openConfirm(`「${store.name}」を削除`, `${store.name}をゴミ箱に移動します。30日間はゴミ箱から復元できますが、31日目以降は自動的に完全削除されます。`, () => deleteTeam(store)),
