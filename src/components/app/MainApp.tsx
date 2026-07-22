@@ -16,6 +16,7 @@ import EntryModal from '../modals/EntryModal';
 import BankCsvImportModal from '../modals/BankCsvImportModal';
 import AddStoreModal from '../modals/AddStoreModal';
 import MemberInviteModal from '../modals/MemberInviteModal';
+import CheckoutModal from '../modals/CheckoutModal';
 
 export default function MainApp() {
   const { state } = useStore();
@@ -47,6 +48,7 @@ export default function MainApp() {
       <BankCsvImportModal />
       <AddStoreModal />
       <MemberInviteModal />
+      <CheckoutModal />
     </div>
   );
 }

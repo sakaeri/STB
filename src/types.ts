@@ -371,6 +371,7 @@ export interface AppState {
   // plan / payment
   pendingUpgrade: PendingUpgrade | null;
   billingCheckoutLoading: boolean;
+  checkoutClientSecret: string | null;
   planChangeLoading: boolean;
   planChangeSaved: boolean;
 

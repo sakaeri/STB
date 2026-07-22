@@ -54,6 +54,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const openInvoices = await stripe.invoices.list({ customer: org.stripe_customer_id, status: 'open', limit: 1 });
         const openInvoice = openInvoices.data[0];
         if (openInvoice?.hosted_invoice_url) {
+          // Resolving an existing unpaid invoice isn't a fresh Checkout
+          // Session, so there's no client_secret to embed here — this one
+          // case still redirects to Stripe's own hosted invoice page.
           res.status(200).json({ url: openInvoice.hosted_invoice_url });
           return;
         }
@@ -91,11 +94,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const origin = (req.headers.origin as string) || `https://${req.headers.host}`;
     const session = await stripe.checkout.sessions.create({
+      ui_mode: 'embedded_page',
+      // Only a redirect-requiring payment method (rare here) leaves the
+      // page at all — an ordinary card payment finishes in place and the
+      // frontend's onComplete callback takes over instead of navigating.
+      redirect_on_completion: 'if_required',
       mode: 'subscription',
       customer: customerId,
       line_items: [{ price: priceId, quantity }],
-      success_url: `${origin}/?billing=success`,
-      cancel_url: `${origin}/?billing=cancel`,
+      return_url: `${origin}/?billing=success`,
       metadata: { org_id: orgId },
       subscription_data: { metadata: { org_id: orgId } },
     });
@@ -109,7 +116,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // active on successful payment; abandoning checkout leaves it frozen.
     await supabase.from('orgs').update({ status: 'frozen' }).eq('id', orgId);
 
-    res.status(200).json({ url: session.url });
+    res.status(200).json({ clientSecret: session.client_secret });
   } catch (e) {
     console.error('create-checkout-session failed', e);
     res.status(500).json({ error: 'お支払い手続きの開始に失敗しました' });

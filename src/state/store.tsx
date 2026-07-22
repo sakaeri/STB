@@ -38,7 +38,7 @@ async function dataUrlToPublicUrl(path: string, dataUrl: string): Promise<string
   return `${data.publicUrl}?t=${Date.now()}`;
 }
 
-async function callBillingApi(path: string, orgId: string): Promise<{ url?: string; error?: string; frozen?: boolean }> {
+async function callBillingApi(path: string, orgId: string): Promise<{ url?: string; clientSecret?: string; error?: string; frozen?: boolean }> {
   const { data: sessionRes } = await supabase.auth.getSession();
   const token = sessionRes.session?.access_token;
   if (!token) return { error: 'ログインが必要です' };
@@ -994,11 +994,20 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       const st = getState();
       if (!st.activeOrgId) return;
       set({ billingCheckoutLoading: true });
-      const { url, error } = await callBillingApi('/api/stripe/create-checkout-session', st.activeOrgId);
+      const { url, clientSecret, error } = await callBillingApi('/api/stripe/create-checkout-session', st.activeOrgId);
       set({ billingCheckoutLoading: false });
-      if (error || !url) { alert(error || 'お支払い手続きの開始に失敗しました'); return; }
-      window.location.href = url;
+      if (error || (!url && !clientSecret)) { alert(error || 'お支払い手続きの開始に失敗しました'); return; }
+      // clientSecret: the normal path — an embedded Stripe Checkout form
+      // opens right in the app. url: only the "resolve an existing unpaid
+      // invoice" fallback still redirects to Stripe's own hosted page.
+      if (clientSecret) set({ checkoutClientSecret: clientSecret });
+      else if (url) window.location.href = url;
     },
+    closeCheckoutModal: () => set({ checkoutClientSecret: null }),
+    // Exposed as a thin public wrapper so the embedded-checkout onComplete
+    // handler (outside this closure) can pick up the now-active org status
+    // right away, instead of waiting for the next natural reload.
+    reloadOrgData: () => reloadActiveOrg(),
 
     // ===== navigation =====
     goList: () => set({ page: 'list' }),
