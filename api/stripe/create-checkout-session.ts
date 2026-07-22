@@ -119,6 +119,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(200).json({ clientSecret: session.client_secret });
   } catch (e) {
     console.error('create-checkout-session failed', e);
-    res.status(500).json({ error: 'お支払い手続きの開始に失敗しました' });
+    const msg = e instanceof Error ? e.message : '';
+    res.status(500).json({ error: `お支払い手続きの開始に失敗しました${msg ? `（${msg}）` : ''}` });
   }
 }
