@@ -298,7 +298,10 @@ export default function MemoPage() {
               )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {curTopic.entries.map((e) => {
+              {curTopic.entries
+                .slice()
+                .sort((a, b) => (b.lastActivityAt || '').localeCompare(a.lastActivityAt || ''))
+                .map((e) => {
                 const latest = e.records.slice().sort((x, y) => y.date.localeCompare(x.date))[0];
                 const latestLabel = latest ? `${latest.label} ・ ${e.records.length}件の記録` : '記録なし';
                 return (

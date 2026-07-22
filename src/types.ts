@@ -95,6 +95,7 @@ export interface MemoRecord {
 export interface MemoEntry {
   id: string;
   name: string;
+  lastActivityAt?: string; // ISO timestamp — latest of the entry/its records, for recency sorting
   records: MemoRecord[];
 }
 

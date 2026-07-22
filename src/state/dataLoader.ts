@@ -191,6 +191,7 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
       id: t.id, name: t.name, storeId: t.team_id, hqOnly: !!t.hq_only, lastActivityAt,
       entries: entries.map((e) => ({
         id: e.id, name: e.name,
+        lastActivityAt: [e.created_at, ...(e.memo_records || []).map((r) => r.created_at)].sort().pop(),
         records: (e.memo_records || []).map((r) => ({
           id: r.id, label: r.label, text: r.text, date: r.date, createdAt: r.created_at,
           images: r.images || [], authorName: r.profiles?.name || null,
