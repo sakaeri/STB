@@ -14,7 +14,7 @@ import {
   yesterdayLabel,
   yen,
 } from '../../state/calc';
-import { buildRow, isPeriodConfirmed } from './rowHelpers';
+import { buildRow, isPeriodConfirmed, myRole } from './rowHelpers';
 import KpiCards from './KpiCards';
 import SalesTable from './SalesTable';
 import SalesCards from './SalesCards';
@@ -113,6 +113,7 @@ export default function SalesListPage() {
   // Only the HQ (aggregate) view is restricted when frozen — a team
   // member looking at only their own store is unaffected.
   const frozen = state.orgStatus === 'frozen' && isHq;
+  const isOwner = myRole(state) === 'オーナー';
   const openStore = (id: string) => actions.openStoreDrawer(id);
 
   const csvField = (v: string | number) => {
@@ -346,8 +347,19 @@ export default function SalesListPage() {
 
       <div style={{ padding: '22px 26px 90px', maxWidth: 1280, margin: '0 auto' }}>
         {frozen && (
-          <div style={{ marginBottom: 14, background: colors.dangerBg, border: `1px solid ${colors.dangerBorder}`, borderRadius: 12, padding: '12px 16px', fontSize: 12.5, color: colors.danger, fontWeight: 700 }}>
-            🔒 この本部は凍結されています。{unitLabel}別の一覧は「本部情報」からのお支払い手続き完了後に確認できます。
+          <div style={{ marginBottom: 14, background: colors.dangerBg, border: `1px solid ${colors.dangerBorder}`, borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 200, fontSize: 12.5, color: colors.danger, fontWeight: 700 }}>
+              🔒 この本部は凍結されています。{unitLabel}別の一覧はお支払い手続き完了後に確認できます。
+            </div>
+            {isOwner && (
+              <button
+                onClick={actions.startCheckout}
+                disabled={state.billingCheckoutLoading}
+                style={{ height: 34, padding: '0 16px', borderRadius: 9, fontWeight: 700, fontSize: 12.5, color: '#fff', background: colors.danger, flex: 'none', opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
+              >
+                {state.billingCheckoutLoading ? '処理中…' : 'お支払い手続きへ'}
+              </button>
+            )}
           </div>
         )}
 
