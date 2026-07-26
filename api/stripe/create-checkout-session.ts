@@ -94,11 +94,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const origin = (req.headers.origin as string) || `https://${req.headers.host}`;
     const session = await stripe.checkout.sessions.create({
-      ui_mode: 'embedded_page',
-      // Only a redirect-requiring payment method (rare here) leaves the
-      // page at all — an ordinary card payment finishes in place and the
-      // frontend's onComplete callback takes over instead of navigating.
-      redirect_on_completion: 'if_required',
+      // 'elements' (Stripe's "Custom Checkout") hands us a bare
+      // PaymentElement plus a confirm() action instead of a pre-built
+      // Stripe-branded form/iframe — the surrounding form (labels, submit
+      // button, copy) is entirely our own, styled to match the app.
+      ui_mode: 'elements',
       mode: 'subscription',
       customer: customerId,
       line_items: [{ price: priceId, quantity }],
