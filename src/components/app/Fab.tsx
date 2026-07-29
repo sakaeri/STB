@@ -16,18 +16,44 @@ export default function Fab() {
   const canCreateTeamNow = canDeleteCompanyWide(role);
   const canCreate = canCreateRole(role);
 
-  const menuBtnStyle = (color: string) =>
-    ({
-      height: 44,
-      padding: '0 18px',
-      borderRadius: 12,
-      background: '#fff',
-      color,
-      fontWeight: 700,
-      fontSize: 13.5,
-      boxShadow: '0 6px 18px rgba(20,40,80,.16)',
-      whiteSpace: 'nowrap',
-    }) as const;
+  const menuItemStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    padding: '13px 18px',
+    fontWeight: 700,
+    fontSize: 13.5,
+    color: '#3a4150',
+    whiteSpace: 'nowrap',
+    width: '100%',
+    textAlign: 'left',
+  };
+  const menuIconStyle = (color: string): React.CSSProperties => ({
+    width: 22,
+    textAlign: 'center',
+    fontSize: 16,
+    color,
+    flex: 'none',
+  });
+  const menuDividerStyle: React.CSSProperties = { borderTop: '1px solid #eef0f3' };
+
+  const menuItems: { key: string; icon: string; color: string; label: string; onClick: () => void }[] = [];
+  if (isHqView && canCreateTeamNow) {
+    menuItems.push({
+      key: 'store',
+      icon: '🏬',
+      color: '#3a4150',
+      label: `${state.unitLabel || '店舗'}を作成`,
+      onClick: () => { actions.closeFabMenu(); actions.openAdd(); },
+    });
+  }
+  if (canCreate) {
+    menuItems.push(
+      { key: 'sales', icon: '💰', color: '#1f9d6b', label: '売上を入力', onClick: () => { actions.closeFabMenu(); actions.openEntry('sales'); } },
+      { key: 'expense', icon: '🧾', color: '#c2566b', label: '経費を入力', onClick: () => { actions.closeFabMenu(); actions.openEntry('expense'); } },
+      { key: 'csv', icon: '🏦', color: '#3a4150', label: '銀行CSVを取り込む', onClick: () => { actions.closeFabMenu(); actions.openBankCsvImport(); } },
+    );
+  }
 
   return (
     <>
@@ -40,55 +66,20 @@ export default function Fab() {
               right: 28,
               bottom: state.isMobile ? 'calc(134px + env(safe-area-inset-bottom))' : 96,
               zIndex: 59,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 8,
-              alignItems: 'flex-end',
+              background: '#fff',
+              borderRadius: 16,
+              boxShadow: '0 6px 18px rgba(20,40,80,.16)',
+              overflow: 'hidden',
+              minWidth: 200,
               animation: 'scIn .16s ease both',
             }}
           >
-            {isHqView && canCreateTeamNow && (
-              <button
-                onClick={() => {
-                  actions.closeFabMenu();
-                  actions.openAdd();
-                }}
-                style={menuBtnStyle('#3a4150')}
-              >
-                {state.unitLabel || '店舗'}を作成
+            {menuItems.map((item, i) => (
+              <button key={item.key} onClick={item.onClick} style={{ ...menuItemStyle, ...(i > 0 ? menuDividerStyle : undefined) }}>
+                <span style={menuIconStyle(item.color)}>{item.icon}</span>
+                {item.label}
               </button>
-            )}
-            {canCreate && (
-              <>
-                <button
-                  onClick={() => {
-                    actions.closeFabMenu();
-                    actions.openEntry('sales');
-                  }}
-                  style={menuBtnStyle('#1f9d6b')}
-                >
-                  売上を入力
-                </button>
-                <button
-                  onClick={() => {
-                    actions.closeFabMenu();
-                    actions.openEntry('expense');
-                  }}
-                  style={menuBtnStyle('#c2566b')}
-                >
-                  経費を入力
-                </button>
-                <button
-                  onClick={() => {
-                    actions.closeFabMenu();
-                    actions.openBankCsvImport();
-                  }}
-                  style={menuBtnStyle('#3a4150')}
-                >
-                  銀行CSVを取り込む
-                </button>
-              </>
-            )}
+            ))}
           </div>
         </>
       )}
