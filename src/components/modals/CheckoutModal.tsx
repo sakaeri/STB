@@ -23,6 +23,7 @@ export default function CheckoutModal() {
   const [loadError, setLoadError] = useState('');
   const [canSubmit, setCanSubmit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [formReady, setFormReady] = useState(false);
   const clientSecret = state.checkoutClientSecret;
   const accent = state.accent;
   const plan = actions.effectivePlan();
@@ -32,6 +33,7 @@ export default function CheckoutModal() {
     let cancelled = false;
     setLoadError('');
     setCanSubmit(false);
+    setFormReady(false);
     getStripePromise().then(async (stripe) => {
       if (cancelled) return;
       if (!stripe) { setLoadError('決済フォームの読み込みに失敗しました（設定エラー）'); return; }
@@ -54,6 +56,7 @@ export default function CheckoutModal() {
         paymentElement.on('change', (e) => setCanSubmit(e.complete));
         paymentElementRef.current = paymentElement;
         if (containerRef.current) paymentElement.mount(containerRef.current);
+        setFormReady(true);
       } catch (e) {
         console.error('initCheckoutElementsSdk failed', e);
         setLoadError('決済フォームの読み込みに失敗しました');
@@ -69,7 +72,7 @@ export default function CheckoutModal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientSecret]);
 
-  if (!clientSecret) return null;
+  if (!state.checkoutModalOpen) return null;
 
   const handleConfirm = async () => {
     if (!confirmRef.current) return;
@@ -93,6 +96,10 @@ export default function CheckoutModal() {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(20,28,42,.45)', zIndex: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, animation: 'scOver .2s ease both' }}>
+      <style>{`
+        @keyframes fc-spin { to { transform: rotate(360deg); } }
+        .fc-checkout-spinner { animation: fc-spin .7s linear infinite; }
+      `}</style>
       <div style={{ background: '#fff', borderRadius: 18, width: 440, maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 60px rgba(20,40,80,.3)', animation: 'scIn .24s ease both', padding: '22px 24px 24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
           <div>
@@ -106,7 +113,13 @@ export default function CheckoutModal() {
           <div style={{ marginBottom: 12, fontSize: 12.5, color: '#d6453d', background: '#fbe7e5', borderRadius: 8, padding: '8px 12px' }}>{loadError}</div>
         )}
 
-        <div ref={containerRef} style={{ marginBottom: 18 }} />
+        {!formReady && !loadError && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, height: 160, marginBottom: 18 }}>
+            <div className="fc-checkout-spinner" style={{ width: 26, height: 26, borderRadius: '50%', border: `3px solid ${accent}33`, borderTopColor: accent }} />
+            <div style={{ fontSize: 12, color: '#9aa0a8' }}>読み込み中…</div>
+          </div>
+        )}
+        <div ref={containerRef} style={{ marginBottom: 18, display: formReady ? 'block' : 'none' }} />
 
         <button
           onClick={handleConfirm}
@@ -115,6 +128,7 @@ export default function CheckoutModal() {
             width: '100%', height: 46, borderRadius: 10, fontWeight: 700, fontSize: 14, color: '#fff',
             background: accent, opacity: !canSubmit || submitting ? 0.5 : 1,
             cursor: !canSubmit || submitting ? 'not-allowed' : 'pointer',
+            display: formReady ? 'block' : 'none',
           }}
         >
           {submitting ? '処理中…' : `¥${plan.price.toLocaleString('ja-JP')}の支払いを確定する`}

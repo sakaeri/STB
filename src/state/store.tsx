@@ -993,17 +993,26 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     startCheckout: async () => {
       const st = getState();
       if (!st.activeOrgId) return;
-      set({ billingCheckoutLoading: true });
+      // Open the modal (with its own loading state) *before* the network
+      // round trip — waiting for create-checkout-session, then Stripe.js,
+      // then loadActions() before showing anything at all made the button
+      // feel unresponsive for a couple of seconds. The modal now appears
+      // instantly and fills in once each step resolves.
+      set({ checkoutModalOpen: true, billingCheckoutLoading: true });
       const { url, clientSecret, error } = await callBillingApi('/api/stripe/create-checkout-session', st.activeOrgId);
       set({ billingCheckoutLoading: false });
-      if (error || (!url && !clientSecret)) { alert(error || 'お支払い手続きの開始に失敗しました'); return; }
-      // clientSecret: the normal path — an embedded Stripe Checkout form
-      // opens right in the app. url: only the "resolve an existing unpaid
+      if (error || (!url && !clientSecret)) {
+        set({ checkoutModalOpen: false });
+        alert(error || 'お支払い手続きの開始に失敗しました');
+        return;
+      }
+      // clientSecret: the normal path — a Stripe Custom Checkout form opens
+      // right in the app. url: only the "resolve an existing unpaid
       // invoice" fallback still redirects to Stripe's own hosted page.
       if (clientSecret) set({ checkoutClientSecret: clientSecret });
       else if (url) window.location.href = url;
     },
-    closeCheckoutModal: () => set({ checkoutClientSecret: null }),
+    closeCheckoutModal: () => set({ checkoutModalOpen: false, checkoutClientSecret: null }),
     // Exposed as a thin public wrapper so the embedded-checkout onComplete
     // handler (outside this closure) can pick up the now-active org status
     // right away, instead of waiting for the next natural reload.

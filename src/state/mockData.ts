@@ -109,6 +109,7 @@ export function createInitialState(): AppState {
 
     pendingUpgrade: null,
     billingCheckoutLoading: false,
+    checkoutModalOpen: false,
     checkoutClientSecret: null,
     planChangeLoading: false,
     planChangeSaved: false,
