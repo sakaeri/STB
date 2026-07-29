@@ -740,31 +740,37 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       const st = getState();
       const m = st.memoModal;
       if (!m || !st.activeOrgId || !st.session) return;
+      // The modal used to close (memoModal: null) *before* the insert even
+      // ran, so a failed save (RLS denial, network error, ...) looked
+      // identical to a successful one — nothing told the user it hadn't
+      // actually gone anywhere. Now it only closes once the insert
+      // succeeds, and a failure surfaces via alert with the modal (and
+      // whatever the user typed) still open to retry.
       if (m.kind === 'topic') {
         const name = (m.name || '').trim();
         if (!name) return;
-        set({ memoModal: null });
         const { error } = await supabase.from('memo_topics').insert({ org_id: st.activeOrgId, team_id: m.storeId || null, hq_only: !!m.hqOnly, name, created_by: st.session });
-        if (error) { console.error(error); return; }
+        if (error) { console.error(error); alert(`保存に失敗しました（${error.message}）`); return; }
+        set({ memoModal: null });
         await reloadActiveOrg();
       } else if (m.kind === 'entry') {
         const name = (m.name || '').trim();
         if (!name || !m.topicId) return;
-        set({ memoModal: null });
         const { error } = await supabase.from('memo_entries').insert({ topic_id: m.topicId, name });
-        if (error) { console.error(error); return; }
+        if (error) { console.error(error); alert(`保存に失敗しました（${error.message}）`); return; }
+        set({ memoModal: null });
         await reloadActiveOrg();
       } else if (m.kind === 'record') {
         const label = (m.label || '').trim(); const text = (m.text || '').trim();
         if (!label || !m.entryId) return;
-        set({ memoModal: null });
         const images = await Promise.all(
           (m.images || []).map((dataUrl) => dataUrlToPublicUrl(`memo/${crypto.randomUUID()}`, dataUrl)),
         );
         const { error } = await supabase.from('memo_records').insert({
           entry_id: m.entryId, label, text, date: new Date().toISOString().slice(0, 10), images, created_by: st.session,
         });
-        if (error) { console.error(error); return; }
+        if (error) { console.error(error); alert(`保存に失敗しました（${error.message}）`); return; }
+        set({ memoModal: null });
         await reloadActiveOrg();
       }
     },
