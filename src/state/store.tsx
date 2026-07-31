@@ -1026,7 +1026,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
 
     // ===== navigation =====
     goList: () => set({ page: 'list' }),
-    goMemo: () => set({ page: 'memo' }),
+    goMemo: () => set({ page: 'memo', memoNav: { topicId: null, entryId: null } }),
     goSettings: () => set({ page: 'settings' }),
     setLayout: (v: AppState['layout']) => set({ layout: v }),
     setAggUnit: (v: AppState['aggUnit']) => set({ aggUnit: v }),
