@@ -176,9 +176,10 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
   const memoTopics: MemoTopic[] = topics.map((t) => {
     const row = t as unknown as {
       created_at: string;
+      created_by: string | null;
       memo_entries?: {
-        id: string; name: string; created_at: string;
-        memo_records?: { id: string; label: string; text: string; date: string; created_at: string; images: string[] | null; profiles: { name: string } | null }[];
+        id: string; name: string; created_at: string; created_by: string | null;
+        memo_records?: { id: string; label: string; text: string; date: string; created_at: string; created_by: string | null; images: string[] | null; profiles: { name: string } | null }[];
       }[];
     };
     const entries = row.memo_entries || [];
@@ -188,13 +189,13 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
       ...entries.flatMap((e) => (e.memo_records || []).map((r) => r.created_at)),
     ].sort().pop();
     return {
-      id: t.id, name: t.name, storeId: t.team_id, hqOnly: !!t.hq_only, lastActivityAt,
+      id: t.id, name: t.name, storeId: t.team_id, hqOnly: !!t.hq_only, lastActivityAt, createdBy: row.created_by,
       entries: entries.map((e) => ({
-        id: e.id, name: e.name,
+        id: e.id, name: e.name, createdBy: e.created_by,
         lastActivityAt: [e.created_at, ...(e.memo_records || []).map((r) => r.created_at)].sort().pop(),
         records: (e.memo_records || []).map((r) => ({
           id: r.id, label: r.label, text: r.text, date: r.date, createdAt: r.created_at,
-          images: r.images || [], authorName: r.profiles?.name || null,
+          images: r.images || [], authorName: r.profiles?.name || null, createdBy: r.created_by,
         })),
       })),
     };

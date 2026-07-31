@@ -68,9 +68,16 @@ export default function MemoPage() {
   const role = myRole(state);
   const [memoSearch, setMemoSearch] = useState('');
 
-  const canDeleteCompanyWide = role === 'オーナー';
+  // 全体（本部＋全チーム）共有のトピック・詳細・記録は、本部のオーナー/
+  // 編集者、またはそれを作成した本人が削除できる — 誰でも見える全体
+  // 共有物を、消せない/事故で消せてしまう両極端を避けるための線引き。
+  const hqSelf = state.hqMembers.find((m) => m.userId === state.session);
+  const isHqEditor = hqSelf?.role === 'オーナー' || hqSelf?.role === '編集者';
+  const canDeleteShared = (createdBy?: string | null) => isHqEditor || (!!createdBy && createdBy === state.session);
   const canDeleteForStore = (storeId: string) =>
     role === 'オーナー' || (role === '管理者' && !isHq && viewRole === storeId);
+  const canDeleteMemoItem = (topic: { storeId?: string | null }, createdBy?: string | null) =>
+    topic.storeId ? canDeleteForStore(topic.storeId) : canDeleteShared(createdBy);
   const canCreate = role !== '閲覧者';
 
   const curTopic = memoNav.topicId ? memoTopics.find((t) => t.id === memoNav.topicId) || null : null;
@@ -155,8 +162,6 @@ export default function MemoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groups, query]);
 
-  const memoEntryCanDelete = curTopic ? (curTopic.storeId ? canDeleteForStore(curTopic.storeId) : canDeleteCompanyWide) : false;
-
   return (
     <div style={{ height: '100%', overflowY: 'auto', animation: 'scIn .25s ease both', background: '#f7f8fa' }}>
       <style>{`
@@ -236,7 +241,7 @@ export default function MemoPage() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {g.items.map((t: MemoTopic) => {
                           const canEditScope = role === 'オーナー' && isHq;
-                          const canDelete = t.storeId ? canDeleteForStore(t.storeId) : canDeleteCompanyWide;
+                          const canDelete = canDeleteMemoItem(t, t.createdBy);
                           const scopeLabel = t.storeId ? stores.find((s) => s.id === t.storeId)?.name || '' : (t.hqOnly ? '本部のみ' : '全体');
                           const scopeColor = t.storeId ? '#2f8f6b' : (t.hqOnly ? '#c2453d' : '#9aa0a8');
                           return (
@@ -318,7 +323,7 @@ export default function MemoPage() {
                       <div style={{ fontWeight: 700, fontSize: 14.5 }}>{e.name}</div>
                       <div style={{ fontSize: 12, color: '#9aa0a8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{latestLabel}</div>
                     </div>
-                    {memoEntryCanDelete && (
+                    {canDeleteMemoItem(curTopic, e.createdBy) && (
                       <button
                         className="fc-memo-delbtn"
                         onClick={(ev) => { ev.stopPropagation(); actions.requestDeleteMemoEntry(curTopic.id, e); }}
@@ -386,7 +391,7 @@ export default function MemoPage() {
                               <span style={{ fontSize: 11, color: '#aab0b8', whiteSpace: 'nowrap' }}>
                                 {dateFmt}{r.authorName && ` ・ ${r.authorName}`}
                               </span>
-                              {memoEntryCanDelete && (
+                              {canDeleteMemoItem(curTopic, r.createdBy) && (
                                 <button
                                   className="fc-memo-delbtn"
                                   onClick={() => actions.requestDeleteMemoRecord(curTopic.id, curEntry.id, r)}

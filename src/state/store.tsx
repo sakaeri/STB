@@ -756,7 +756,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       } else if (m.kind === 'entry') {
         const name = (m.name || '').trim();
         if (!name || !m.topicId) return;
-        const { error } = await supabase.from('memo_entries').insert({ topic_id: m.topicId, name });
+        const { error } = await supabase.from('memo_entries').insert({ topic_id: m.topicId, name, created_by: st.session });
         if (error) { console.error(error); alert(`保存に失敗しました（${error.message}）`); return; }
         set({ memoModal: null });
         await reloadActiveOrg();

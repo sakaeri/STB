@@ -90,6 +90,7 @@ export interface MemoRecord {
   createdAt?: string;
   images?: string[];
   authorName?: string | null;
+  createdBy?: string | null;
 }
 
 export interface MemoEntry {
@@ -97,6 +98,7 @@ export interface MemoEntry {
   name: string;
   lastActivityAt?: string; // ISO timestamp — latest of the entry/its records, for recency sorting
   records: MemoRecord[];
+  createdBy?: string | null;
 }
 
 export interface MemoTopic {
@@ -106,6 +108,7 @@ export interface MemoTopic {
   hqOnly?: boolean;
   lastActivityAt?: string; // ISO timestamp — latest of the topic/its entries/their records, for recency sorting
   entries: MemoEntry[];
+  createdBy?: string | null;
 }
 
 export interface TrashItem {
