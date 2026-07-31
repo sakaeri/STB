@@ -47,7 +47,7 @@ export default function StoreDrawer() {
             <div style={{ flex: 1, lineHeight: 1.3, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 17 }}>{store.name}</div>
             </div>
-            <button className="stb-icon-btn" onClick={actions.closeStoreDrawer} style={{ width: 32, height: 32, borderRadius: 8, color: colors.faint, fontSize: 19, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button className="stb-icon-btn" onClick={actions.closeStoreDrawer} style={{ width: 36, height: 36, borderRadius: 9, color: colors.faint, fontSize: 21, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               ✕
             </button>
           </div>
@@ -163,7 +163,7 @@ export default function StoreDrawer() {
               {row.owner} ・ {periodLbl}
             </div>
           </div>
-          <button className="stb-icon-btn" onClick={actions.closeStoreDrawer} style={{ width: 32, height: 32, borderRadius: 8, color: colors.faint, fontSize: 19, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button className="stb-icon-btn" onClick={actions.closeStoreDrawer} style={{ width: 36, height: 36, borderRadius: 9, color: colors.faint, fontSize: 21, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             ✕
           </button>
         </div>
@@ -269,7 +269,7 @@ export default function StoreDrawer() {
                           ev.stopPropagation();
                           actions.requestDeleteTx(store.id, t);
                         }}
-                        style={{ width: 26, height: 26, borderRadius: 7, color: colors.faint3, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
+                        style={{ width: 30, height: 30, borderRadius: 8, color: colors.faint3, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
                       >
                         ✕
                       </button>
@@ -517,7 +517,7 @@ export default function StoreDrawer() {
                     <button
                       className="stb-icon-btn-danger"
                       onClick={() => actions.requestDeleteMember(idx)}
-                      style={{ width: 26, height: 26, borderRadius: 7, color: colors.faint3, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
+                      style={{ width: 30, height: 30, borderRadius: 8, color: colors.faint3, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
                     >
                       ✕
                     </button>

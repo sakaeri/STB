@@ -125,7 +125,7 @@ export default function EntryModal() {
                     <button
                       onClick={() => actions.deleteEntryPreset(draft.storeId, p.id)}
                       title="削除"
-                      style={{ padding: '7px 9px 7px 2px', fontSize: 11, color: '#c3c8d0' }}
+                      style={{ padding: '7px 9px 7px 2px', fontSize: 13, color: '#c3c8d0' }}
                     >
                       ✕
                     </button>
@@ -172,7 +172,7 @@ export default function EntryModal() {
                 <img src={draft.photo} loading="lazy" style={{ width: '100%', maxHeight: 180, objectFit: 'cover', display: 'block' }} />
                 <button
                   onClick={actions.onRemovePhoto}
-                  style={{ position: 'absolute', top: 8, right: 8, width: 28, height: 28, borderRadius: 8, background: 'rgba(20,28,42,.55)', color: '#fff', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ position: 'absolute', top: 8, right: 8, width: 32, height: 32, borderRadius: 9, background: 'rgba(20,28,42,.55)', color: '#fff', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
                   ✕
                 </button>

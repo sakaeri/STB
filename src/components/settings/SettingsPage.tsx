@@ -280,7 +280,7 @@ export default function SettingsPage() {
                   <span style={{ fontSize: 11.5, fontWeight: 700, color: roleBg[m.role] || '#8a909a', background: '#eef0f3', padding: '6px 10px', borderRadius: 8 }}>{m.role}</span>
                 )}
                 {canDeleteCompanyWide && (
-                  <button onClick={() => actions.requestDeleteHqMember(idx)} style={{ width: 26, height: 26, borderRadius: 7, color: '#c3c8d0', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>✕</button>
+                  <button onClick={() => actions.requestDeleteHqMember(idx)} style={{ width: 30, height: 30, borderRadius: 8, color: '#c3c8d0', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>✕</button>
                 )}
               </div>
             ))}
@@ -468,7 +468,7 @@ export default function SettingsPage() {
           <section style={{ background: '#fff', border: '1.5px solid #f6d9d9', borderRadius: 15, overflow: 'hidden' }}>
             <div style={{ padding: '17px 22px', borderBottom: '1px solid #fbeaea', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#c2453d', display: 'flex', alignItems: 'center', gap: 7 }}>⚠ 本部を削除する</h2>
-              <button onClick={() => setDangerOpen(false)} style={{ width: 28, height: 28, borderRadius: 8, color: '#8a909a', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>✕</button>
+              <button onClick={() => setDangerOpen(false)} style={{ width: 32, height: 32, borderRadius: 9, color: '#8a909a', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>✕</button>
             </div>
             <div style={{ padding: '16px 22px', display: 'flex', alignItems: 'center', gap: 14 }}>
               <div style={{ flex: 1, fontSize: 12.5, color: '#6b7280', lineHeight: 1.7 }}>

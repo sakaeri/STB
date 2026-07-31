@@ -13,7 +13,7 @@ export default function TermsModal() {
       >
         <div style={{ padding: '20px 24px', borderBottom: '1px solid #f0f2f5', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#3a4150' }}>利用規約</div>
-          <button onClick={actions.closeTermsModal} style={{ width: 28, height: 28, borderRadius: 8, background: '#f0f2f5', color: '#6b7280', fontWeight: 700 }}>×</button>
+          <button onClick={actions.closeTermsModal} style={{ width: 32, height: 32, borderRadius: 9, background: '#f0f2f5', color: '#6b7280', fontWeight: 700, fontSize: 16 }}>×</button>
         </div>
         <div style={{ padding: '20px 24px', fontSize: 12.5, color: '#3a4150', lineHeight: 1.9, whiteSpace: 'pre-wrap' }}>{state.termsModalText}</div>
       </div>

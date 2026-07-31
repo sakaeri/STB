@@ -106,7 +106,7 @@ export default function CheckoutModal() {
             <h2 style={{ margin: 0, fontSize: 15.5, fontWeight: 700 }}>お支払い情報の入力</h2>
             <div style={{ fontSize: 12, color: '#8a909a', marginTop: 4 }}>月額 <span style={{ fontWeight: 700, color: '#3a4150' }}>¥{plan.price.toLocaleString('ja-JP')}</span> のお支払いが発生します</div>
           </div>
-          <button onClick={actions.closeCheckoutModal} style={{ color: '#8a909a', fontSize: 13, fontWeight: 700, flex: 'none' }}>✕</button>
+          <button onClick={actions.closeCheckoutModal} style={{ width: 30, height: 30, color: '#8a909a', fontSize: 16, fontWeight: 700, flex: 'none' }}>✕</button>
         </div>
 
         {loadError && (

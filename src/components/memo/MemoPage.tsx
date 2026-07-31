@@ -40,11 +40,11 @@ const rowStyle: React.CSSProperties = {
 };
 
 const delBtnStyle: React.CSSProperties = {
-  width: 26,
-  height: 26,
-  borderRadius: 7,
+  width: 30,
+  height: 30,
+  borderRadius: 8,
   color: '#c3c8d0',
-  fontSize: 13,
+  fontSize: 15,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -395,7 +395,7 @@ export default function MemoPage() {
                                 <button
                                   className="fc-memo-delbtn"
                                   onClick={() => actions.requestDeleteMemoRecord(curTopic.id, curEntry.id, r)}
-                                  style={{ width: 22, height: 22, borderRadius: 6, color: '#c3c8d0', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
+                                  style={{ width: 26, height: 26, borderRadius: 7, color: '#c3c8d0', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
                                 >
                                   ✕
                                 </button>

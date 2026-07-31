@@ -138,7 +138,7 @@ export default function MemoAddModal() {
                         <img src={src} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                         <button
                           onClick={() => actions.onMemoModalRemoveImage(i)}
-                          style={{ position: 'absolute', top: 3, right: 3, width: 20, height: 20, borderRadius: 6, background: 'rgba(20,28,42,.55)', color: '#fff', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          style={{ position: 'absolute', top: 3, right: 3, width: 24, height: 24, borderRadius: 7, background: 'rgba(20,28,42,.55)', color: '#fff', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         >
                           ✕
                         </button>
