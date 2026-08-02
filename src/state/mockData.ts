@@ -71,6 +71,7 @@ export function createInitialState(): AppState {
     showNewOrgModal: false,
     hqSetupForm: { hqName: '', firstTeamName: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4 },
     hqSetupStep: 'basic',
+    hqSetupTemplateId: null,
 
     accounts: [],
     session: null,

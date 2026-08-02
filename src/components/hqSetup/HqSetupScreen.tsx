@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import { useStore } from '../../state/store.tsx';
 import { CLOSING_DAY_OPTIONS, FISCAL_MONTH_OPTIONS } from '../../state/calc';
+import { HQ_TEMPLATES } from '../../state/hqTemplates';
 
 const outerStyle: CSSProperties = {
   display: 'flex',
@@ -44,6 +45,17 @@ const errorBannerStyle: CSSProperties = {
   padding: '8px 12px',
 };
 
+const templateChipStyle = (active: boolean, accent: string): CSSProperties => ({
+  height: 32,
+  padding: '0 12px',
+  borderRadius: 8,
+  fontSize: 12,
+  fontWeight: 700,
+  border: `1.5px solid ${active ? accent : '#dfe3e8'}`,
+  background: active ? `${accent}14` : '#fff',
+  color: active ? accent : '#6b7280',
+});
+
 export default function HqSetupScreen() {
   const { state, actions } = useStore();
   const f = state.hqSetupForm;
@@ -51,6 +63,7 @@ export default function HqSetupScreen() {
   const isOptional = state.hqSetupStep === 'optional';
   const canProceed = !!(f.hqName.trim() && f.firstTeamName.trim());
   const isAdmin = !!state.accounts.find((a) => a.id === state.session)?.isAdmin;
+  const selectedTemplate = HQ_TEMPLATES.find((t) => t.id === state.hqSetupTemplateId) || null;
 
   return (
     <div style={outerStyle}>
@@ -97,7 +110,10 @@ export default function HqSetupScreen() {
           </p>
           {isOptional && (
             <p style={{ margin: '10px 0 0', fontSize: 12.5, color: '#3a4150', background: '#f7f8fa', borderRadius: 8, padding: '8px 12px' }}>
-              本部名：{f.hqName}　/　最初のチーム名：{f.firstTeamName}
+              本部名：{f.hqName}　/　最初の{selectedTemplate?.unitLabel || 'チーム'}名：{f.firstTeamName}
+              {!!selectedTemplate && (
+                <><br />情報メモに「{selectedTemplate.memoTopics.join('」「')}」を自動で追加します</>
+              )}
             </p>
           )}
         </div>
@@ -105,6 +121,23 @@ export default function HqSetupScreen() {
         <div style={{ padding: '20px 28px 28px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           {isBasic && (
             <>
+              <div>
+                <label style={labelStyle}>業種テンプレート（任意）</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {HQ_TEMPLATES.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => actions.onHqSetupTemplate(state.hqSetupTemplateId === t.id ? null : t.id)}
+                      style={templateChipStyle(state.hqSetupTemplateId === t.id, state.accent)}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ fontSize: 11, color: '#aab0b8', marginTop: 6 }}>
+                  選ぶと、呼び方や情報メモの初期項目が自動で設定されます（あとで変更できます）。選ばなくても自由に作成できます。
+                </div>
+              </div>
               <div>
                 <label style={labelStyle}>
                   本部名 <span style={{ color: '#d6453d' }}>*</span>
@@ -119,13 +152,13 @@ export default function HqSetupScreen() {
               </div>
               <div>
                 <label style={labelStyle}>
-                  最初のチーム名 <span style={{ color: '#d6453d' }}>*</span>
+                  最初の{selectedTemplate?.unitLabel || 'チーム'}名 <span style={{ color: '#d6453d' }}>*</span>
                 </label>
                 <input
                   type="text"
                   value={f.firstTeamName}
                   onChange={(e) => actions.onHqSetupField('firstTeamName', e.target.value)}
-                  placeholder="例：渋谷店"
+                  placeholder={selectedTemplate?.teamNamePlaceholder || '例：渋谷店'}
                   style={inputStyle}
                 />
               </div>

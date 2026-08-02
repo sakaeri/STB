@@ -1,9 +1,20 @@
 import { useStore } from '../../state/store.tsx';
 import { CLOSING_DAY_OPTIONS, FISCAL_MONTH_OPTIONS } from '../../state/calc';
+import { HQ_TEMPLATES } from '../../state/hqTemplates';
 
 const labelStyle: React.CSSProperties = { fontSize: 12.5, fontWeight: 700, color: '#46505e', display: 'block', marginBottom: 8 };
 const inputStyle: React.CSSProperties = { width: '100%', border: '1.5px solid #dfe3e8', borderRadius: 11, padding: '12px 14px', fontSize: 14.5, fontWeight: 500, outline: 'none' };
 const selectStyle: React.CSSProperties = { ...inputStyle, fontSize: 13.5, background: '#fff', cursor: 'pointer' };
+const templateChipStyle = (active: boolean, accent: string): React.CSSProperties => ({
+  height: 32,
+  padding: '0 12px',
+  borderRadius: 8,
+  fontSize: 12,
+  fontWeight: 700,
+  border: `1.5px solid ${active ? accent : '#dfe3e8'}`,
+  background: active ? `${accent}14` : '#fff',
+  color: active ? accent : '#6b7280',
+});
 
 export default function NewOrgModal() {
   const { state, actions } = useStore();
@@ -13,6 +24,7 @@ export default function NewOrgModal() {
   const f = state.hqSetupForm;
   const isBasicStep = state.hqSetupStep === 'basic';
   const canGoNext = !!f.hqName.trim() && !!f.firstTeamName.trim();
+  const selectedTemplate = HQ_TEMPLATES.find((t) => t.id === state.hqSetupTemplateId) || null;
 
   return (
     <div
@@ -31,7 +43,10 @@ export default function NewOrgModal() {
           <p style={{ margin: '8px 0 0', fontSize: 12.5, color: '#8a909a', lineHeight: 1.6 }}>新しい本部のオーナーとして、あなたのプロフィールで参加します。</p>
           {!isBasicStep && (
             <p style={{ margin: '8px 0 0', fontSize: 12.5, color: '#3a4150', background: '#f7f8fa', borderRadius: 8, padding: '8px 12px' }}>
-              本部名：{f.hqName}　/　最初のチーム名：{f.firstTeamName}
+              本部名：{f.hqName}　/　最初の{selectedTemplate?.unitLabel || 'チーム'}名：{f.firstTeamName}
+              {!!selectedTemplate && (
+                <><br />情報メモに「{selectedTemplate.memoTopics.join('」「')}」を自動で追加します</>
+              )}
             </p>
           )}
         </div>
@@ -44,12 +59,29 @@ export default function NewOrgModal() {
           <>
             <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
+                <label style={labelStyle}>業種テンプレート（任意）</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {HQ_TEMPLATES.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => actions.onHqSetupTemplate(state.hqSetupTemplateId === t.id ? null : t.id)}
+                      style={templateChipStyle(state.hqSetupTemplateId === t.id, accent)}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ fontSize: 11, color: '#aab0b8', marginTop: 6 }}>
+                  選ぶと、呼び方や情報メモの初期項目が自動で設定されます（あとで変更できます）。
+                </div>
+              </div>
+              <div>
                 <label style={labelStyle}>本部名 <span style={{ color: '#d6453d' }}>*</span></label>
                 <input type="text" value={f.hqName} onChange={(e) => actions.onHqSetupField('hqName', e.target.value)} placeholder="例：株式会社〇〇" style={inputStyle} />
               </div>
               <div>
-                <label style={labelStyle}>最初のチーム名 <span style={{ color: '#d6453d' }}>*</span></label>
-                <input type="text" value={f.firstTeamName} onChange={(e) => actions.onHqSetupField('firstTeamName', e.target.value)} placeholder="例：渋谷店" style={inputStyle} />
+                <label style={labelStyle}>最初の{selectedTemplate?.unitLabel || 'チーム'}名 <span style={{ color: '#d6453d' }}>*</span></label>
+                <input type="text" value={f.firstTeamName} onChange={(e) => actions.onHqSetupField('firstTeamName', e.target.value)} placeholder={selectedTemplate?.teamNamePlaceholder || '例：渋谷店'} style={inputStyle} />
               </div>
             </div>
             <div style={{ padding: '0 24px 22px', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>

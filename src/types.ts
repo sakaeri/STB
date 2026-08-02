@@ -342,6 +342,7 @@ export interface AppState {
   showNewOrgModal: boolean;
   hqSetupForm: HqSetupForm;
   hqSetupStep: 'basic' | 'optional';
+  hqSetupTemplateId: string | null;
 
   // account / auth
   accounts: Account[];

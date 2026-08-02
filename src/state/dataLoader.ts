@@ -65,8 +65,13 @@ export async function fetchMyOrgs(userId: string): Promise<Org[]> {
 export async function createOrgWithFirstTeam(params: {
   userId: string; userName: string; hqName: string; firstTeamName: string;
   address: string; rep: string; closingDay: string; fiscalStartMonth: number;
+  // Set when an HQ setup template was picked — prefills the unit label
+  // and seeds a few starter 情報メモ topics (shared org-wide) so the org
+  // doesn't start on a completely blank slate. Both optional/empty for
+  // 自由作成 (no template).
+  unitLabel?: string | null; memoTopics?: string[];
 }): Promise<string> {
-  const { userId, userName, hqName, firstTeamName, address, rep, closingDay, fiscalStartMonth } = params;
+  const { userId, userName, hqName, firstTeamName, address, rep, closingDay, fiscalStartMonth, unitLabel, memoTopics } = params;
 
   // Generate the org id client-side and skip `.select()` on this insert:
   // right after creating the org there's no org_members row yet, so the
@@ -77,7 +82,10 @@ export async function createOrgWithFirstTeam(params: {
   const orgId = crypto.randomUUID();
   const { error: orgErr } = await supabase
     .from('orgs')
-    .insert({ id: orgId, name: hqName, address, rep, closing_day: closingDay, fiscal_start_month: fiscalStartMonth, created_by: userId });
+    .insert({
+      id: orgId, name: hqName, address, rep, closing_day: closingDay, fiscal_start_month: fiscalStartMonth, created_by: userId,
+      unit_label: unitLabel || null, unit_label_plural: unitLabel || null,
+    });
   if (orgErr) throw orgErr;
 
   const { error: memberErr } = await supabase
@@ -89,6 +97,15 @@ export async function createOrgWithFirstTeam(params: {
     .from('teams')
     .insert({ org_id: orgId, name: firstTeamName, owner_name: userName });
   if (teamErr) throw teamErr;
+
+  if (memoTopics && memoTopics.length) {
+    const { error: memoErr } = await supabase
+      .from('memo_topics')
+      .insert(memoTopics.map((name) => ({ org_id: orgId, team_id: null, hq_only: false, name, created_by: userId })));
+    // Non-fatal: the org/team already exist at this point, and a starter
+    // memo topic failing to seed shouldn't block the whole signup.
+    if (memoErr) console.error('createOrgWithFirstTeam: seeding memo topics failed', memoErr);
+  }
 
   return orgId;
 }

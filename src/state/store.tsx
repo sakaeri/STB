@@ -11,6 +11,7 @@ import {
 } from './adminData';
 import { planForCount, billedPlanFor, type PlanStep } from '../tokens';
 import { decodeCsvFile, parseCsvText, rowsFromCsvTable } from './bankCsv';
+import { HQ_TEMPLATES } from './hqTemplates';
 
 type Patch = Partial<AppState> | ((s: AppState) => Partial<AppState>);
 
@@ -306,6 +307,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
 
     // ===== HQ setup =====
     onHqSetupField: (key: keyof AppState['hqSetupForm'], val: string | number) => set((s) => ({ hqSetupForm: { ...s.hqSetupForm, [key]: val } })),
+    onHqSetupTemplate: (id: string | null) => set({ hqSetupTemplateId: id }),
     goHqSetupOptionalStep: () => {
       const f = getState().hqSetupForm;
       if (!f.hqName.trim() || !f.firstTeamName.trim()) { set({ authError: 'すべての必須項目を入力してください' }); return; }
@@ -318,16 +320,18 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       if (!f.hqName.trim() || !f.firstTeamName.trim()) { set({ authError: 'すべての必須項目を入力してください' }); return; }
       if (!st.session) return;
       try {
+        const template = HQ_TEMPLATES.find((t) => t.id === st.hqSetupTemplateId) || null;
         const orgId = await createOrgWithFirstTeam({
           userId: st.session, userName: st.ownerProfile.name, hqName: f.hqName.trim(), firstTeamName: f.firstTeamName.trim(),
           address: (f.address || '').trim(), rep: (f.rep || '').trim(), closingDay: f.closingDay || 'eom', fiscalStartMonth: f.fiscalStartMonth || 4,
+          unitLabel: template?.unitLabel || null, memoTopics: template?.memoTopics || [],
         });
         const myOrgs = await fetchMyOrgs(st.session);
         set((s) => ({ accounts: s.accounts.map((a) => (a.id === s.session ? { ...a, hqCreated: true, orgs: myOrgs } : a)) }));
         await loadOrg(orgId);
         set({
           authError: '', adminOwnHqSetup: false,
-          hqSetupForm: { hqName: '', firstTeamName: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4 }, hqSetupStep: 'basic',
+          hqSetupForm: { hqName: '', firstTeamName: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4 }, hqSetupStep: 'basic', hqSetupTemplateId: null,
         });
       } catch (e) {
         set({ authError: (e as Error).message || '本部の作成に失敗しました' });
@@ -340,7 +344,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       await loadOrg(id);
       set({ showProfileModal: false });
     },
-    openNewOrg: () => set({ showNewOrgModal: true, showProfileModal: false, hqSetupForm: { hqName: '', firstTeamName: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4 }, hqSetupStep: 'basic', authError: '' }),
+    openNewOrg: () => set({ showNewOrgModal: true, showProfileModal: false, hqSetupForm: { hqName: '', firstTeamName: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4 }, hqSetupStep: 'basic', hqSetupTemplateId: null, authError: '' }),
     closeNewOrg: () => set({ showNewOrgModal: false }),
     createNewOrg: async () => {
       const st = getState();
@@ -348,16 +352,18 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       if (!f.hqName.trim() || !f.firstTeamName.trim()) { set({ authError: 'すべての必須項目を入力してください' }); return; }
       if (!st.session) return;
       try {
+        const template = HQ_TEMPLATES.find((t) => t.id === st.hqSetupTemplateId) || null;
         const orgId = await createOrgWithFirstTeam({
           userId: st.session, userName: st.ownerProfile.name, hqName: f.hqName.trim(), firstTeamName: f.firstTeamName.trim(),
           address: (f.address || '').trim(), rep: (f.rep || '').trim(), closingDay: f.closingDay || 'eom', fiscalStartMonth: f.fiscalStartMonth || 4,
+          unitLabel: template?.unitLabel || null, memoTopics: template?.memoTopics || [],
         });
         const myOrgs = await fetchMyOrgs(st.session);
         set((s) => ({ accounts: s.accounts.map((a) => (a.id === s.session ? { ...a, hqCreated: true, orgs: myOrgs } : a)) }));
         await loadOrg(orgId);
         set({
           showNewOrgModal: false, authError: '',
-          hqSetupForm: { hqName: '', firstTeamName: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4 }, hqSetupStep: 'basic',
+          hqSetupForm: { hqName: '', firstTeamName: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4 }, hqSetupStep: 'basic', hqSetupTemplateId: null,
         });
       } catch (e) {
         set({ authError: (e as Error).message || '本部の作成に失敗しました' });
