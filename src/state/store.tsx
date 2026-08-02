@@ -753,39 +753,40 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         : { ...(s.memoModal as MemoModalState), labelMode: 'existing', label: v },
     })),
     onMemoModalText: (v: string) => set((s) => ({ memoModal: { ...(s.memoModal as MemoModalState), text: v } })),
-    onMemoModalAddImages: (files: FileList | null) => {
+    // One picker, one button — images and PDFs are told apart by MIME type
+    // and routed to their own draft lists (images get capped + compressed,
+    // PDFs don't have a preview so they're kept as {url, name} instead).
+    onMemoModalAddFiles: (files: FileList | null) => {
       if (!files || !files.length) return;
-      const existing = (getState().memoModal as MemoModalState | null)?.images || [];
-      const room = MAX_MEMO_IMAGES - existing.length;
-      if (room <= 0) return;
-      Promise.all(Array.from(files).slice(0, room).map((f) => new Promise<string>((resolve) => {
+      const arr = Array.from(files);
+      const imageFiles = arr.filter((f) => f.type.startsWith('image/'));
+      const pdfFiles = arr.filter((f) => f.type === 'application/pdf');
+      const existingImages = (getState().memoModal as MemoModalState | null)?.images || [];
+      const room = Math.max(0, MAX_MEMO_IMAGES - existingImages.length);
+      const readAsDataUrl = (f: File) => new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
         reader.readAsDataURL(f);
-      }).then((dataUrl) => compressImageDataUrl(dataUrl)))).then((dataUrls) => {
-        set((s) => ({
-          memoModal: {
-            ...(s.memoModal as MemoModalState),
-            images: [...((s.memoModal as MemoModalState)?.images || []), ...dataUrls].slice(0, MAX_MEMO_IMAGES),
-          },
-        }));
+      });
+      Promise.all([
+        Promise.all(imageFiles.slice(0, room).map((f) => readAsDataUrl(f).then((d) => compressImageDataUrl(d)))),
+        Promise.all(pdfFiles.map(async (f): Promise<MemoPdf> => ({ url: await readAsDataUrl(f), name: f.name }))),
+      ]).then(([newImages, newPdfs]) => {
+        set((s) => {
+          const mm = s.memoModal as MemoModalState;
+          return {
+            memoModal: {
+              ...mm,
+              images: [...(mm?.images || []), ...newImages].slice(0, MAX_MEMO_IMAGES),
+              pdfDrafts: [...(mm?.pdfDrafts || []), ...newPdfs],
+            },
+          };
+        });
       });
     },
     onMemoModalRemoveImage: (idx: number) => set((s) => ({
       memoModal: { ...(s.memoModal as MemoModalState), images: ((s.memoModal as MemoModalState)?.images || []).filter((_, i) => i !== idx) },
     })),
-    onMemoModalAddPdfs: (files: FileList | null) => {
-      if (!files || !files.length) return;
-      Promise.all(Array.from(files).map((f) => new Promise<MemoPdf>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve({ url: reader.result as string, name: f.name });
-        reader.readAsDataURL(f);
-      }))).then((pdfs) => {
-        set((s) => ({
-          memoModal: { ...(s.memoModal as MemoModalState), pdfDrafts: [...((s.memoModal as MemoModalState)?.pdfDrafts || []), ...pdfs] },
-        }));
-      });
-    },
     onMemoModalRemovePdf: (idx: number) => set((s) => ({
       memoModal: { ...(s.memoModal as MemoModalState), pdfDrafts: ((s.memoModal as MemoModalState)?.pdfDrafts || []).filter((_, i) => i !== idx) },
     })),
