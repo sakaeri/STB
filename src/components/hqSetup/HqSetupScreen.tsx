@@ -146,7 +146,7 @@ export default function HqSetupScreen() {
                   type="text"
                   value={f.hqName}
                   onChange={(e) => actions.onHqSetupField('hqName', e.target.value)}
-                  placeholder="例：株式会社〇〇"
+                  placeholder={selectedTemplate?.hqNamePlaceholder || '例：株式会社〇〇'}
                   style={inputStyle}
                 />
               </div>

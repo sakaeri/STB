@@ -77,7 +77,7 @@ export default function NewOrgModal() {
               </div>
               <div>
                 <label style={labelStyle}>本部名 <span style={{ color: '#d6453d' }}>*</span></label>
-                <input type="text" value={f.hqName} onChange={(e) => actions.onHqSetupField('hqName', e.target.value)} placeholder="例：株式会社〇〇" style={inputStyle} />
+                <input type="text" value={f.hqName} onChange={(e) => actions.onHqSetupField('hqName', e.target.value)} placeholder={selectedTemplate?.hqNamePlaceholder || '例：株式会社〇〇'} style={inputStyle} />
               </div>
               <div>
                 <label style={labelStyle}>最初の{selectedTemplate?.unitLabel || 'チーム'}名 <span style={{ color: '#d6453d' }}>*</span></label>
