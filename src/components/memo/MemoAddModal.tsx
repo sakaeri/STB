@@ -131,7 +131,7 @@ export default function MemoAddModal() {
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>画像（任意・複数可）</label>
+                  <label style={labelStyle}>画像（任意・最大6枚）</label>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {(mm.images || []).map((src, i) => (
                       <div key={i} style={{ position: 'relative', width: 76, height: 76, borderRadius: 10, overflow: 'hidden', border: '1.5px solid #dfe3e8', flex: 'none' }}>
@@ -144,13 +144,42 @@ export default function MemoAddModal() {
                         </button>
                       </div>
                     ))}
-                    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 76, height: 76, border: '1.5px dashed #d8dce2', borderRadius: 10, color: '#8a909a', fontSize: 22, cursor: 'pointer', background: '#fafbfc', flex: 'none' }}>
-                      ＋
+                    {(mm.images || []).length < 6 && (
+                      <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 76, height: 76, border: '1.5px dashed #d8dce2', borderRadius: 10, color: '#8a909a', fontSize: 22, cursor: 'pointer', background: '#fafbfc', flex: 'none' }}>
+                        ＋
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={(e) => { actions.onMemoModalAddImages(e.target.files); e.target.value = ''; }}
+                          style={{ display: 'none' }}
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label style={labelStyle}>PDF添付（任意・複数可）</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {(mm.pdfDrafts || []).map((p, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1.5px solid #dfe3e8', borderRadius: 9, background: '#fafbfc', padding: '8px 10px' }}>
+                        <span style={{ fontSize: 15 }}>📄</span>
+                        <span style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: '#3a4150', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</span>
+                        <button
+                          onClick={() => actions.onMemoModalRemovePdf(i)}
+                          style={{ width: 24, height: 24, borderRadius: 7, color: '#c3c8d0', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: 40, border: '1.5px dashed #d8dce2', borderRadius: 9, color: '#8a909a', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', background: '#fafbfc' }}>
+                      ＋ PDFを追加
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="application/pdf"
                         multiple
-                        onChange={(e) => { actions.onMemoModalAddImages(e.target.files); e.target.value = ''; }}
+                        onChange={(e) => { actions.onMemoModalAddPdfs(e.target.files); e.target.value = ''; }}
                         style={{ display: 'none' }}
                       />
                     </label>

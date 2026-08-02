@@ -179,7 +179,10 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
       created_by: string | null;
       memo_entries?: {
         id: string; name: string; created_at: string; created_by: string | null;
-        memo_records?: { id: string; label: string; text: string; date: string; created_at: string; created_by: string | null; images: string[] | null; profiles: { name: string } | null }[];
+        memo_records?: {
+          id: string; label: string; text: string; date: string; created_at: string; created_by: string | null;
+          images: string[] | null; pdfs: { url: string; name: string }[] | null; profiles: { name: string } | null;
+        }[];
       }[];
     };
     const entries = row.memo_entries || [];
@@ -195,7 +198,7 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
         lastActivityAt: [e.created_at, ...(e.memo_records || []).map((r) => r.created_at)].sort().pop(),
         records: (e.memo_records || []).map((r) => ({
           id: r.id, label: r.label, text: r.text, date: r.date, createdAt: r.created_at,
-          images: r.images || [], authorName: r.profiles?.name || null, createdBy: r.created_by,
+          images: r.images || [], pdfs: r.pdfs || [], authorName: r.profiles?.name || null, createdBy: r.created_by,
         })),
       })),
     };

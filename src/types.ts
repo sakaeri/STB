@@ -89,6 +89,7 @@ export interface MemoRecord {
   date: string;
   createdAt?: string;
   images?: string[];
+  pdfs?: MemoPdf[];
   authorName?: string | null;
   createdBy?: string | null;
 }
@@ -224,6 +225,11 @@ export interface EntryDraft {
   photo: string | null;
 }
 
+export interface MemoPdf {
+  url: string;
+  name: string;
+}
+
 export interface MemoModalState {
   kind: 'topic' | 'entry' | 'record';
   topicId?: string | null;
@@ -235,6 +241,11 @@ export interface MemoModalState {
   labelMode?: 'new' | 'existing';
   text?: string;
   images?: string[];
+  // pending PDFs picked in the modal: kept as data URLs (like images) until
+  // saveMemoModal uploads them, {name} carries the original filename since
+  // — unlike images — a PDF isn't previewable, so the filename is the only
+  // way to tell attachments apart in the UI.
+  pdfDrafts?: MemoPdf[];
 }
 
 export interface ConfirmDialogState {

@@ -411,6 +411,22 @@ export default function MemoPage() {
                                 ))}
                               </div>
                             )}
+                            {!!r.pdfs?.length && (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+                                {r.pdfs.map((p, idx) => (
+                                  <a
+                                    key={idx}
+                                    href={p.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid #e7e9ed', borderRadius: 9, padding: '8px 10px', fontSize: 12.5, color: '#3a4150', fontWeight: 700 }}
+                                  >
+                                    <span style={{ fontSize: 15 }}>📄</span>
+                                    <span style={{ flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</span>
+                                  </a>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         );
                       })}

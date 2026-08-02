@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type {
-  AppState, Store, Transaction, TrashItem, ConfirmDialogState, MemoModalState, Member, HqMember, MemoTopic,
+  AppState, Store, Transaction, TrashItem, ConfirmDialogState, MemoModalState, Member, HqMember, MemoTopic, MemoPdf,
 } from '../types';
 import { createInitialState } from './mockData';
 import { supabase, isPasswordRecoveryLink, clearPasswordRecoveryLink } from '../lib/supabase';
@@ -37,6 +37,36 @@ async function dataUrlToPublicUrl(path: string, dataUrl: string): Promise<string
   const { data } = supabase.storage.from('logos').getPublicUrl(fullPath);
   return `${data.publicUrl}?t=${Date.now()}`;
 }
+
+// Memo photos come straight from phone cameras (often several MB each)
+// with no server-side processing step, so without this a handful of
+// attachments could mean tens of MB uploaded/stored per record. Downscale
+// to a reasonable max dimension and re-encode as JPEG before it ever
+// leaves the browser. Falls back to the original on any decode failure
+// (e.g. an already-tiny image, or a format canvas can't round-trip).
+async function compressImageDataUrl(dataUrl: string, maxDim = 1600, quality = 0.82): Promise<string> {
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error('image decode failed'));
+      el.src = dataUrl;
+    });
+    const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+    if (scale >= 1) return dataUrl;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return dataUrl;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', quality);
+  } catch {
+    return dataUrl;
+  }
+}
+
+const MAX_MEMO_IMAGES = 6;
 
 async function callBillingApi(path: string, orgId: string): Promise<{ url?: string; clientSecret?: string; error?: string; frozen?: boolean }> {
   const { data: sessionRes } = await supabase.auth.getSession();
@@ -705,7 +735,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     openMemoEntry: (entryId: string) => set((s) => ({ memoNav: { ...s.memoNav, entryId } })),
     openAddTopic: (defaultStoreId: string | null) => set({ memoModal: { kind: 'topic', name: '', storeId: defaultStoreId } }),
     openAddEntry: (topicId: string | null) => set({ memoModal: { kind: 'entry', topicId, name: '' } }),
-    openAddRecord: (topicId: string | null, entryId: string | null) => set({ memoModal: { kind: 'record', topicId, entryId, label: '', labelMode: 'new', text: '', images: [] } }),
+    openAddRecord: (topicId: string | null, entryId: string | null) => set({ memoModal: { kind: 'record', topicId, entryId, label: '', labelMode: 'new', text: '', images: [], pdfDrafts: [] } }),
     closeMemoModal: () => set({ memoModal: null }),
     // v is a team id, '' (全体 — shared with HQ + every team), or 'hq'
     // (本部のみ — HQ members only, hidden from every team). Both '' and
@@ -725,16 +755,39 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     onMemoModalText: (v: string) => set((s) => ({ memoModal: { ...(s.memoModal as MemoModalState), text: v } })),
     onMemoModalAddImages: (files: FileList | null) => {
       if (!files || !files.length) return;
-      Promise.all(Array.from(files).map((f) => new Promise<string>((resolve) => {
+      const existing = (getState().memoModal as MemoModalState | null)?.images || [];
+      const room = MAX_MEMO_IMAGES - existing.length;
+      if (room <= 0) return;
+      Promise.all(Array.from(files).slice(0, room).map((f) => new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
         reader.readAsDataURL(f);
-      }))).then((dataUrls) => {
-        set((s) => ({ memoModal: { ...(s.memoModal as MemoModalState), images: [...((s.memoModal as MemoModalState)?.images || []), ...dataUrls] } }));
+      }).then((dataUrl) => compressImageDataUrl(dataUrl)))).then((dataUrls) => {
+        set((s) => ({
+          memoModal: {
+            ...(s.memoModal as MemoModalState),
+            images: [...((s.memoModal as MemoModalState)?.images || []), ...dataUrls].slice(0, MAX_MEMO_IMAGES),
+          },
+        }));
       });
     },
     onMemoModalRemoveImage: (idx: number) => set((s) => ({
       memoModal: { ...(s.memoModal as MemoModalState), images: ((s.memoModal as MemoModalState)?.images || []).filter((_, i) => i !== idx) },
+    })),
+    onMemoModalAddPdfs: (files: FileList | null) => {
+      if (!files || !files.length) return;
+      Promise.all(Array.from(files).map((f) => new Promise<MemoPdf>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve({ url: reader.result as string, name: f.name });
+        reader.readAsDataURL(f);
+      }))).then((pdfs) => {
+        set((s) => ({
+          memoModal: { ...(s.memoModal as MemoModalState), pdfDrafts: [...((s.memoModal as MemoModalState)?.pdfDrafts || []), ...pdfs] },
+        }));
+      });
+    },
+    onMemoModalRemovePdf: (idx: number) => set((s) => ({
+      memoModal: { ...(s.memoModal as MemoModalState), pdfDrafts: ((s.memoModal as MemoModalState)?.pdfDrafts || []).filter((_, i) => i !== idx) },
     })),
     saveMemoModal: async () => {
       const st = getState();
@@ -766,8 +819,11 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         const images = await Promise.all(
           (m.images || []).map((dataUrl) => dataUrlToPublicUrl(`memo/${crypto.randomUUID()}`, dataUrl)),
         );
+        const pdfs = await Promise.all(
+          (m.pdfDrafts || []).map(async (p) => ({ url: await dataUrlToPublicUrl(`memo/${crypto.randomUUID()}`, p.url), name: p.name })),
+        );
         const { error } = await supabase.from('memo_records').insert({
-          entry_id: m.entryId, label, text, date: new Date().toISOString().slice(0, 10), images, created_by: st.session,
+          entry_id: m.entryId, label, text, date: new Date().toISOString().slice(0, 10), images, pdfs, created_by: st.session,
         });
         if (error) { console.error(error); alert(`保存に失敗しました（${error.message}）`); return; }
         set({ memoModal: null });
