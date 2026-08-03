@@ -19,9 +19,21 @@ export interface AdminSettingsData {
 export async function fetchAdminOrgs(pricing: PricingConfig = DEFAULT_PRICING): Promise<AdminMockOrg[]> {
   const { data: orgs, error: orgsErr } = await supabase
     .from('orgs')
-    .select('id, name, rep, reading, address, status, created_at, billed_step')
+    .select('id, name, rep, reading, address, status, created_at, billed_step, signup_template_id')
     .order('created_at', { ascending: true });
   if (orgsErr) throw orgsErr;
+
+  // One オーナー per org (by construction — see createOrgWithFirstTeam),
+  // fetched separately since org_members/profiles aren't nested under orgs.
+  const { data: owners, error: ownersErr } = await supabase
+    .from('org_members')
+    .select('org_id, profiles(name, email)')
+    .eq('role', 'オーナー');
+  if (ownersErr) throw ownersErr;
+  const ownerByOrg = new Map((owners || []).map((row) => {
+    const p = row.profiles as unknown as { name: string; email: string } | null;
+    return [row.org_id, { name: p?.name || '', email: p?.email || '' }];
+  }));
 
   const { data: teams, error: teamsErr } = await supabase.from('teams').select('id, org_id');
   if (teamsErr) throw teamsErr;
@@ -67,12 +79,15 @@ export async function fetchAdminOrgs(pricing: PricingConfig = DEFAULT_PRICING): 
     monthMap.forEach((sales, month) => { history[month] = { teams: teamCount, sales }; });
     if (!history[nowKey]) history[nowKey] = { teams: teamCount, sales: 0 };
     const billedStep = Number(o.billed_step) || 0;
+    const owner = ownerByOrg.get(o.id);
     return {
       id: o.id, name: o.name, rep: o.rep, reading: o.reading || '',
       teams: teamCount, monthlySales: history[nowKey].sales,
       plan: billedPlanFor(teamCount, billedStep, pricing).label, billedStep, status: o.status as 'active' | 'frozen',
       joinedAt: (o.created_at as string).slice(0, 10), address: o.address, history,
       usesCsvImport: orgsUsingCsvImport.has(o.id),
+      signupTemplateId: o.signup_template_id || null,
+      ownerName: owner?.name || '', ownerEmail: owner?.email || '',
     };
   });
 }

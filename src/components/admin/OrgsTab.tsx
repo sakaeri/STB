@@ -4,6 +4,7 @@ import { billedPlanFor } from '../../tokens';
 import { adminMatchesSearch } from '../../state/calc';
 import { adminMonthLabel, monthDataFor, prefectureOf } from './shared';
 import type { AdminMockOrg } from '../../types';
+import { HQ_TEMPLATES } from '../../state/hqTemplates';
 
 export default function OrgsTab() {
   const { state, actions } = useStore();
@@ -250,9 +251,12 @@ function OrgRow({ org, month }: { org: AdminMockOrg; month: string }) {
       {showDetail && (
         <tr style={{ borderTop: '1px solid #f0f2f5', background: '#f7f8fa' }}>
           <td colSpan={8} style={{ padding: '14px 18px' }}>
-            <div style={{ display: 'flex', gap: 28, fontSize: 12.5, color: '#6b7280' }}>
+            <div style={{ display: 'flex', gap: 28, fontSize: 12.5, color: '#6b7280', flexWrap: 'wrap', rowGap: 8 }}>
               <div><span style={{ color: '#9aa0a8' }}>所在地：</span>{org.address}</div>
               <div><span style={{ color: '#9aa0a8' }}>登録日：</span>{org.joinedAt}</div>
+              <div><span style={{ color: '#9aa0a8' }}>業種テンプレート：</span>{HQ_TEMPLATES.find((t) => t.id === org.signupTemplateId)?.label || '自由作成'}</div>
+              <div><span style={{ color: '#9aa0a8' }}>オーナー：</span>{org.ownerName || '—'}</div>
+              <div><span style={{ color: '#9aa0a8' }}>メールアドレス：</span>{org.ownerEmail || '—'}</div>
             </div>
           </td>
         </tr>

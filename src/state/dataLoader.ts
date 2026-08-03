@@ -68,10 +68,11 @@ export async function createOrgWithFirstTeam(params: {
   // Set when an HQ setup template was picked — prefills the unit label
   // and seeds a few starter 情報メモ topics (shared org-wide) so the org
   // doesn't start on a completely blank slate. Both optional/empty for
-  // 自由作成 (no template).
-  unitLabel?: string | null; memoTopics?: string[];
+  // 自由作成 (no template). templateId is recorded as-is (just for the
+  // admin dashboard's own reference), independent of the other two.
+  unitLabel?: string | null; memoTopics?: string[]; templateId?: string | null;
 }): Promise<string> {
-  const { userId, userName, hqName, firstTeamName, address, rep, closingDay, fiscalStartMonth, unitLabel, memoTopics } = params;
+  const { userId, userName, hqName, firstTeamName, address, rep, closingDay, fiscalStartMonth, unitLabel, memoTopics, templateId } = params;
 
   // Generate the org id client-side and skip `.select()` on this insert:
   // right after creating the org there's no org_members row yet, so the
@@ -84,7 +85,7 @@ export async function createOrgWithFirstTeam(params: {
     .from('orgs')
     .insert({
       id: orgId, name: hqName, address, rep, closing_day: closingDay, fiscal_start_month: fiscalStartMonth, created_by: userId,
-      unit_label: unitLabel || null, unit_label_plural: unitLabel || null,
+      unit_label: unitLabel || null, unit_label_plural: unitLabel || null, signup_template_id: templateId || null,
     });
   if (orgErr) throw orgErr;
 

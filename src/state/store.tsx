@@ -324,7 +324,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         const orgId = await createOrgWithFirstTeam({
           userId: st.session, userName: st.ownerProfile.name, hqName: f.hqName.trim(), firstTeamName: f.firstTeamName.trim(),
           address: (f.address || '').trim(), rep: (f.rep || '').trim(), closingDay: f.closingDay || 'eom', fiscalStartMonth: f.fiscalStartMonth || 4,
-          unitLabel: template?.unitLabel || null, memoTopics: template?.memoTopics || [],
+          unitLabel: template?.unitLabel || null, memoTopics: template?.memoTopics || [], templateId: template?.id || null,
         });
         const myOrgs = await fetchMyOrgs(st.session);
         set((s) => ({ accounts: s.accounts.map((a) => (a.id === s.session ? { ...a, hqCreated: true, orgs: myOrgs } : a)) }));
@@ -356,7 +356,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         const orgId = await createOrgWithFirstTeam({
           userId: st.session, userName: st.ownerProfile.name, hqName: f.hqName.trim(), firstTeamName: f.firstTeamName.trim(),
           address: (f.address || '').trim(), rep: (f.rep || '').trim(), closingDay: f.closingDay || 'eom', fiscalStartMonth: f.fiscalStartMonth || 4,
-          unitLabel: template?.unitLabel || null, memoTopics: template?.memoTopics || [],
+          unitLabel: template?.unitLabel || null, memoTopics: template?.memoTopics || [], templateId: template?.id || null,
         });
         const myOrgs = await fetchMyOrgs(st.session);
         set((s) => ({ accounts: s.accounts.map((a) => (a.id === s.session ? { ...a, hqCreated: true, orgs: myOrgs } : a)) }));

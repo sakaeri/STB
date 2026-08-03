@@ -193,6 +193,9 @@ export interface AdminMockOrg {
   address: string;
   history: Record<string, { teams: number; sales: number }>;
   usesCsvImport: boolean;
+  signupTemplateId: string | null;
+  ownerName: string;
+  ownerEmail: string;
 }
 
 export interface HqSetupForm {
