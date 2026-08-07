@@ -38,6 +38,15 @@ export default function Fab() {
   const menuDividerStyle: React.CSSProperties = { borderTop: '1px solid #eef0f3' };
 
   const menuItems: { key: string; icon: string; color: string; label: string; onClick: () => void }[] = [];
+  if (canCreate) {
+    menuItems.push(
+      { key: 'sales', icon: '💰', color: '#1f9d6b', label: '売上を入力', onClick: () => { actions.closeFabMenu(); actions.openEntry('sales'); } },
+      { key: 'expense', icon: '🧾', color: '#c2566b', label: '経費を入力', onClick: () => { actions.closeFabMenu(); actions.openEntry('expense'); } },
+      { key: 'csv', icon: '🏦', color: '#3a4150', label: '銀行CSVを取り込む', onClick: () => { actions.closeFabMenu(); actions.openBankCsvImport(); } },
+    );
+  }
+  // Least-used action — creating a new {unitLabel} is comparatively rare
+  // next to day-to-day entry — so it goes last, not first.
   if (isHqView && canCreateTeamNow) {
     menuItems.push({
       key: 'store',
@@ -46,13 +55,6 @@ export default function Fab() {
       label: `${state.unitLabel || '店舗'}を作成`,
       onClick: () => { actions.closeFabMenu(); actions.openAdd(); },
     });
-  }
-  if (canCreate) {
-    menuItems.push(
-      { key: 'sales', icon: '💰', color: '#1f9d6b', label: '売上を入力', onClick: () => { actions.closeFabMenu(); actions.openEntry('sales'); } },
-      { key: 'expense', icon: '🧾', color: '#c2566b', label: '経費を入力', onClick: () => { actions.closeFabMenu(); actions.openEntry('expense'); } },
-      { key: 'csv', icon: '🏦', color: '#3a4150', label: '銀行CSVを取り込む', onClick: () => { actions.closeFabMenu(); actions.openBankCsvImport(); } },
-    );
   }
 
   return (
