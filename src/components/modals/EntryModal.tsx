@@ -90,13 +90,12 @@ export default function EntryModal() {
                       key={o.id}
                       onClick={() => actions.onEntryStoreId(o.id)}
                       style={{
-                        display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 9,
+                        padding: '8px 12px', borderRadius: 9,
                         border: `1.5px solid ${active ? state.accent : '#dfe3e8'}`,
                         background: active ? state.accent + '18' : '#fff',
                         color: active ? state.accent : '#3a4150', fontWeight: 700, fontSize: 12.5,
                       }}
                     >
-                      <span style={{ fontSize: 13 }}>{active ? '◎' : '○'}</span>
                       {o.name}
                     </button>
                   );
