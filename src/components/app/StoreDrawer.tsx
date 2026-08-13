@@ -219,7 +219,7 @@ export default function StoreDrawer() {
               <span style={{ fontSize: 11.5, color: colors.faint2 }}>
                 売上{storeTx.filter((t) => t.type === 'sales').length}件・経費{storeTx.filter((t) => t.type === 'expense').length}件
               </span>
-              <span style={{ marginLeft: 'auto', fontSize: 11, color: colors.faint3, transform: txListOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>▾</span>
+              <span style={{ marginLeft: 'auto', fontSize: 18, fontWeight: 700, color: colors.muted, transform: txListOpen ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>▾</span>
             </button>
             {txListOpen && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
