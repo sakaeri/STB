@@ -75,6 +75,7 @@ export function createInitialState(): AppState {
 
     accounts: [],
     session: null,
+    authChecked: false,
     authView: 'login',
     authEmail: '',
     authPassword: '',

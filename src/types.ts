@@ -350,6 +350,11 @@ export interface AppState {
   // account / auth
   accounts: Account[];
   session: string | null;
+  // false until the very first Supabase auth check (INITIAL_SESSION)
+  // resolves — gates the initial screen choice so a returning, already-
+  // logged-in user doesn't see a flash of the login screen before their
+  // restored session is confirmed.
+  authChecked: boolean;
   authView: AuthView;
   authEmail: string;
   authPassword: string;

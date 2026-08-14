@@ -1423,11 +1423,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         // chance to say otherwise. isPasswordRecoveryLink() is captured
         // straight from the URL before Supabase can touch it, so it
         // catches this on the very first event, event name aside.
-        set({ authView: 'reset', authError: '', resetPassword: '', resetPasswordConfirm: '' });
+        set({ authChecked: true, authView: 'reset', authError: '', resetPassword: '', resetPasswordConfirm: '' });
         return;
       }
       if (!session) {
-        set({ session: null, accounts: [], activeOrgId: null, stores: [], members: [], hqMembers: [], transactions: {}, memoTopics: [], trash: [] });
+        set({ authChecked: true, session: null, accounts: [], activeOrgId: null, stores: [], members: [], hqMembers: [], transactions: {}, memoTopics: [], trash: [] });
         return;
       }
       if (getState().pendingInviteId) {
@@ -1441,7 +1441,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         // snapshot, bouncing a brand-new invited signup into ordinary HQ
         // setup, or an already-logged-in user back to whichever org they
         // were in before, instead of the one they were just added to.
-        set({ session: session.user.id });
+        set({ authChecked: true, session: session.user.id });
         return;
       }
       // None of these three depend on each other's results — fetch them
@@ -1462,6 +1462,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const resolvedOrgId = preferredOrgId && myOrgs.some((o) => o.id === preferredOrgId) ? preferredOrgId : (myOrgs[0]?.id ?? null);
       if (resolvedOrgId) saveActiveOrgId(resolvedOrgId);
       set({
+        authChecked: true,
         session: session.user.id,
         ownerProfile: { name: profile?.name || '', email, password: '' },
         accounts: [{

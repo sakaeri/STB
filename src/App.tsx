@@ -80,6 +80,11 @@ export default function App() {
   let screen: React.ReactNode;
   if (state.pendingInviteId) {
     screen = <InviteScreen />;
+  } else if (!state.authChecked) {
+    // Nothing rendered yet while the very first Supabase session check is
+    // still in flight — showing AuthScreen here would flash the login form
+    // for an already-logged-in user before their restored session lands.
+    screen = <BootLoading />;
   } else if (!state.session || !account) {
     screen = <AuthScreen />;
   } else if (account.isAdmin) {
@@ -100,5 +105,21 @@ export default function App() {
       {state.showTermsModal && <TermsModal />}
       <ConfirmModal />
     </>
+  );
+}
+
+function BootLoading() {
+  const { state } = useStore();
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#eceef1' }}>
+      <style>{`@keyframes fc-boot-spin { to { transform: rotate(360deg); } }`}</style>
+      <div
+        style={{
+          width: 28, height: 28, borderRadius: '50%',
+          border: `3px solid ${state.accent}33`, borderTopColor: state.accent,
+          animation: 'fc-boot-spin .7s linear infinite',
+        }}
+      />
+    </div>
   );
 }
