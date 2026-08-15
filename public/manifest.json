@@ -1,0 +1,12 @@
+{
+  "name": "STB",
+  "short_name": "STB",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#eceef1",
+  "theme_color": "#1f7a5a",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
