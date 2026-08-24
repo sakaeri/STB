@@ -19,7 +19,7 @@ export interface AdminSettingsData {
 export async function fetchAdminOrgs(pricing: PricingConfig = DEFAULT_PRICING): Promise<AdminMockOrg[]> {
   const { data: orgs, error: orgsErr } = await supabase
     .from('orgs')
-    .select('id, name, rep, reading, address, status, created_at, billed_step, signup_template_id, pricing_model')
+    .select('id, name, rep, reading, address, status, created_at, billed_step, signup_template_id, pricing_model, stripe_subscription_id')
     .order('created_at', { ascending: true });
   if (orgsErr) throw orgsErr;
 
@@ -90,7 +90,7 @@ export async function fetchAdminOrgs(pricing: PricingConfig = DEFAULT_PRICING): 
       usesCsvImport: orgsUsingCsvImport.has(o.id),
       signupTemplateId: o.signup_template_id || null,
       ownerName: owner?.name || '', ownerEmail: owner?.email || '',
-      pricingModel,
+      pricingModel, hasStripeSubscription: !!o.stripe_subscription_id,
     };
   });
 }

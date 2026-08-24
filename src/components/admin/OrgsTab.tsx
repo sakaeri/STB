@@ -17,8 +17,12 @@ export default function OrgsTab() {
   const statOrgCount = orgs.length;
   const statTeamCount = orgs.reduce((sum, o) => sum + monthDataFor(o, month).teams, 0);
   const statFrozenCount = orgs.filter((o) => o.status === 'frozen').length;
+  // Trial orgs that haven't actually subscribed yet aren't being charged
+  // anything — billedPlanFor would still compute a step price for them
+  // (no free tier once on the trial model), which would otherwise inflate
+  // this total with revenue that doesn't exist yet.
   const statBillingTotal = orgs
-    .filter((o) => o.status === 'active')
+    .filter((o) => o.status === 'active' && !(o.pricingModel === 'trial' && !o.hasStripeSubscription))
     .reduce((sum, o) => sum + billedPlanFor(monthDataFor(o, month).teams, o.billedStep, effectivePricing(o.pricingModel, state.pricingConfig)).price, 0);
   // Adoption, not volume — "has this org used CSV import at all", not what
   // share of its transactions came from it. Meant as a rough signal for
@@ -190,9 +194,18 @@ function OrgRow({ org, month }: { org: AdminMockOrg; month: string }) {
   const { state, actions } = useStore();
   const { teams, sales } = monthDataFor(org, month);
   const isFrozen = org.status === 'frozen';
+  const inTrialGrace = org.pricingModel === 'trial' && !org.hasStripeSubscription && !isFrozen;
   // Frozen orgs haven't completed Stripe payment, so no revenue is actually
   // being collected — show ¥0 rather than the team-count-derived plan price.
-  const plan = isFrozen ? { label: '¥0/月（凍結中）', color: '#c2453d' } : billedPlanFor(teams, org.billedStep, effectivePricing(org.pricingModel, state.pricingConfig));
+  // A trial org still inside its 30-day grace hasn't subscribed either —
+  // billedPlanFor would still show a step price for it (no free tier once
+  // on the trial model), which reads as "already being charged" when
+  // nothing has actually been billed yet, so show the trial countdown instead.
+  const plan = isFrozen
+    ? { label: '¥0/月（凍結中）', color: '#c2453d' }
+    : inTrialGrace
+      ? { label: `お試し中（残り${trialDaysLeft(org)}日）`, color: state.accent }
+      : billedPlanFor(teams, org.billedStep, effectivePricing(org.pricingModel, state.pricingConfig));
   const showActionMenu = state.adminActionMenuOrgId === org.id;
   const showDetail = state.adminDetailOrgId === org.id;
 
@@ -268,6 +281,10 @@ function OrgRow({ org, month }: { org: AdminMockOrg; month: string }) {
 
 const TRIAL_DAYS = 30;
 
+function trialDaysLeft(org: AdminMockOrg): number {
+  return Math.max(0, TRIAL_DAYS - Math.floor((Date.now() - new Date(org.joinedAt).getTime()) / (24 * 60 * 60 * 1000)));
+}
+
 // 'legacy' orgs (registered before the 2026-08 pricing overhaul) keep the
 // original "N teams free forever" rule untouched. 'trial' orgs get no
 // permanent free tier — a 30-day trial from signup instead, freezing
@@ -276,6 +293,7 @@ const TRIAL_DAYS = 30;
 function pricingModelLabel(org: AdminMockOrg): string {
   if (org.pricingModel !== 'trial') return '旧料金（5チームまで無料）';
   if (org.status === 'frozen') return 'お試し（期限切れ・凍結中）';
-  const daysLeft = TRIAL_DAYS - Math.floor((Date.now() - new Date(org.joinedAt).getTime()) / (24 * 60 * 60 * 1000));
+  if (org.hasStripeSubscription) return 'お試し（契約済み）';
+  const daysLeft = trialDaysLeft(org);
   return daysLeft > 0 ? `お試し（残り${daysLeft}日）` : 'お試し（期限切れ）';
 }

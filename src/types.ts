@@ -197,6 +197,7 @@ export interface AdminMockOrg {
   ownerName: string;
   ownerEmail: string;
   pricingModel: 'legacy' | 'trial';
+  hasStripeSubscription: boolean;
 }
 
 export interface HqSetupForm {
