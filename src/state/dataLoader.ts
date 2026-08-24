@@ -15,6 +15,7 @@ export interface LoadedOrgData {
   hasStripeSubscription: boolean;
   orgBilledStep: number;
   orgPricingModel: 'legacy' | 'trial';
+  orgCreatedAt: string | null;
   stores: Store[];
   hqMembers: HqMember[];
   members: Member[];
@@ -271,6 +272,7 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
     hasStripeSubscription: !!orgRow.stripe_subscription_id,
     orgBilledStep: Number(orgRow.billed_step) || 0,
     orgPricingModel: (orgRow.pricing_model as 'legacy' | 'trial') || 'legacy',
+    orgCreatedAt: orgRow.created_at || null,
     stores, hqMembers, members, transactions, entryPresets, memoTopics, trash, confirmedPeriods, logoMap,
   };
 }

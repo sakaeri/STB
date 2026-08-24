@@ -32,6 +32,7 @@ export function createInitialState(): AppState {
     hasStripeSubscription: false,
     orgBilledStep: 0,
     orgPricingModel: 'legacy',
+    orgCreatedAt: null,
 
     stores: [],
     members: [],

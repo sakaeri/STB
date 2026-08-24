@@ -107,6 +107,18 @@ export default function SettingsPage() {
 
   const plan = actions.effectivePlan();
   const downgradeCand = actions.downgradeCandidatePlan();
+  // Trial-model orgs have no free tier baked into the price math (see
+  // effectivePricing) — so `plan` alone would show a yen amount from the
+  // very first team, even though nothing is actually charged until the
+  // owner subscribes. Show the trial countdown instead for as long as
+  // that's true; once a real subscription exists (or the trial has run
+  // out and frozen — its own banner already covers that case), fall back
+  // to the normal price badge.
+  const TRIAL_DAYS = 30;
+  const showTrialBadge = state.orgPricingModel === 'trial' && !state.hasStripeSubscription && state.orgStatus !== 'frozen';
+  const trialDaysLeft = showTrialBadge && state.orgCreatedAt
+    ? Math.max(0, TRIAL_DAYS - Math.floor((Date.now() - new Date(state.orgCreatedAt).getTime()) / (24 * 60 * 60 * 1000)))
+    : null;
   const orgKey = state.activeOrgId ?? 'default';
   const showDowngradePrompt = isHqView && isOwner && !!downgradeCand && state.orgDowngradeDismissed[orgKey] !== state.stores.length;
 
@@ -149,8 +161,8 @@ export default function SettingsPage() {
         </div>
         {isHqView && (
           <div style={{ padding: '14px 22px 0', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fff', background: plan.color, padding: '6px 12px', borderRadius: 8, flex: 'none' }}>
-              {plan.label} ・ {state.stores.length}{unitLabel}
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fff', background: trialDaysLeft !== null ? accent : plan.color, padding: '6px 12px', borderRadius: 8, flex: 'none' }}>
+              {trialDaysLeft !== null ? `お試し中（残り${trialDaysLeft}日）` : plan.label} ・ {state.stores.length}{unitLabel}
             </span>
             {showDowngradePrompt && downgradeCand && (
               <button

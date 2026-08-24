@@ -300,6 +300,7 @@ export interface AppState {
   hasStripeSubscription: boolean;
   orgBilledStep: number;
   orgPricingModel: 'legacy' | 'trial';
+  orgCreatedAt: string | null;
 
   // data
   stores: Store[];
