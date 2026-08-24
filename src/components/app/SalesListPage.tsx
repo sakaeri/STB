@@ -361,7 +361,7 @@ export default function SalesListPage() {
         {!frozen && showTrialEndingBanner && (
           <div style={{ marginBottom: 14, background: colors.warnBg, border: `1px solid ${colors.warnBorder}`, borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 200, fontSize: 12.5, color: colors.warnText, fontWeight: 700 }}>
-              ⏰ お試し期間終了まであと{trialDaysLeftCount}日。期間終了後、お支払い手続きが完了していないとご利用を一時停止させていただきます。
+              ⏰ お試し期間終了まであと{trialDaysLeftCount}日
             </div>
             {isOwner && (
               <button

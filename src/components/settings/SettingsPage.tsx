@@ -153,10 +153,7 @@ export default function SettingsPage() {
       {showTrialEndingBanner && (
         <div style={{ background: '#fdf3e3', border: '1px solid #f0dcae', borderRadius: 13, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 20 }}>⏰</span>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ fontWeight: 700, fontSize: 13.5, color: '#8a6a2a' }}>お試し期間終了まであと{daysLeft}日</div>
-            <div style={{ fontSize: 12, color: '#8a6a2a', marginTop: 2 }}>期間終了後、お支払い手続きが完了していないとご利用を一時停止させていただきます。</div>
-          </div>
+          <div style={{ flex: 1, minWidth: 200, fontWeight: 700, fontSize: 13.5, color: '#8a6a2a' }}>お試し期間終了まであと{daysLeft}日</div>
           {isOwner && (
             <button
               onClick={actions.startCheckout}
