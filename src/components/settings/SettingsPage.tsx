@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import { useStore } from '../../state/store.tsx';
-import { CLOSING_DAY_OPTIONS, FISCAL_MONTH_OPTIONS } from '../../state/calc';
+import { CLOSING_DAY_OPTIONS, FISCAL_MONTH_OPTIONS, trialDaysLeft } from '../../state/calc';
 import { accentSoft, roleBg } from '../../tokens';
 import type { Store, TrashItem } from '../../types';
 import { myRole } from '../app/rowHelpers';
@@ -114,11 +114,12 @@ export default function SettingsPage() {
   // that's true; once a real subscription exists (or the trial has run
   // out and frozen — its own banner already covers that case), fall back
   // to the normal price badge.
-  const TRIAL_DAYS = 30;
   const showTrialBadge = state.orgPricingModel === 'trial' && !state.hasStripeSubscription && state.orgStatus !== 'frozen';
-  const trialDaysLeft = showTrialBadge && state.orgCreatedAt
-    ? Math.max(0, TRIAL_DAYS - Math.floor((Date.now() - new Date(state.orgCreatedAt).getTime()) / (24 * 60 * 60 * 1000)))
-    : null;
+  const daysLeft = showTrialBadge ? trialDaysLeft(state.orgCreatedAt) : null;
+  // Freezing without warning at day 30 felt abrupt — surface a heads-up
+  // banner (mirroring the frozen banner's style/CTA) once the trial is
+  // close to running out, rather than showing it for the entire 30 days.
+  const showTrialEndingBanner = isHqView && showTrialBadge && daysLeft !== null && daysLeft <= 7;
   const orgKey = state.activeOrgId ?? 'default';
   const showDowngradePrompt = isHqView && isOwner && !!downgradeCand && state.orgDowngradeDismissed[orgKey] !== state.stores.length;
 
@@ -148,6 +149,26 @@ export default function SettingsPage() {
         </div>
       )}
 
+      {/* お試し期間終了間近バナー */}
+      {showTrialEndingBanner && (
+        <div style={{ background: '#fdf3e3', border: '1px solid #f0dcae', borderRadius: 13, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 20 }}>⏰</span>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontWeight: 700, fontSize: 13.5, color: '#8a6a2a' }}>お試し期間終了まであと{daysLeft}日</div>
+            <div style={{ fontSize: 12, color: '#8a6a2a', marginTop: 2 }}>期間終了後、お支払い手続きが完了していないとご利用を一時停止させていただきます。</div>
+          </div>
+          {isOwner && (
+            <button
+              onClick={actions.startCheckout}
+              disabled={state.billingCheckoutLoading}
+              style={{ height: 40, padding: '0 20px', borderRadius: 10, fontWeight: 700, fontSize: 13, color: '#fff', background: '#d99a2b', flex: 'none', opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
+            >
+              {state.billingCheckoutLoading ? '処理中…' : '有料プランへ変更はコチラ'}
+            </button>
+          )}
+        </div>
+      )}
+
       {/* 本部（会社）情報 */}
       <section style={cardStyle}>
         <div style={cardHeaderStyle}>
@@ -161,8 +182,8 @@ export default function SettingsPage() {
         </div>
         {isHqView && (
           <div style={{ padding: '14px 22px 0', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fff', background: trialDaysLeft !== null ? accent : plan.color, padding: '6px 12px', borderRadius: 8, flex: 'none' }}>
-              {trialDaysLeft !== null ? `お試し中（残り${trialDaysLeft}日）` : plan.label} ・ {state.stores.length}{unitLabel}
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fff', background: daysLeft !== null ? accent : plan.color, padding: '6px 12px', borderRadius: 8, flex: 'none' }}>
+              {daysLeft !== null ? `お試し中（残り${daysLeft}日）` : plan.label} ・ {state.stores.length}{unitLabel}
             </span>
             {showDowngradePrompt && downgradeCand && (
               <button

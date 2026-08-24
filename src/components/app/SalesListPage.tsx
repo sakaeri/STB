@@ -11,6 +11,7 @@ import {
   yesterdayKey,
   yesterdayLabel,
   yen,
+  trialDaysLeft,
 } from '../../state/calc';
 import { buildRow, isPeriodConfirmed, myRole } from './rowHelpers';
 import KpiCards from './KpiCards';
@@ -103,6 +104,12 @@ export default function SalesListPage() {
   // member looking at only their own store is unaffected.
   const frozen = state.orgStatus === 'frozen' && isHq;
   const isOwner = myRole(state) === 'オーナー';
+  // Mirrors SettingsPage's trial-ending banner — freezing without warning
+  // at day 30 felt abrupt, so surface a heads-up once the trial is close
+  // to running out (last 7 days) rather than only in Settings.
+  const trialActive = state.orgPricingModel === 'trial' && !state.hasStripeSubscription && state.orgStatus !== 'frozen';
+  const trialDaysLeftCount = trialActive ? trialDaysLeft(state.orgCreatedAt) : null;
+  const showTrialEndingBanner = isHq && trialActive && trialDaysLeftCount !== null && trialDaysLeftCount <= 7;
   const openStore = (id: string) => actions.openStoreDrawer(id);
 
   const csvField = (v: string | number) => {
@@ -347,6 +354,22 @@ export default function SalesListPage() {
                 style={{ height: 34, padding: '0 16px', borderRadius: 9, fontWeight: 700, fontSize: 12.5, color: '#fff', background: colors.danger, flex: 'none', opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
               >
                 {state.billingCheckoutLoading ? '処理中…' : 'お支払い手続きへ'}
+              </button>
+            )}
+          </div>
+        )}
+        {!frozen && showTrialEndingBanner && (
+          <div style={{ marginBottom: 14, background: colors.warnBg, border: `1px solid ${colors.warnBorder}`, borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 200, fontSize: 12.5, color: colors.warnText, fontWeight: 700 }}>
+              ⏰ お試し期間終了まであと{trialDaysLeftCount}日。期間終了後、お支払い手続きが完了していないとご利用を一時停止させていただきます。
+            </div>
+            {isOwner && (
+              <button
+                onClick={actions.startCheckout}
+                disabled={state.billingCheckoutLoading}
+                style={{ height: 34, padding: '0 16px', borderRadius: 9, fontWeight: 700, fontSize: 12.5, color: '#fff', background: colors.warn, flex: 'none', opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
+              >
+                {state.billingCheckoutLoading ? '処理中…' : '有料プランへ変更はコチラ'}
               </button>
             )}
           </div>

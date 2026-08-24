@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useStore } from '../../state/store.tsx';
 import { billedPlanFor, effectivePricing } from '../../tokens';
-import { adminMatchesSearch } from '../../state/calc';
+import { adminMatchesSearch, trialDaysLeft } from '../../state/calc';
 import { adminMonthLabel, monthDataFor, prefectureOf } from './shared';
 import type { AdminMockOrg } from '../../types';
 import { HQ_TEMPLATES } from '../../state/hqTemplates';
@@ -204,7 +204,7 @@ function OrgRow({ org, month }: { org: AdminMockOrg; month: string }) {
   const plan = isFrozen
     ? { label: '¥0/月（凍結中）', color: '#c2453d' }
     : inTrialGrace
-      ? { label: `お試し中（残り${trialDaysLeft(org)}日）`, color: state.accent }
+      ? { label: `お試し中（残り${trialDaysLeft(org.joinedAt)}日）`, color: state.accent }
       : billedPlanFor(teams, org.billedStep, effectivePricing(org.pricingModel, state.pricingConfig));
   const showActionMenu = state.adminActionMenuOrgId === org.id;
   const showDetail = state.adminDetailOrgId === org.id;
@@ -279,12 +279,6 @@ function OrgRow({ org, month }: { org: AdminMockOrg; month: string }) {
   );
 }
 
-const TRIAL_DAYS = 30;
-
-function trialDaysLeft(org: AdminMockOrg): number {
-  return Math.max(0, TRIAL_DAYS - Math.floor((Date.now() - new Date(org.joinedAt).getTime()) / (24 * 60 * 60 * 1000)));
-}
-
 // 'legacy' orgs (registered before the 2026-08 pricing overhaul) keep the
 // original "N teams free forever" rule untouched. 'trial' orgs get no
 // permanent free tier — a 30-day trial from signup instead, freezing
@@ -294,6 +288,6 @@ function pricingModelLabel(org: AdminMockOrg): string {
   if (org.pricingModel !== 'trial') return '旧料金（5チームまで無料）';
   if (org.status === 'frozen') return 'お試し（期限切れ・凍結中）';
   if (org.hasStripeSubscription) return 'お試し（契約済み）';
-  const daysLeft = trialDaysLeft(org);
+  const daysLeft = trialDaysLeft(org.joinedAt);
   return daysLeft > 0 ? `お試し（残り${daysLeft}日）` : 'お試し（期限切れ）';
 }

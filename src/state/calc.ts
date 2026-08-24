@@ -173,6 +173,17 @@ export function adminMatchesSearch(o: { name: string; rep: string; reading: stri
   return [o.name, o.rep, o.reading].some((s) => toHiragana(s || '').includes(nq));
 }
 
+// Trial-model orgs get a 30-day trial from signup instead of a permanent
+// free tier (see src/state/dataLoader.ts's fetchOrgData) — this is the one
+// place that math happens, shared by the settings-page badge/banner and
+// the admin dashboard's org list.
+export const TRIAL_DAYS = 30;
+
+export function trialDaysLeft(createdAt: string | null): number {
+  if (!createdAt) return 0;
+  return Math.max(0, TRIAL_DAYS - Math.floor((Date.now() - new Date(createdAt).getTime()) / (24 * 60 * 60 * 1000)));
+}
+
 export function getClosingDayNum(companyInfo: CompanyInfo): number | null {
   const cd = companyInfo.closingDay || 'eom';
   return cd === 'eom' ? null : parseInt(cd, 10);
