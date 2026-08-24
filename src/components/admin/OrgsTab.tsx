@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useStore } from '../../state/store.tsx';
-import { billedPlanFor } from '../../tokens';
+import { billedPlanFor, effectivePricing } from '../../tokens';
 import { adminMatchesSearch } from '../../state/calc';
 import { adminMonthLabel, monthDataFor, prefectureOf } from './shared';
 import type { AdminMockOrg } from '../../types';
@@ -19,7 +19,7 @@ export default function OrgsTab() {
   const statFrozenCount = orgs.filter((o) => o.status === 'frozen').length;
   const statBillingTotal = orgs
     .filter((o) => o.status === 'active')
-    .reduce((sum, o) => sum + billedPlanFor(monthDataFor(o, month).teams, o.billedStep, state.pricingConfig).price, 0);
+    .reduce((sum, o) => sum + billedPlanFor(monthDataFor(o, month).teams, o.billedStep, effectivePricing(o.pricingModel, state.pricingConfig)).price, 0);
   // Adoption, not volume — "has this org used CSV import at all", not what
   // share of its transactions came from it. Meant as a rough signal for
   // whether a full bank API integration is worth building (see 銀行API連携
@@ -192,7 +192,7 @@ function OrgRow({ org, month }: { org: AdminMockOrg; month: string }) {
   const isFrozen = org.status === 'frozen';
   // Frozen orgs haven't completed Stripe payment, so no revenue is actually
   // being collected — show ¥0 rather than the team-count-derived plan price.
-  const plan = isFrozen ? { label: '¥0/月（凍結中）', color: '#c2453d' } : billedPlanFor(teams, org.billedStep, state.pricingConfig);
+  const plan = isFrozen ? { label: '¥0/月（凍結中）', color: '#c2453d' } : billedPlanFor(teams, org.billedStep, effectivePricing(org.pricingModel, state.pricingConfig));
   const showActionMenu = state.adminActionMenuOrgId === org.id;
   const showDetail = state.adminDetailOrgId === org.id;
 
@@ -257,10 +257,25 @@ function OrgRow({ org, month }: { org: AdminMockOrg; month: string }) {
               <div><span style={{ color: '#9aa0a8' }}>業種テンプレート：</span>{HQ_TEMPLATES.find((t) => t.id === org.signupTemplateId)?.label || '自由作成'}</div>
               <div><span style={{ color: '#9aa0a8' }}>オーナー：</span>{org.ownerName || '—'}</div>
               <div><span style={{ color: '#9aa0a8' }}>メールアドレス：</span>{org.ownerEmail || '—'}</div>
+              <div><span style={{ color: '#9aa0a8' }}>料金モデル：</span>{pricingModelLabel(org)}</div>
             </div>
           </td>
         </tr>
       )}
     </>
   );
+}
+
+const TRIAL_DAYS = 30;
+
+// 'legacy' orgs (registered before the 2026-08 pricing overhaul) keep the
+// original "N teams free forever" rule untouched. 'trial' orgs get no
+// permanent free tier — a 30-day trial from signup instead, freezing
+// automatically if still unsubscribed once it runs out (see
+// src/state/dataLoader.ts's fetchOrgData).
+function pricingModelLabel(org: AdminMockOrg): string {
+  if (org.pricingModel !== 'trial') return '旧料金（5チームまで無料）';
+  if (org.status === 'frozen') return 'お試し（期限切れ・凍結中）';
+  const daysLeft = TRIAL_DAYS - Math.floor((Date.now() - new Date(org.joinedAt).getTime()) / (24 * 60 * 60 * 1000));
+  return daysLeft > 0 ? `お試し（残り${daysLeft}日）` : 'お試し（期限切れ）';
 }

@@ -196,6 +196,7 @@ export interface AdminMockOrg {
   signupTemplateId: string | null;
   ownerName: string;
   ownerEmail: string;
+  pricingModel: 'legacy' | 'trial';
 }
 
 export interface HqSetupForm {
@@ -298,6 +299,7 @@ export interface AppState {
   orgStatus: 'active' | 'frozen';
   hasStripeSubscription: boolean;
   orgBilledStep: number;
+  orgPricingModel: 'legacy' | 'trial';
 
   // data
   stores: Store[];

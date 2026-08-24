@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { userClient, serviceClient, bearerToken } from '../_lib/supabase.js';
 import { getStripe } from '../_lib/stripe.js';
-import { stepsForCount, parsePricingConfig } from '../_lib/pricing.js';
+import { stepsForCount, parsePricingConfig, effectivePricing } from '../_lib/pricing.js';
 
 // The owner explicitly choosing to lower billing to match a reduced team
 // count. Billing never does this on its own (sync-quantity.ts only ever
@@ -34,7 +34,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const { data: org, error: orgErr } = await supabase
-      .from('orgs').select('id, stripe_subscription_id').eq('id', orgId).single();
+      .from('orgs').select('id, stripe_subscription_id, pricing_model').eq('id', orgId).single();
     if (orgErr || !org) {
       res.status(400).json({ error: '本部情報が見つかりませんでした' });
       return;
@@ -42,7 +42,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { count } = await supabase.from('teams').select('id', { count: 'exact', head: true }).eq('org_id', orgId);
     const { data: pricingRaw } = await supabase.rpc('get_public_pricing');
-    const pricing = parsePricingConfig(pricingRaw);
+    const pricing = effectivePricing(org.pricing_model === 'trial' ? 'trial' : 'legacy', parsePricingConfig(pricingRaw));
     // Unfloored — this is the actual target the client showed and
     // confirmed (downgradeCandidatePlan / the "◯◯に変更" button), which
     // can genuinely be Free (step 0). sync-quantity.ts floors at 1 because

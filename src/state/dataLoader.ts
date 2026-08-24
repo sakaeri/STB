@@ -14,6 +14,7 @@ export interface LoadedOrgData {
   orgStatus: 'active' | 'frozen';
   hasStripeSubscription: boolean;
   orgBilledStep: number;
+  orgPricingModel: 'legacy' | 'trial';
   stores: Store[];
   hqMembers: HqMember[];
   members: Member[];
@@ -86,6 +87,10 @@ export async function createOrgWithFirstTeam(params: {
     .insert({
       id: orgId, name: hqName, address, rep, closing_day: closingDay, fiscal_start_month: fiscalStartMonth, created_by: userId,
       unit_label: unitLabel || null, unit_label_plural: unitLabel || null, signup_template_id: templateId || null,
+      // Every org created going forward is on the new 30-day-trial-then-
+      // freeze model (see fetchOrgData below) — 'legacy' is reserved for
+      // orgs that already existed before this pricing change shipped.
+      pricing_model: 'trial',
     });
   if (orgErr) throw orgErr;
 
@@ -121,6 +126,25 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
   if (orgRes.error || !orgRes.data) throw orgRes.error || new Error('org not found');
   if (teamsRes.error) throw teamsRes.error;
   const orgRow = orgRes.data;
+
+  // 'trial'-model orgs (created after the 2026-08 pricing overhaul, see
+  // createOrgWithFirstTeam) get no permanent free tier — instead a 30-day
+  // trial from signup, no card required. Checked lazily here (rather than
+  // via a cron job) since org data is always loaded on every visit anyway:
+  // once the window has passed with no active subscription, freeze on the
+  // next load. 'legacy' orgs (everything that existed before this change)
+  // are untouched — they keep the original "N teams free forever" rule.
+  const TRIAL_DAYS = 30;
+  if (
+    orgRow.pricing_model === 'trial'
+    && orgRow.status !== 'frozen'
+    && !orgRow.stripe_subscription_id
+    && Date.now() > new Date(orgRow.created_at).getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000
+  ) {
+    const { error: freezeErr } = await supabase.from('orgs').update({ status: 'frozen' }).eq('id', orgId);
+    if (!freezeErr) orgRow.status = 'frozen';
+  }
+
   const teams = teamsRes.data || [];
   const teamIds = teams.map((t) => t.id);
   const teamNameById = new Map(teams.map((t) => [t.id, t.name]));
@@ -246,6 +270,7 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
     orgStatus: orgRow.status as 'active' | 'frozen',
     hasStripeSubscription: !!orgRow.stripe_subscription_id,
     orgBilledStep: Number(orgRow.billed_step) || 0,
+    orgPricingModel: (orgRow.pricing_model as 'legacy' | 'trial') || 'legacy',
     stores, hqMembers, members, transactions, entryPresets, memoTopics, trash, confirmedPeriods, logoMap,
   };
 }

@@ -31,6 +31,7 @@ export function createInitialState(): AppState {
     orgStatus: 'active',
     hasStripeSubscription: false,
     orgBilledStep: 0,
+    orgPricingModel: 'legacy',
 
     stores: [],
     members: [],

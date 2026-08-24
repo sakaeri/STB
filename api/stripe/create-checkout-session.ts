@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { userClient, bearerToken } from '../_lib/supabase.js';
 import { getStripe } from '../_lib/stripe.js';
-import { stepsForCount, parsePricingConfig } from '../_lib/pricing.js';
+import { stepsForCount, parsePricingConfig, effectivePricing } from '../_lib/pricing.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const { data: org, error: orgErr } = await supabase
-      .from('orgs').select('id, name, stripe_customer_id, stripe_subscription_id').eq('id', orgId).single();
+      .from('orgs').select('id, name, stripe_customer_id, stripe_subscription_id, pricing_model').eq('id', orgId).single();
     if (orgErr || !org) {
       console.error('create-checkout-session: orgs lookup failed', orgErr);
       res.status(404).json({ error: `本部が見つかりません${orgErr ? `（${orgErr.message}）` : ''}` });
@@ -70,7 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { count } = await supabase.from('teams').select('id', { count: 'exact', head: true }).eq('org_id', orgId);
     const { data: pricingRaw } = await supabase.rpc('get_public_pricing');
-    const pricing = parsePricingConfig(pricingRaw);
+    const pricing = effectivePricing(org.pricing_model === 'trial' ? 'trial' : 'legacy', parsePricingConfig(pricingRaw));
     // Checkout only ever runs to resolve a frozen/unpaid state, so always
     // bill at least the first paid step even if team count is technically
     // still within the free range (e.g. frozen for an unrelated reason).

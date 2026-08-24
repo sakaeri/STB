@@ -9,7 +9,7 @@ import {
   fetchAdminOrgs, fetchAuditLog, fetchAppSettings, addAuditLog,
   saveAppSettingsBilling, saveAppSettingsTerms, fetchPublicTerms, fetchPublicAppLogo, fetchPublicPricing,
 } from './adminData';
-import { planForCount, billedPlanFor, type PlanStep } from '../tokens';
+import { planForCount, billedPlanFor, effectivePricing, type PlanStep } from '../tokens';
 import { decodeCsvFile, parseCsvText, rowsFromCsvTable } from './bankCsv';
 import { HQ_TEMPLATES } from './hqTemplates';
 
@@ -118,17 +118,25 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
   };
 
   const activeTeamCount = () => getState().stores.length;
+  // 'trial'-model orgs bill on the same per-step rate as the global config
+  // but with no permanent free tier (see effectivePricing) — every pricing
+  // calc below goes through this rather than reading st.pricingConfig raw.
+  const activePricing = () => {
+    const st = getState();
+    return effectivePricing(st.orgPricingModel, st.pricingConfig);
+  };
   const effectivePlan = () => {
     const st = getState();
-    return billedPlanFor(activeTeamCount(), st.orgBilledStep, st.pricingConfig);
+    return billedPlanFor(activeTeamCount(), st.orgBilledStep, activePricing());
   };
   // Billing never auto-lowers (see billedPlanFor) — this detects when the
   // live team count would justify a lower step than what's actually billed,
   // so the owner can choose to switch down manually (downgradePlan below).
   const downgradeCandidatePlan = (): PlanStep | null => {
     const st = getState();
-    const billed = billedPlanFor(activeTeamCount(), st.orgBilledStep, st.pricingConfig);
-    const liveOnly = planForCount(activeTeamCount(), st.pricingConfig);
+    const pricing = activePricing();
+    const billed = billedPlanFor(activeTeamCount(), st.orgBilledStep, pricing);
+    const liveOnly = planForCount(activeTeamCount(), pricing);
     return liveOnly.step < billed.step ? liveOnly : null;
   };
 
@@ -490,8 +498,9 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       const st = getState();
       const f = st.addForm;
       if (!f || !f.name.trim()) return;
-      const currentPlan = billedPlanFor(st.stores.length, st.orgBilledStep, st.pricingConfig);
-      const nextPlan = billedPlanFor(st.stores.length + 1, st.orgBilledStep, st.pricingConfig);
+      const pricing = effectivePricing(st.orgPricingModel, st.pricingConfig);
+      const currentPlan = billedPlanFor(st.stores.length, st.orgBilledStep, pricing);
+      const nextPlan = billedPlanFor(st.stores.length + 1, st.orgBilledStep, pricing);
       if (nextPlan.price !== currentPlan.price) { set({ pendingUpgrade: { fromPlan: currentPlan, toPlan: nextPlan } }); return; }
       actuallyCreateStore();
     },

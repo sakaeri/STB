@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { userClient, serviceClient, bearerToken } from '../_lib/supabase.js';
 import { getStripe } from '../_lib/stripe.js';
-import { stepsForCount, parsePricingConfig } from '../_lib/pricing.js';
+import { stepsForCount, parsePricingConfig, effectivePricing } from '../_lib/pricing.js';
 
 // Called (fire-and-forget) after a team is created or deleted, so a live
 // subscription's billed quantity tracks the org's actual team count.
@@ -23,7 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Reading the org row at all already proves membership (RLS-scoped) —
     // any org/team member who could trigger a create/delete may sync.
     const { data: org, error: orgErr } = await supabase
-      .from('orgs').select('id, stripe_subscription_id').eq('id', orgId).single();
+      .from('orgs').select('id, stripe_subscription_id, pricing_model').eq('id', orgId).single();
     if (orgErr || !org) {
       console.error('sync-quantity: orgs lookup failed', orgErr);
       res.status(404).json({ error: `本部が見つかりません${orgErr ? `（${orgErr.message}）` : ''}` });
@@ -31,7 +31,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const { count } = await supabase.from('teams').select('id', { count: 'exact', head: true }).eq('org_id', orgId);
     const { data: pricingRaw } = await supabase.rpc('get_public_pricing');
-    const pricing = parsePricingConfig(pricingRaw);
+    const basePricing = parsePricingConfig(pricingRaw);
+    const isTrial = org.pricing_model === 'trial';
+    // Billing/quantity math always uses the trial override (no permanent
+    // free tier) once an org is on the new model; the free-tier freeze
+    // gate below deliberately does NOT use it — see comment there.
+    const pricing = effectivePricing(isTrial ? 'trial' : 'legacy', basePricing);
 
     // Shared by both "never subscribed" and "subscription turned out to be
     // stale/dead" below: nothing is actually being billed, so if team
@@ -40,8 +45,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // here: the frozen banner's "お支払い手続きへ" button already starts a
     // brand new Checkout whenever stripe_subscription_id is null, so this
     // is effectively "send them to sign up again", not a block.
+    //
+    // Trial-model orgs are exempt from this gate entirely — they get no
+    // permanent free tier, but during the 30-day trial no card is required
+    // and no team-count threshold freezes them; only running out the trial
+    // window unsubscribed does (see the lazy check in
+    // src/state/dataLoader.ts's fetchOrgData). Using the *legacy* free-tier
+    // config here (not the trial override) would otherwise freeze a brand
+    // new trial org on its very first team.
     const freezeIfOverFreeTier = async (): Promise<boolean> => {
-      if (stepsForCount(count || 0, pricing) > 0) {
+      if (!isTrial && stepsForCount(count || 0, basePricing) > 0) {
         const service = serviceClient();
         const { data } = await service.from('orgs').update({ status: 'frozen' }).eq('id', orgId).select('name').single();
         if (data) await service.from('admin_audit_log').insert({ text: `「${data.name}」を凍結しました（無料枠を超えたが未契約）` });
