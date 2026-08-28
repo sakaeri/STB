@@ -387,9 +387,9 @@ export default function MemoPage() {
                         <button
                           onClick={() => actions.openAddRecordForLabel(curTopic.id, curEntry.id, g.label)}
                           title={`「${g.label}」に記録を追加`}
-                          style={{ width: 26, height: 26, borderRadius: 7, background: accent + '18', color: accent, fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
+                          style={{ height: 28, padding: '0 11px 0 8px', borderRadius: 8, background: accent + '18', color: accent, fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3, flex: 'none' }}
                         >
-                          ＋
+                          <span style={{ fontSize: 15, fontWeight: 400 }}>＋</span>追加
                         </button>
                       )}
                     </div>
