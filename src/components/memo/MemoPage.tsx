@@ -389,7 +389,7 @@ export default function MemoPage() {
                           title={`「${g.label}」に記録を追加`}
                           style={{ height: 28, padding: '0 11px 0 8px', borderRadius: 8, background: accent + '18', color: accent, fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 3, flex: 'none' }}
                         >
-                          <span style={{ fontSize: 15, fontWeight: 400 }}>＋</span>追加
+                          <span style={{ fontSize: 15, fontWeight: 400 }}>＋</span>内容追加
                         </button>
                       )}
                     </div>
