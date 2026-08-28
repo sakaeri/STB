@@ -7,7 +7,10 @@ const inputStyle: React.CSSProperties = {
   border: '1.5px solid #dfe3e8',
   borderRadius: 11,
   padding: '12px 14px',
-  fontSize: 14.5,
+  // iOS Safari auto-zooms the whole page in when a focused input/textarea's
+  // font-size is under 16px — that's the "画面が少しだけ拡大される" the
+  // user reported, not intentional. 16px is the threshold that avoids it.
+  fontSize: 16,
   fontWeight: 500,
   outline: 'none',
   background: '#fff',
@@ -133,7 +136,7 @@ export default function MemoAddModal() {
                     onChange={(e) => actions.onMemoModalText(e.target.value)}
                     rows={4}
                     placeholder="詳細を入力"
-                    style={{ ...inputStyle, padding: '11px 13px', fontSize: 14, lineHeight: 1.6, resize: 'vertical', fontFamily: 'inherit' }}
+                    style={{ ...inputStyle, padding: '11px 13px', lineHeight: 1.6, resize: 'vertical', fontFamily: 'inherit' }}
                   />
                 </div>
                 <div>
