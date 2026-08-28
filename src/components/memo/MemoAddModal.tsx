@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useStore } from '../../state/store.tsx';
 
 const labelStyle: React.CSSProperties = { fontSize: 12.5, fontWeight: 700, color: '#46505e', display: 'block', marginBottom: 8 };
@@ -31,7 +32,12 @@ export default function MemoAddModal() {
       ? !!(mm.name && mm.name.trim())
       : !!(mm.label && mm.label.trim());
 
-  return (
+  // Portaled straight to <body>: MemoPage's own scrolling container has a
+  // transform-based entry animation (scIn), which per spec makes it a
+  // containing block for any `position: fixed` descendant — without this,
+  // the modal renders fixed to the top of that scrolled container instead
+  // of the actual viewport, invisible unless scrolled back to the top.
+  return createPortal(
     <div
       onClick={actions.closeMemoModal}
       style={{ position: 'fixed', inset: 0, background: 'rgba(20,28,42,.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, animation: 'scOver .2s ease both' }}
@@ -189,6 +195,7 @@ export default function MemoAddModal() {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
