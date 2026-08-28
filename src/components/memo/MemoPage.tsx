@@ -381,7 +381,18 @@ export default function MemoPage() {
                 });
                 return groups.map((g) => (
                   <div key={g.label} style={{ background: '#fff', border: '1px solid #e7e9ed', borderRadius: 13, padding: '15px 17px' }}>
-                    <div style={{ fontWeight: 700, fontSize: 13.5, color: accent, marginBottom: 10 }}>{g.label}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13.5, color: accent }}>{g.label}</div>
+                      {canCreate && (
+                        <button
+                          onClick={() => actions.openAddRecordForLabel(curTopic.id, curEntry.id, g.label)}
+                          title={`「${g.label}」に記録を追加`}
+                          style={{ width: 26, height: 26, borderRadius: 7, background: accent + '18', color: accent, fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}
+                        >
+                          ＋
+                        </button>
+                      )}
+                    </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                       {g.records.map((r, i) => {
                         const dateFmt = `${r.date.slice(0, 4)}/${r.date.slice(5, 7)}/${r.date.slice(8, 10)}`;
@@ -401,7 +412,7 @@ export default function MemoPage() {
                                 </button>
                               )}
                             </div>
-                            {!!r.text && <div style={{ fontSize: 13.5, color: '#2a2f38', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{r.text}</div>}
+                            {!!r.text && <div style={{ fontSize: 13.5, color: '#2a2f38', lineHeight: 1.7, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{r.text}</div>}
                             {!!r.images?.length && (
                               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
                                 {r.images.map((src, idx) => (

@@ -751,6 +751,11 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     openAddTopic: (defaultStoreId: string | null) => set({ memoModal: { kind: 'topic', name: '', storeId: defaultStoreId } }),
     openAddEntry: (topicId: string | null) => set({ memoModal: { kind: 'entry', topicId, name: '' } }),
     openAddRecord: (topicId: string | null, entryId: string | null) => set({ memoModal: { kind: 'record', topicId, entryId, label: '', labelMode: 'new', text: '', images: [], pdfDrafts: [] } }),
+    // Records already grouped under a 見出し get their own "＋" so adding
+    // another one under that same heading doesn't require opening the
+    // modal's own heading picker and finding it there first.
+    openAddRecordForLabel: (topicId: string | null, entryId: string | null, label: string) =>
+      set({ memoModal: { kind: 'record', topicId, entryId, label, labelMode: 'existing', text: '', images: [], pdfDrafts: [] } }),
     closeMemoModal: () => set({ memoModal: null }),
     // v is a team id, '' (全体 — shared with HQ + every team), or 'hq'
     // (本部のみ — HQ members only, hidden from every team). Both '' and
