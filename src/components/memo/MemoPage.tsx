@@ -3,6 +3,7 @@ import { useStore } from '../../state/store.tsx';
 import type { MemoTopic, MemoRecord } from '../../types';
 import MemoAddModal from './MemoAddModal';
 import { myRole } from '../app/rowHelpers';
+import { accentSoft } from '../../tokens';
 
 const crumbBtnStyle = (active: boolean): React.CSSProperties => ({
   fontSize: 12.5,
@@ -67,6 +68,11 @@ export default function MemoPage() {
   const isHq = viewRole === 'hq';
   const role = myRole(state);
   const [memoSearch, setMemoSearch] = useState('');
+  // A search hit only narrows things down to the topic/detail — the
+  // matching record itself could still be buried among several 見出し
+  // cards. Jumping here from search scrolls to and briefly highlights it
+  // instead of leaving the user to hunt for it again.
+  const [highlightRecordId, setHighlightRecordId] = useState<string | null>(null);
 
   // 全体（本部＋全チーム）共有のトピック・詳細・記録は、本部のオーナー/
   // 編集者、またはそれを作成した本人が削除できる — 誰でも見える全体
@@ -90,6 +96,18 @@ export default function MemoPage() {
   useEffect(() => {
     if (!memoLevel0) setMemoSearch('');
   }, [memoLevel0]);
+
+  // Scrolls to (and briefly highlights) the record a search hit was
+  // clicked for, once the record-list view it lives in has actually
+  // rendered — landing on the right 詳細 still left the matching record
+  // itself to be hunted for among however many 見出し cards it has.
+  useEffect(() => {
+    if (!highlightRecordId || !memoLevel2) return;
+    const el = document.getElementById(`memo-record-${highlightRecordId}`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const t = setTimeout(() => setHighlightRecordId(null), 2000);
+    return () => clearTimeout(t);
+  }, [highlightRecordId, memoLevel2, curEntry]);
 
   // Most recently touched (topic itself, or any of its entries/records)
   // floats to the top within each group.
@@ -122,6 +140,7 @@ export default function MemoPage() {
     key: string;
     topicId: string;
     entryId: string | null;
+    recordId?: string;
     topicName: string;
     entryName?: string;
     snippet: string;
@@ -148,6 +167,7 @@ export default function MemoPage() {
                 key: `r-${r.id}`,
                 topicId: t.id,
                 entryId: e.id,
+                recordId: r.id,
                 topicName: t.name,
                 entryName: e.name,
                 snippet: labelHit ? r.label : (r.text || '').slice(0, 60),
@@ -214,6 +234,7 @@ export default function MemoPage() {
                     onClick={() => {
                       actions.openMemoTopic(h.topicId);
                       if (h.entryId) actions.openMemoEntry(h.entryId);
+                      setHighlightRecordId(h.recordId ?? null);
                     }}
                     style={rowStyle}
                   >
@@ -396,8 +417,17 @@ export default function MemoPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                       {g.records.map((r, i) => {
                         const dateFmt = `${r.date.slice(0, 4)}/${r.date.slice(5, 7)}/${r.date.slice(8, 10)}`;
+                        const highlighted = r.id === highlightRecordId;
                         return (
-                          <div key={r.id} style={i > 0 ? { borderTop: '1px solid #f0f2f5', paddingTop: 12 } : undefined}>
+                          <div
+                            key={r.id}
+                            id={`memo-record-${r.id}`}
+                            style={{
+                              ...(i > 0 ? { borderTop: '1px solid #f0f2f5', paddingTop: 12 } : {}),
+                              ...(highlighted ? { background: accentSoft(accent), borderRadius: 9, margin: '-8px -8px 0', padding: '8px' } : {}),
+                              transition: 'background .6s ease',
+                            }}
+                          >
                             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 6 }}>
                               <span style={{ fontSize: 11, color: '#aab0b8', whiteSpace: 'nowrap' }}>
                                 {dateFmt}{r.authorName && ` ・ ${r.authorName}`}
