@@ -498,17 +498,17 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       const st = getState();
       const f = st.addForm;
       if (!f || !f.name.trim()) return;
-      // Trial-model orgs have no free tier baked into the price math (see
-      // effectivePricing) — every single team past the first is technically
-      // a "plan change". Without this, the very act of adding a 2nd team
-      // during the 30-day trial would pop the upgrade-confirmation dialog
-      // and immediately push into Stripe Checkout, which defeats the whole
-      // point of "use freely for 30 days, no card required" (see the freeze
-      // exemption for trial orgs in api/stripe/sync-quantity.ts — this is
-      // the client-side half of that same promise). Once actually
-      // subscribed, or once frozen, this exemption no longer applies.
-      const inTrialGrace = st.orgPricingModel === 'trial' && !st.hasStripeSubscription && st.orgStatus !== 'frozen';
-      if (inTrialGrace) { actuallyCreateStore(); return; }
+      // Trial-model pricing is flat and already known upfront (¥600/team,
+      // no free tier) — every team added is its own "plan change", so a
+      // confirmation dialog on literally every single one is just friction,
+      // not information (unlike legacy's step pricing, where an abrupt
+      // ¥3,000 jump tied to one team still earns a heads-up). Skipped
+      // regardless of subscription status: unsubscribed, this also avoids
+      // forcing Checkout on a 2nd team during the free 30-day trial (see
+      // the matching freeze exemption in api/stripe/sync-quantity.ts);
+      // already subscribed, the extra step is simply billed silently via
+      // the normal background sync-quantity call below.
+      if (st.orgPricingModel === 'trial') { actuallyCreateStore(); return; }
       const pricing = effectivePricing(st.orgPricingModel, st.pricingConfig);
       const currentPlan = billedPlanFor(st.stores.length, st.orgBilledStep, pricing);
       const nextPlan = billedPlanFor(st.stores.length + 1, st.orgBilledStep, pricing);
