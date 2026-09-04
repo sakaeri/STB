@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const { data: org, error: orgErr } = await supabase
-      .from('orgs').select('id, name, stripe_customer_id, stripe_subscription_id, pricing_model').eq('id', orgId).single();
+      .from('orgs').select('id, name, stripe_customer_id, stripe_subscription_id, pricing_model, created_at').eq('id', orgId).single();
     if (orgErr || !org) {
       console.error('create-checkout-session: orgs lookup failed', orgErr);
       res.status(404).json({ error: `本部が見つかりません${orgErr ? `（${orgErr.message}）` : ''}` });
@@ -120,7 +120,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // mean waiting on the webhook round-trip before showing the invite
     // URL). The checkout.session.completed webhook flips it back to
     // active on successful payment; abandoning checkout leaves it frozen.
-    await supabase.from('orgs').update({ status: 'frozen' }).eq('id', orgId);
+    //
+    // Exception: a trial-model org still inside its own 30-day grace period
+    // hasn't done anything requiring payment yet — this Checkout session
+    // may just be the owner voluntarily setting up payment early (see the
+    // "今すぐお支払い設定をする" button in Settings). Freezing on session
+    // creation there would punish someone who simply closes the tab without
+    // finishing, despite having legitimate free days left. Once the grace
+    // period has actually run out, fetchOrgData's own lazy check freezes it
+    // regardless, so nothing here needs to race that.
+    const TRIAL_DAYS = 30;
+    const stillInTrialGrace = org.pricing_model === 'trial'
+      && Date.now() <= new Date(org.created_at).getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000;
+    if (!stillInTrialGrace) {
+      await supabase.from('orgs').update({ status: 'frozen' }).eq('id', orgId);
+    }
 
     res.status(200).json({ clientSecret: session.client_secret });
   } catch (e) {

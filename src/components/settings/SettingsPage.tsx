@@ -182,6 +182,18 @@ export default function SettingsPage() {
             <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fff', background: daysLeft !== null ? accent : plan.color, padding: '6px 12px', borderRadius: 8, flex: 'none' }}>
               {daysLeft !== null ? `お試し中（残り${daysLeft}日）` : plan.label} ・ {state.stores.length}{unitLabel}
             </span>
+            {/* Trial owners don't have to wait for the last-7-days banner
+                (or being frozen) to set up payment — this lets them opt in
+                whenever they're ready. */}
+            {daysLeft !== null && isOwner && (
+              <button
+                onClick={actions.startCheckout}
+                disabled={state.billingCheckoutLoading}
+                style={{ fontSize: 11, fontWeight: 700, color: accent, background: accentSoft(accent), padding: '6px 10px', borderRadius: 8, flex: 'none', opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
+              >
+                {state.billingCheckoutLoading ? '処理中…' : '今すぐお支払い設定をする'}
+              </button>
+            )}
             {showDowngradePrompt && downgradeCand && (
               <button
                 onClick={actions.confirmDowngrade}
