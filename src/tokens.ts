@@ -80,14 +80,17 @@ export interface PricingConfig {
 export const DEFAULT_PRICING: PricingConfig = { freeTeams: 5, teamsPerStep: 5, pricePerStep: 3000 };
 
 // 'legacy' = orgs that existed before the 2026-08 pricing overhaul — they
-// keep the original "N teams free forever" config untouched. 'trial' =
-// every org created since — same per-step rate, but no permanent free
-// tier (a 30-day trial from signup instead; see fetchOrgData). Mirrored
-// server-side in api/_lib/pricing.ts.
+// keep the original "N teams free forever" config (the admin-configurable
+// one above) untouched. 'trial' = every org created since — no permanent
+// free tier, flat ¥600/team instead of the legacy step pricing (a 30-day
+// trial from signup instead; see fetchOrgData). Fixed rather than
+// admin-configurable for now — mirrored server-side in api/_lib/pricing.ts.
 export type PricingModel = 'legacy' | 'trial';
 
+export const TRIAL_PRICING: PricingConfig = { freeTeams: 0, teamsPerStep: 1, pricePerStep: 600 };
+
 export function effectivePricing(pricingModel: PricingModel, base: PricingConfig): PricingConfig {
-  return pricingModel === 'trial' ? { ...base, freeTeams: 0 } : base;
+  return pricingModel === 'trial' ? TRIAL_PRICING : base;
 }
 
 export interface PlanStep {

@@ -76,7 +76,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // still within the free range (e.g. frozen for an unrelated reason).
     const quantity = Math.max(1, stepsForCount(count || 0, pricing));
 
-    const priceId = process.env.STRIPE_PRICE_ID;
+    // Trial-model orgs bill at a different per-unit rate (¥600/team vs the
+    // legacy ¥3,000/5-team step) — Stripe has no concept of that split, so
+    // it needs its own Price object (quantity below is already "1 unit per
+    // team" for trial, "1 unit per 5-team step" for legacy either way).
+    const priceId = org.pricing_model === 'trial'
+      ? (process.env.STRIPE_PRICE_ID_TRIAL || process.env.STRIPE_PRICE_ID)
+      : process.env.STRIPE_PRICE_ID;
     if (!priceId) { res.status(500).json({ error: 'サーバー設定エラー（STRIPE_PRICE_ID未設定）' }); return; }
 
     const stripe = getStripe();

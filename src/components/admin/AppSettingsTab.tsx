@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type { ChangeEvent, DragEvent } from 'react';
 import { useStore } from '../../state/store.tsx';
-import { accentBorder, accentSoft } from '../../tokens';
+import { accentBorder, accentSoft, TRIAL_PRICING } from '../../tokens';
 
 const LOGO_ID = 'operator-logo';
 
@@ -162,7 +162,7 @@ export default function AppSettingsTab() {
         </div>
 
         <div>
-          <div style={{ fontSize: 12, color: '#8a909a', marginBottom: 8 }}>料金設定（線形・上限なし）</div>
+          <div style={{ fontSize: 12, color: '#8a909a', marginBottom: 8 }}>料金設定（線形・上限なし・既存本部のみ）</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: '#f7f8fa', borderRadius: 9, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 12.5, color: '#3a4150' }}>最初の</span>
             <input
@@ -195,6 +195,8 @@ export default function AppSettingsTab() {
             例：{state.pricingConfig.freeTeams + 1}〜{state.pricingConfig.freeTeams + state.pricingConfig.teamsPerStep}チームで月額¥{state.pricingConfig.pricePerStep.toLocaleString('ja-JP')}、
             {state.pricingConfig.freeTeams + state.pricingConfig.teamsPerStep + 1}〜{state.pricingConfig.freeTeams + state.pricingConfig.teamsPerStep * 2}チームで月額¥{(state.pricingConfig.pricePerStep * 2).toLocaleString('ja-JP')}…と続きます。
             Stripe側の価格（1ステップ分の金額）と揃えてください。
+            ※この設定は2026年8月以前からの既存本部のみに適用されます。新規登録の本部（お試し期間あり）は
+            固定で1チーム¥{TRIAL_PRICING.pricePerStep.toLocaleString('ja-JP')}です。
           </p>
         </div>
 

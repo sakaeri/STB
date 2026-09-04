@@ -13,13 +13,17 @@ export function stepsForCount(n: number, pricing: PricingConfig): number {
 }
 
 // 'legacy' = orgs that existed before the 2026-08 pricing overhaul — kept
-// on the original "N teams free forever" config untouched. 'trial' =
-// every org created since — same per-step rate, but no permanent free
-// tier (30-day trial from signup instead; see src/state/dataLoader.ts).
+// on the original "N teams free forever" config (admin-configurable)
+// untouched. 'trial' = every org created since — no permanent free tier,
+// flat ¥600/team instead of the legacy step pricing (30-day trial from
+// signup instead; see src/state/dataLoader.ts). Fixed rather than
+// admin-configurable for now.
 export type PricingModel = 'legacy' | 'trial';
 
+export const TRIAL_PRICING: PricingConfig = { freeTeams: 0, teamsPerStep: 1, pricePerStep: 600 };
+
 export function effectivePricing(pricingModel: PricingModel, base: PricingConfig): PricingConfig {
-  return pricingModel === 'trial' ? { ...base, freeTeams: 0 } : base;
+  return pricingModel === 'trial' ? TRIAL_PRICING : base;
 }
 
 export function parsePricingConfig(raw: unknown): PricingConfig {
