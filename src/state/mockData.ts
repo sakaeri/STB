@@ -166,7 +166,7 @@ export function createInitialState(): AppState {
     termsDirty: false,
     copiedWebhook: false,
 
-    brandName: 'STB',
+    brandName: 'PaILE',
     accent: '#1f7a5a',
 
     pendingInviteId: null,

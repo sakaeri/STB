@@ -1,6 +1,6 @@
 {
-  "name": "STB",
-  "short_name": "STB",
+  "name": "PaILE",
+  "short_name": "PaILE",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
