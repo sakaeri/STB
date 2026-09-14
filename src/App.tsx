@@ -1,14 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useStore } from './state/store.tsx';
 import { isPasswordRecoveryLink } from './lib/supabase';
 import AuthScreen from './components/auth/AuthScreen';
-import LandingPage from './components/landing/LandingPage';
 import HqSetupScreen from './components/hqSetup/HqSetupScreen';
 import MainApp from './components/app/MainApp';
 import AdminDashboard from './components/admin/AdminDashboard';
 import InviteScreen from './components/invite/InviteScreen';
 import TermsModal from './components/modals/TermsModal';
 import ConfirmModal from './components/modals/ConfirmModal';
+
+// Its own JS/CSS chunk, loaded only for anonymous visitors landing on "/" —
+// everyone going straight into the app (the common case) skips the extra
+// ~10KB of marketing markup and the two webfonts it pulls in entirely.
+const LandingPage = lazy(() => import('./components/landing/LandingPage'));
 
 // The marketing landing page only makes sense at the bare root, and only
 // when the URL isn't secretly an auth callback (password recovery / email
@@ -105,14 +109,16 @@ export default function App() {
     screen = <BootLoading />;
   } else if (!state.session || !account) {
     screen = showLanding ? (
-      <LandingPage
-        onNavigateToAuth={(view) => {
-          window.history.pushState({}, '', '/login');
-          setShowLanding(false);
-          if (view === 'signup') actions.goSignup();
-          else actions.goLogin();
-        }}
-      />
+      <Suspense fallback={<div style={{ minHeight: '100vh', background: '#f6f7f4' }} />}>
+        <LandingPage
+          onNavigateToAuth={(view) => {
+            window.history.pushState({}, '', '/login');
+            setShowLanding(false);
+            if (view === 'signup') actions.goSignup();
+            else actions.goLogin();
+          }}
+        />
+      </Suspense>
     ) : (
       <AuthScreen />
     );
