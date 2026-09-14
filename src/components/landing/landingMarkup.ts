@@ -21,7 +21,7 @@ export const landingMarkup = `
     <div>
       <span class="eyebrow">多店舗・FC運営のための売上管理</span>
       <h1>店舗ごとのExcel、LINE、手計算。<br>全部、PaILEにまとめませんか？</h1>
-      <p class="lede">売上・経費、ロイヤリティと貯蓄の計算、店舗との情報共有。本部の"締め作業"に必要なものを、PaILEひとつにまとめます。</p>
+      <p class="lede">売上・経費の管理、店舗との情報共有。本部の"締め作業"に必要なものを、PaILEひとつにまとめます。（ロイヤリティ・貯蓄の計算が必要な店舗にも対応）</p>
 
       <div class="price-strip">
         <div class="ps-item"><div class="n">¥600</div><div class="c">1店舗・月額</div></div>
@@ -190,7 +190,7 @@ export const landingMarkup = `
   </div>
   <div class="step-row">
     <div class="step-item"><div class="step-num"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-deep)" stroke-width="1.7"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M12 12v5M9.5 14.5h5"/></svg><span class="badge">1</span></div><div class="t">本部を作成</div><div class="d">メールで登録するだけ、すぐ完了。</div></div>
-    <div class="step-item"><div class="step-num"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-deep)" stroke-width="1.7"><path d="M4 9 12 4l8 5"/><path d="M5 9v10h14V9"/><path d="M10 19v-5h4v5"/></svg><span class="badge">2</span></div><div class="t">店舗を追加</div><div class="d">店舗名とロイヤリティ設定を入力。</div></div>
+    <div class="step-item"><div class="step-num"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-deep)" stroke-width="1.7"><path d="M4 9 12 4l8 5"/><path d="M5 9v10h14V9"/><path d="M10 19v-5h4v5"/></svg><span class="badge">2</span></div><div class="t">店舗を追加</div><div class="d">店舗名を入力するだけ。</div></div>
     <div class="step-item"><div class="step-num"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-deep)" stroke-width="1.7"><circle cx="10" cy="8" r="3.2"/><path d="M4.5 19c.6-3 2.8-5 5.5-5s4.9 2 5.5 5"/><path d="M18 8v5M15.5 10.5h5"/></svg><span class="badge">3</span></div><div class="t">メンバーを招待</div><div class="d">招待URLを送るだけで追加完了。</div></div>
     <div class="step-item"><div class="step-num"><svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-deep)" stroke-width="1.7"><circle cx="12" cy="12" r="8.5"/><path d="m8.5 12.5 2.3 2.3L16 9.5"/></svg><span class="badge">4</span></div><div class="t">今日から運用開始</div><div class="d">売上入力も情報共有も、その日から。</div></div>
   </div>
