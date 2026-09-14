@@ -1,6 +1,8 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useStore } from './state/store.tsx';
+import { isPasswordRecoveryLink } from './lib/supabase';
 import AuthScreen from './components/auth/AuthScreen';
+import LandingPage from './components/landing/LandingPage';
 import HqSetupScreen from './components/hqSetup/HqSetupScreen';
 import MainApp from './components/app/MainApp';
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -8,8 +10,19 @@ import InviteScreen from './components/invite/InviteScreen';
 import TermsModal from './components/modals/TermsModal';
 import ConfirmModal from './components/modals/ConfirmModal';
 
+// The marketing landing page only makes sense at the bare root, and only
+// when the URL isn't secretly an auth callback (password recovery / email
+// confirmation links also land on "/" with a hash Supabase parses itself).
+function computeShowLanding(): boolean {
+  if (window.location.pathname !== '/') return false;
+  if (isPasswordRecoveryLink()) return false;
+  if (window.location.hash.startsWith('#error=') || /access_token|type=/.test(window.location.hash)) return false;
+  return true;
+}
+
 export default function App() {
-  const { state, set } = useStore();
+  const { state, set, actions } = useStore();
+  const [showLanding, setShowLanding] = useState(computeShowLanding);
 
   // Restore session / unit label overrides / mobile flag on first mount.
   useEffect(() => {
@@ -20,6 +33,8 @@ export default function App() {
     set({ isMobile: initialMobile, layout: initialMobile ? 'card' : 'table' });
     const onResize = () => set({ isMobile: window.innerWidth < 860 });
     window.addEventListener('resize', onResize);
+    const onPopState = () => setShowLanding(computeShowLanding());
+    window.addEventListener('popstate', onPopState);
     try {
       const savedUnit = localStorage.getItem('fc_unitLabel');
       const savedPlural = localStorage.getItem('fc_unitLabelPlural');
@@ -55,7 +70,10 @@ export default function App() {
         window.history.replaceState({}, '', window.location.pathname);
       }
     } catch { /* noop */ }
-    return () => window.removeEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('popstate', onPopState);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -86,7 +104,18 @@ export default function App() {
     // for an already-logged-in user before their restored session lands.
     screen = <BootLoading />;
   } else if (!state.session || !account) {
-    screen = <AuthScreen />;
+    screen = showLanding ? (
+      <LandingPage
+        onNavigateToAuth={(view) => {
+          window.history.pushState({}, '', '/login');
+          setShowLanding(false);
+          if (view === 'signup') actions.goSignup();
+          else actions.goLogin();
+        }}
+      />
+    ) : (
+      <AuthScreen />
+    );
   } else if (account.isAdmin) {
     if (state.adminOwnHqSetup) {
       screen = account.hqCreated ? <MainApp /> : <HqSetupScreen />;
