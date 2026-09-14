@@ -174,6 +174,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
   }
 
   async function loadOrg(orgId: string) {
+    set({ orgDataLoaded: false });
     try {
       const data = await fetchOrgData(orgId);
       const session = getState().session;
@@ -182,10 +183,11 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         activeOrgId: orgId, hqNameOverride: data.companyInfo.name || null,
         viewRole: initialViewRole(session, data), selectedStoreId: null,
         page: 'list', ...data, logoMap: { ...s.logoMap, ...data.logoMap },
+        orgDataLoaded: true,
       }));
     } catch (e) {
       console.error('loadOrg failed', e);
-      set({ authError: '本部データの読み込みに失敗しました' });
+      set({ authError: '本部データの読み込みに失敗しました', orgDataLoaded: true });
     }
   }
 
@@ -1452,7 +1454,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       if (!session) {
-        set({ authChecked: true, session: null, accounts: [], activeOrgId: null, stores: [], members: [], hqMembers: [], transactions: {}, memoTopics: [], trash: [] });
+        set({ authChecked: true, session: null, accounts: [], activeOrgId: null, orgDataLoaded: false, stores: [], members: [], hqMembers: [], transactions: {}, memoTopics: [], trash: [] });
         return;
       }
       if (getState().pendingInviteId) {
@@ -1513,10 +1515,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             hqNameOverride: orgData.companyInfo.name || null,
             viewRole: isOrgMember ? 'hq' : (orgData.stores[0]?.id || 'hq'), selectedStoreId: null,
             ...orgData, logoMap: { ...s.logoMap, ...orgData.logoMap },
+            orgDataLoaded: true,
           }));
         } catch (e) {
           console.error('initial org load failed', e);
+          set({ orgDataLoaded: true });
         }
+      } else {
+        set({ orgDataLoaded: true });
       }
       if (profile?.is_admin) void actions.loadAdminOverview();
     }

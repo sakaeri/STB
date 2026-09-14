@@ -342,6 +342,12 @@ export interface AppState {
 
   // multi-org
   activeOrgId: string | null;
+  // false from the moment activeOrgId is set (or changes) until fetchOrgData
+  // for it resolves — account.hqCreated flips true as soon as the light
+  // "which orgs am I in" check comes back, well before the heavier
+  // stores/transactions/memos fetch does, so this is what actually gates
+  // showing MainApp instead of a loading screen over an empty shell.
+  orgDataLoaded: boolean;
   hqNameOverride: string | null;
   orgMaxTeams: Record<string, number>;
   orgDowngradeDismissed: Record<string, number | null>;

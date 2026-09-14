@@ -124,12 +124,19 @@ export default function App() {
     );
   } else if (account.isAdmin) {
     if (state.adminOwnHqSetup) {
-      screen = account.hqCreated ? <MainApp /> : <HqSetupScreen />;
+      // account.hqCreated flips true as soon as the light "which orgs am I
+      // in" check comes back — well before the heavier per-org data fetch
+      // does, so without this the app briefly renders MainApp over an
+      // empty shell (no stores/sales yet) that reads as broken rather than
+      // loading.
+      screen = !account.hqCreated ? <HqSetupScreen /> : state.orgDataLoaded ? <MainApp /> : <BootLoading />;
     } else {
       screen = <AdminDashboard />;
     }
   } else if (!account.hqCreated) {
     screen = <HqSetupScreen />;
+  } else if (!state.orgDataLoaded) {
+    screen = <BootLoading />;
   } else {
     screen = <MainApp />;
   }
