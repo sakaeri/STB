@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from './state/store.tsx';
 import { isPasswordRecoveryLink } from './lib/supabase';
 import AuthScreen from './components/auth/AuthScreen';
@@ -27,6 +27,42 @@ function computeShowLanding(): boolean {
 export default function App() {
   const { state, set, actions } = useStore();
   const [showLanding, setShowLanding] = useState(computeShowLanding);
+  const liveRef = useRef({ state, actions });
+  liveRef.current = { state, actions };
+
+  // Mobile Safari (and mobile Chrome to a lesser extent) can freeze the tab
+  // — via the back/forward cache on navigation, or just suspending it in
+  // the background — and resume it later without re-running any JS. If
+  // that freeze happened to land mid-load or on a transient bad response,
+  // reopening the tab just repaints whatever was frozen: no new auth event
+  // fires, so none of the retry/race-guard logic in the org-load path ever
+  // gets a chance to run again. Silently refetch the active org's data
+  // whenever the tab comes back from being hidden a while, or is restored
+  // from bfcache, so a stale/empty snapshot never just sits there.
+  useEffect(() => {
+    let hiddenAt = 0;
+    const refreshIfStale = () => {
+      const { state: s, actions: a } = liveRef.current;
+      if (s.session && s.orgDataLoaded && s.activeOrgId) void a.reloadOrgData();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        hiddenAt = Date.now();
+      } else if (document.visibilityState === 'visible') {
+        if (hiddenAt && Date.now() - hiddenAt > 5000) refreshIfStale();
+        hiddenAt = 0;
+      }
+    };
+    const onPageShow = (e: PageTransitionEvent) => {
+      if (e.persisted) refreshIfStale();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pageshow', onPageShow);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pageshow', onPageShow);
+    };
+  }, []);
 
   // Restore session / unit label overrides / mobile flag on first mount.
   useEffect(() => {
