@@ -135,6 +135,32 @@ export default function App() {
 
   const account = useMemo(() => state.accounts.find((a) => a.id === state.session) || null, [state.accounts, state.session]);
 
+  // Belt-and-suspenders on top of every fix already made to the load paths
+  // themselves (see store.tsx): whatever the mechanism, a real org can
+  // never legitimately have zero stores AND zero HQ members (every org is
+  // created together with its first team and at least one HQ member).
+  // Treating "loaded" as also requiring non-empty data — regardless of
+  // which code path set orgDataLoaded — means a still-broken combination
+  // shows the loading animation and quietly retries instead of a bare
+  // empty dashboard, even from a path this session's fixes didn't
+  // anticipate.
+  const orgDataReady = state.orgDataLoaded && (state.stores.length > 0 || state.hqMembers.length > 0);
+  useEffect(() => {
+    if (!state.orgDataLoaded || orgDataReady || !state.activeOrgId) return;
+    console.error('App: orgDataLoaded is true but stores/hqMembers are both empty — retrying', { activeOrgId: state.activeOrgId });
+    let cancelled = false;
+    let attempt = 0;
+    const tryAgain = () => {
+      if (cancelled) return;
+      attempt++;
+      void actions.reloadOrgData();
+      if (attempt < 4) setTimeout(tryAgain, 1500);
+    };
+    const t = setTimeout(tryAgain, 800);
+    return () => { cancelled = true; clearTimeout(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.orgDataLoaded, orgDataReady, state.activeOrgId]);
+
   let screen: React.ReactNode;
   if (state.pendingInviteId) {
     screen = <InviteScreen />;
@@ -165,22 +191,27 @@ export default function App() {
       // does, so without this the app briefly renders MainApp over an
       // empty shell (no stores/sales yet) that reads as broken rather than
       // loading.
-      screen = !account.hqCreated ? <HqSetupScreen /> : state.orgDataLoaded ? <MainApp /> : <BootLoading />;
+      screen = !account.hqCreated ? <HqSetupScreen /> : orgDataReady ? <MainApp /> : <BootLoading />;
     } else {
       screen = <AdminDashboard />;
     }
   } else if (!account.hqCreated) {
     screen = <HqSetupScreen />;
-  } else if (!state.orgDataLoaded) {
+  } else if (!orgDataReady) {
     screen = <BootLoading />;
   } else {
     screen = <MainApp />;
   }
 
+  const debugText = state.orgLoadDebug
+    || (state.orgDataLoaded && !orgDataReady
+      ? `DEBUG ${new Date().toISOString()}: render caught orgDataLoaded=true with stores=${state.stores.length} hqMembers=${state.hqMembers.length} activeOrgId=${state.activeOrgId} ua=${navigator.userAgent}`
+      : null);
+
   return (
     <>
       {screen}
-      {state.orgLoadDebug && <OrgLoadDebugBanner text={state.orgLoadDebug} />}
+      {debugText && <OrgLoadDebugBanner text={debugText} />}
       {state.showTermsModal && <TermsModal />}
       <ConfirmModal />
     </>
