@@ -338,9 +338,14 @@ function BootLoading() {
             />
           ))}
         </div>
-        <div style={{ marginTop: 26, textAlign: 'center', animation: 'fc-boot-textin 3.5s ease-in-out infinite' }}>
-          <div style={{ fontSize: 17, fontWeight: 800, color: '#1f7a5a', letterSpacing: '.02em' }}>PaILE</div>
-          <div style={{ fontSize: 12, fontWeight: 500, color: '#8a909a', marginTop: 4 }}>データを準備しています…</div>
+        <div
+          style={{
+            marginTop: 26, display: 'flex', flexDirection: 'column', alignItems: 'center',
+            animation: 'fc-boot-textin 3.5s ease-in-out infinite',
+          }}
+        >
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#1f7a5a', letterSpacing: '.02em' }}>PaILE</div>
+          <div style={{ fontSize: 12, fontWeight: 500, color: '#8a909a', marginTop: 5, whiteSpace: 'nowrap' }}>データを準備しています…</div>
         </div>
       </div>
     </div>

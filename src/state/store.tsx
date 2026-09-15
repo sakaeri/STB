@@ -191,14 +191,28 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
   async function loadOrg(orgId: string) {
     set({ orgDataLoaded: false });
     try {
-      const data = await fetchOrgData(orgId);
+      let data = await fetchOrgData(orgId);
+      let attempts = 1;
+      // Same empty-data race as the initial auth-load path (see its own
+      // comment) — this was the one org-loading path that never got the
+      // same protection, so it could still land on orgDataLoaded=true with
+      // an empty dashboard (org switch, org creation, invite redemption).
+      for (let attempt = 0; (data.stores.length === 0 || data.hqMembers.length === 0) && attempt < 2; attempt++) {
+        await sleep(350 * (attempt + 1));
+        data = await fetchOrgData(orgId);
+        attempts++;
+      }
       const session = getState().session;
       saveActiveOrgId(orgId);
+      const stillEmpty = data.stores.length === 0 || data.hqMembers.length === 0;
       set((s) => ({
         activeOrgId: orgId, hqNameOverride: data.companyInfo.name || null,
         viewRole: initialViewRole(session, data), selectedStoreId: null,
         page: 'list', ...data, logoMap: { ...s.logoMap, ...data.logoMap },
-        orgDataLoaded: true, orgLoadDebug: null, txLoadedFrom: defaultTxFloor(),
+        orgDataLoaded: true, txLoadedFrom: defaultTxFloor(),
+        orgLoadDebug: stillEmpty
+          ? `DEBUG ${new Date().toISOString()}: loadOrg(${orgId}) stores=${data.stores.length} hqMembers=${data.hqMembers.length} (×${attempts}) ua=${navigator.userAgent}`
+          : null,
       }));
     } catch (e) {
       console.error('loadOrg failed', e);
