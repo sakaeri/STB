@@ -299,6 +299,14 @@ function BootLoading() {
           53%     { transform: translate(68px, 2px) scale(.3); opacity: 0; }
           100%    { opacity: 0; }
         }
+        /* Only visible during the still moment after landing (see the
+           65%-100% hold in fc-boot-fall) — hidden through the fall/bounce
+           itself, and faded back out just before the next drop starts. */
+        @keyframes fc-boot-textin {
+          0%, 60%  { opacity: 0; transform: translateY(4px); }
+          68%, 94% { opacity: 1; transform: translateY(0); }
+          100%     { opacity: 0; transform: translateY(0); }
+        }
       `}</style>
       <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <img
@@ -329,6 +337,10 @@ function BootLoading() {
               }}
             />
           ))}
+        </div>
+        <div style={{ marginTop: 26, textAlign: 'center', animation: 'fc-boot-textin 3.5s ease-in-out infinite' }}>
+          <div style={{ fontSize: 17, fontWeight: 800, color: '#1f7a5a', letterSpacing: '.02em' }}>PaILE</div>
+          <div style={{ fontSize: 12, fontWeight: 500, color: '#8a909a', marginTop: 4 }}>データを準備しています…</div>
         </div>
       </div>
     </div>
