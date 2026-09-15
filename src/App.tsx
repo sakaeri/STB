@@ -347,8 +347,14 @@ function BootLoading() {
           <div style={{ fontSize: 22, fontWeight: 700, color: '#1f7a5a', letterSpacing: '-.01em' }}>
             PaILE
           </div>
-          <div style={{ fontSize: 11, fontWeight: 500, color: '#8a909a', letterSpacing: '.04em', marginTop: 5, whiteSpace: 'nowrap' }}>
-            データを準備しています…
+          <div style={{ position: 'relative', display: 'inline-block', marginTop: 5 }}>
+            <div style={{ fontSize: 11, fontWeight: 500, color: '#8a909a', letterSpacing: '.04em', whiteSpace: 'nowrap' }}>
+              データを準備しています
+            </div>
+            {/* "…" sits outside normal flow so it doesn't shift the
+                centering of the line above — otherwise it drags the
+                visual center right by about its own width. */}
+            <span style={{ position: 'absolute', left: '100%', top: 0, fontSize: 11, fontWeight: 500, color: '#8a909a' }}>…</span>
           </div>
         </div>
       </div>
