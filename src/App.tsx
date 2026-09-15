@@ -151,17 +151,44 @@ export default function App() {
 }
 
 function BootLoading() {
-  const { state } = useStore();
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#eceef1' }}>
-      <style>{`@keyframes fc-boot-spin { to { transform: rotate(360deg); } }`}</style>
-      <div
-        style={{
-          width: 28, height: 28, borderRadius: '50%',
-          border: `3px solid ${state.accent}33`, borderTopColor: state.accent,
-          animation: 'fc-boot-spin .7s linear infinite',
-        }}
-      />
+      <style>{`
+        @keyframes fc-boot-fall {
+          0%   { transform: translateY(-140px) scale(.9); opacity: 0; }
+          8%   { opacity: 1; }
+          30%  { transform: translateY(-110px) scale(.94); }
+          50%  { transform: translateY(0) scale(1); }
+          56%  { transform: translateY(2px) scaleX(1.22) scaleY(.8); }
+          64%  { transform: translateY(-16px) scaleX(.92) scaleY(1.12) rotate(-5deg); }
+          72%  { transform: translateY(0) scaleX(1.08) scaleY(.95) rotate(4deg); }
+          80%  { transform: translateY(-5px) scaleX(.97) scaleY(1.04) rotate(-2.5deg); }
+          88%  { transform: translateY(0) scaleX(1.02) scaleY(.99) rotate(1.5deg); }
+          100% { transform: translateY(0) scale(1) rotate(0deg); }
+        }
+        @keyframes fc-boot-shadow {
+          0%, 8%  { transform: scale(.4); opacity: 0; }
+          50%     { transform: scale(1); opacity: .16; }
+          56%     { transform: scale(1.15); opacity: .2; }
+          64%     { transform: scale(.75); opacity: .09; }
+          72%     { transform: scale(1.05); opacity: .16; }
+          100%    { transform: scale(1); opacity: .14; }
+        }
+      `}</style>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <img
+          src="/icon-mark.png"
+          alt=""
+          style={{ width: 116, height: 'auto', transformOrigin: '50% 100%', animation: 'fc-boot-fall 1.9s ease-in-out infinite' }}
+        />
+        <div
+          style={{
+            width: 64, height: 14, marginTop: 2, borderRadius: '50%',
+            background: 'radial-gradient(closest-side, rgba(20,40,32,.55), transparent)',
+            animation: 'fc-boot-shadow 1.9s ease-in-out infinite',
+          }}
+        />
+      </div>
     </div>
   );
 }
