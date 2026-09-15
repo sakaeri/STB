@@ -38,6 +38,8 @@ export function createInitialState(): AppState {
     members: [],
     hqMembers: [],
     transactions: {},
+    txLoadedFrom: '',
+    txRangeLoading: false,
     entryPresets: {},
     memoTopics: [],
     trash: [],

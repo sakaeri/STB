@@ -375,17 +375,23 @@ export default function SalesListPage() {
           </div>
         )}
 
-        <KpiCards
-          isHq={isHq}
-          tSales={tSales}
-          tProfit={tProfit}
-          tRoyalty={tRoyalty}
-          tSavings={tSavings}
-          storeCount={visible.length}
-          unitLabel={unitLabel}
-          salesDelta={salesDelta}
-          isMobile={state.isMobile}
-        />
+        {/* txRangeLoading is only ever true while ensureTransactionsLoaded
+            (MainApp) is expanding past the loaded window — current-period
+            viewing never triggers it. Dim rather than hide, so the layout
+            doesn't jump once the real totals land. */}
+        <div style={{ opacity: state.txRangeLoading ? 0.4 : 1, transition: 'opacity .15s', pointerEvents: state.txRangeLoading ? 'none' : 'auto' }}>
+          <KpiCards
+            isHq={isHq}
+            tSales={tSales}
+            tProfit={tProfit}
+            tRoyalty={tRoyalty}
+            tSavings={tSavings}
+            storeCount={visible.length}
+            unitLabel={unitLabel}
+            salesDelta={salesDelta}
+            isMobile={state.isMobile}
+          />
+        </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, marginTop: 18, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: '#3a4150' }}>{isHq ? `${unitLabel}別 売上一覧` : '売上明細'}</span>
@@ -514,7 +520,15 @@ export default function SalesListPage() {
           document.getElementById('print-root')!,
         )}
 
-        <div style={{ filter: frozen ? 'blur(6px)' : 'none', userSelect: frozen ? 'none' : 'auto', pointerEvents: frozen ? 'none' : 'auto' }}>
+        <div
+          style={{
+            filter: frozen ? 'blur(6px)' : 'none',
+            opacity: state.txRangeLoading ? 0.4 : 1,
+            transition: 'opacity .15s',
+            userSelect: frozen ? 'none' : 'auto',
+            pointerEvents: frozen || state.txRangeLoading ? 'none' : 'auto',
+          }}
+        >
           {state.layout === 'table' && (
             <SalesTable
               rows={pagedRows}

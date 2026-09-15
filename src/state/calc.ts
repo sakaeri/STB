@@ -134,6 +134,21 @@ export function periodDataPrev(
   return monthData(store, year, month - 1, transactions);
 }
 
+// The earliest date a view needs loaded — mirrors periodDataPrev's own
+// branches exactly, since the previous period is always the earlier of
+// what periodData + periodDataPrev need together. Used to decide whether
+// state.transactions (bounded to a trailing window, see dataLoader.ts's
+// defaultTxFloor) needs expanding before rendering the current selection.
+export function periodFloorDate(aggUnit: string, month: number, year: number, periodDate: string): string {
+  if (aggUnit === 'year') return `${year - 1}-01-01`;
+  if (aggUnit === 'week') return addDays(mondayOf(periodDate), -7);
+  if (aggUnit === 'day') return addDays(periodDate, -1);
+  const totalMonths = year * 12 + (month - 1);
+  const yr = Math.floor(totalMonths / 12);
+  const mi = ((totalMonths % 12) + 12) % 12;
+  return `${yr}-${String(mi + 1).padStart(2, '0')}-01`;
+}
+
 // The raw transactions behind periodData()'s totals, for CSV/PDF exports
 // that need line-item detail rather than just the aggregate numbers.
 export function periodTransactions(

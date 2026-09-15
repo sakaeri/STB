@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { useStore } from '../../state/store.tsx';
+import { periodFloorDate } from '../../state/calc';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import BottomNav from './BottomNav';
@@ -19,7 +21,18 @@ import MemberInviteModal from '../modals/MemberInviteModal';
 import CheckoutModal from '../modals/CheckoutModal';
 
 export default function MainApp() {
-  const { state } = useStore();
+  const { state, actions } = useStore();
+
+  // state.transactions is only guaranteed complete from state.txLoadedFrom
+  // forward (see dataLoader.ts's defaultTxFloor) — whenever the selected
+  // period/view needs data older than that, expand it. Lives here rather
+  // than inside SalesListPage since StoreDrawer/EntryModal (mounted below,
+  // unconditionally) read the same period state independent of state.page.
+  useEffect(() => {
+    if (!state.activeOrgId) return;
+    const floor = periodFloorDate(state.aggUnit, state.month, state.year || 2026, state.periodDate);
+    void actions.ensureTransactionsLoaded(floor);
+  }, [state.activeOrgId, state.aggUnit, state.month, state.year, state.periodDate, actions]);
 
   return (
     <div style={{ display: 'flex', width: '100%', height: '100dvh', overflow: 'hidden', background: '#fff' }}>

@@ -308,6 +308,16 @@ export interface AppState {
   members: Member[];
   hqMembers: HqMember[];
   transactions: Record<string, Transaction[]>;
+  // 'YYYY-MM-DD' — state.transactions is guaranteed complete (org-wide)
+  // from this date forward, but not necessarily before it. Set to the
+  // default trailing window on every fresh org load, and lowered by
+  // ensureTransactionsLoaded() when a view needs an older period. Never
+  // moves forward within a session.
+  txLoadedFrom: string;
+  // True while an on-demand expansion fetch (viewing a period older than
+  // txLoadedFrom) is in flight — lets KPI/table components show a scoped
+  // loading state instead of flashing zeroed totals.
+  txRangeLoading: boolean;
   entryPresets: Record<string, EntryPreset[]>;
   memoTopics: MemoTopic[];
   trash: TrashItem[];

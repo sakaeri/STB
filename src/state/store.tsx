@@ -4,7 +4,7 @@ import type {
 } from '../types';
 import { createInitialState } from './mockData';
 import { supabase, isPasswordRecoveryLink, clearPasswordRecoveryLink } from '../lib/supabase';
-import { fetchMyOrgs, fetchOrgData, createOrgWithFirstTeam } from './dataLoader';
+import { fetchMyOrgs, fetchOrgData, createOrgWithFirstTeam, defaultTxFloor, fetchTransactionsSince, mapTransactionRow } from './dataLoader';
 import {
   fetchAdminOrgs, fetchAuditLog, fetchAppSettings, addAuditLog,
   saveAppSettingsBilling, saveAppSettingsTerms, fetchPublicTerms, fetchPublicAppLogo, fetchPublicPricing,
@@ -165,7 +165,11 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     const st = getState();
     if (!st.activeOrgId) return;
     try {
-      const data = await fetchOrgData(st.activeOrgId);
+      // Re-fetch from the current (possibly already-expanded) floor, not
+      // the default window — a plain replace stays correct because the
+      // floor only ever moves backward within a session, so this always
+      // re-covers whatever range ensureTransactionsLoaded has expanded to.
+      const data = await fetchOrgData(st.activeOrgId, st.txLoadedFrom);
       // A real org always has ≥1 store and ≥1 HQ member (see the same
       // check in the initial-load path) — if this refresh raced and came
       // back empty, applying it would silently wipe out perfectly good,
@@ -194,7 +198,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         activeOrgId: orgId, hqNameOverride: data.companyInfo.name || null,
         viewRole: initialViewRole(session, data), selectedStoreId: null,
         page: 'list', ...data, logoMap: { ...s.logoMap, ...data.logoMap },
-        orgDataLoaded: true, orgLoadDebug: null,
+        orgDataLoaded: true, orgLoadDebug: null, txLoadedFrom: defaultTxFloor(),
       }));
     } catch (e) {
       console.error('loadOrg failed', e);
@@ -221,7 +225,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
   function clearSessionState() {
     set({
       session: null, accounts: [], activeOrgId: null, hqNameOverride: null,
-      stores: [], members: [], hqMembers: [], transactions: {}, memoTopics: [], trash: [],
+      stores: [], members: [], hqMembers: [], transactions: {}, txLoadedFrom: '', memoTopics: [], trash: [],
       companyInfo: { name: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4, dailyClosingEnabled: false },
       confirmedPeriods: {}, page: 'list', selectedStoreId: null,
       authEmail: '', authPassword: '',
@@ -651,11 +655,38 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         amount, date: d.date, photo_url: d.photo || null, created_by: st.session,
       });
       if (error) { console.error('saveEntry failed', error); return; }
+      // A backdated entry older than the loaded window would otherwise
+      // silently "vanish" after save — reloadActiveOrg only re-covers
+      // txLoadedFrom forward, so the floor must drop first.
+      if (d.date < getState().txLoadedFrom) await actions.ensureTransactionsLoaded(d.date);
       await reloadActiveOrg();
     },
     deleteTx: async (storeId: string, id: string) => {
       set((s) => ({ transactions: { ...s.transactions, [storeId]: (s.transactions[storeId] || []).filter((t) => t.id !== id) } }));
       await supabase.from('transactions').delete().eq('id', id);
+    },
+    // Expands state.transactions to cover an older period than the
+    // current txLoadedFrom floor — a no-op if it's already covered. See
+    // the txLoadedFrom field comment (types.ts) for why a floor date
+    // rather than a set of loaded months.
+    ensureTransactionsLoaded: async (neededFloor: string) => {
+      const st = getState();
+      if (!st.activeOrgId || neededFloor >= st.txLoadedFrom) return;
+      set({ txRangeLoading: true });
+      try {
+        const teamIds = st.stores.map((s) => s.id);
+        const extra = await fetchTransactionsSince(teamIds, neededFloor, st.txLoadedFrom);
+        set((s) => ({
+          transactions: Object.fromEntries(
+            st.stores.map((store) => [store.id, [...(extra[store.id] || []), ...(s.transactions[store.id] || [])]]),
+          ),
+          txLoadedFrom: neededFloor,
+        }));
+      } catch (e) {
+        console.error('ensureTransactionsLoaded failed', e);
+      } finally {
+        set({ txRangeLoading: false });
+      }
     },
 
     // ===== entry presets (よく使う項目) =====
@@ -754,6 +785,10 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       if (error) { console.error('saveBankCsvBatch failed', error); alert('取り込みに失敗しました'); return; }
       const savedIds = new Set(toSave.map((r) => r.id));
       set((s) => (s.bankCsvImport ? { bankCsvImport: { ...s.bankCsvImport, rows: s.bankCsvImport.rows.filter((r) => !savedIds.has(r.id)) } } : {}));
+      // Same backdated-entry floor check as saveEntry — a bulk import can
+      // easily include older rows than a single manual entry would.
+      const minDate = toSave.reduce((min, r) => (r.date < min ? r.date : min), toSave[0].date);
+      if (minDate < getState().txLoadedFrom) await actions.ensureTransactionsLoaded(minDate);
       await reloadActiveOrg();
     },
     requestDeleteTx: (storeId: string, tx: { id: string; title: string; amount: number; date: string }) => {
@@ -1348,32 +1383,37 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       }
       set({
         activeOrgId: null, hqNameOverride: null, showProfileModal: true,
-        stores: [], members: [], hqMembers: [], transactions: {}, memoTopics: [], trash: [],
+        stores: [], members: [], hqMembers: [], transactions: {}, txLoadedFrom: '', memoTopics: [], trash: [],
         companyInfo: { name: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4, dailyClosingEnabled: false },
         page: 'list' as const, selectedStoreId: null,
       });
     });
   }
 
-  function deleteTeam(store: Store) {
+  async function deleteTeam(store: Store) {
     const st = getState();
     // Deleting the team row cascades away its transactions/memos in the
     // database immediately — bundle a snapshot of them into the trash
     // item itself, or restoring the team later would bring back an empty
-    // shell with none of its data.
+    // shell with none of its data. state.transactions may only hold this
+    // team's recent window (see txLoadedFrom) — fetch its full,
+    // unbounded history directly rather than snapshotting whatever
+    // fraction happens to already be in memory, or restoring later would
+    // silently lose older transactions. Scoped to a single team, so this
+    // stays cheap regardless of how deep that team's history goes.
+    const { data: fullTxRows, error: fullTxErr } = await supabase.from('transactions').select('*').eq('team_id', store.id);
+    if (fullTxErr) console.error('deleteTeam: fetching full transaction history failed, snapshot may be incomplete', fullTxErr);
     const snapshot = {
       store,
-      transactions: st.transactions[store.id] || [],
+      transactions: fullTxErr ? (st.transactions[store.id] || []) : (fullTxRows || []).map(mapTransactionRow),
       memoTopics: st.memoTopics.filter((t) => t.storeId === store.id),
       members: st.members.filter((m) => m.store === store.name),
     };
-    addTrash('team', store.name, snapshot, store.id).then(() => {
-      set((s) => ({ stores: s.stores.filter((s2) => s2.id !== store.id), selectedStoreId: null }));
-      supabase.from('teams').delete().eq('id', store.id).then(({ error }) => {
-        if (error) { console.error('deleteTeam failed', error); return; }
-        syncStripeQuantity(getState().activeOrgId);
-      });
-    });
+    await addTrash('team', store.name, snapshot, store.id);
+    set((s) => ({ stores: s.stores.filter((s2) => s2.id !== store.id), selectedStoreId: null }));
+    const { error } = await supabase.from('teams').delete().eq('id', store.id);
+    if (error) { console.error('deleteTeam failed', error); return; }
+    syncStripeQuantity(getState().activeOrgId);
   }
 
   function actuallyCreateStore(andThenCheckout?: boolean) {
@@ -1580,7 +1620,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             hqNameOverride: orgData.companyInfo.name || null,
             viewRole: isOrgMember ? 'hq' : (orgData.stores[0]?.id || 'hq'), selectedStoreId: null,
             ...orgData, logoMap: { ...s.logoMap, ...orgData.logoMap },
-            orgDataLoaded: true,
+            orgDataLoaded: true, txLoadedFrom: defaultTxFloor(),
             orgLoadDebug: stillEmpty
               ? `DEBUG ${new Date().toISOString()}: myOrgs=${myOrgs.length}(×${myOrgsAttempts}) stores=${orgData.stores.length} hqMembers=${orgData.hqMembers.length} (×${orgDataAttempts}) ua=${navigator.userAgent}`
               : null,

@@ -6,6 +6,30 @@ import type {
   Store, Member, HqMember, Transaction, EntryPreset, MemoTopic, TrashItem, CompanyInfo, Defaults, Org,
 } from '../types';
 
+// Bounds the initial transactions fetch to a trailing window instead of an
+// org's entire lifetime history — see ensureTransactionsLoaded (store.tsx)
+// for how a view that needs an older period expands past this on demand.
+// 12 full months back from the start of the current month, so "this month"
+// and "last month" (the most common month-over-month comparison) are
+// always covered with zero extra round trips.
+export function defaultTxFloor(): string {
+  const now = new Date();
+  const totalMonths = now.getFullYear() * 12 + now.getMonth() - 12;
+  const yr = Math.floor(totalMonths / 12);
+  const mi = ((totalMonths % 12) + 12) % 12;
+  return `${yr}-${String(mi + 1).padStart(2, '0')}-01`;
+}
+
+export function mapTransactionRow(row: {
+  id: string; team_id: string; type: string; title: string; amount: number | string; date: string;
+  photo_url: string | null; created_at: string; source: string | null;
+}): Transaction {
+  return {
+    id: row.id, type: row.type as Transaction['type'], title: row.title, amount: Number(row.amount), date: row.date,
+    photo: row.photo_url, createdAt: row.created_at, source: row.source === 'csv' ? 'csv' : 'manual',
+  };
+}
+
 export interface LoadedOrgData {
   companyInfo: CompanyInfo;
   defaults: Defaults;
@@ -117,7 +141,8 @@ export async function createOrgWithFirstTeam(params: {
   return orgId;
 }
 
-export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
+export async function fetchOrgData(orgId: string, txFloor?: string): Promise<LoadedOrgData> {
+  const floor = txFloor || defaultTxFloor();
   // orgs/teams don't depend on each other's results, so fetch them together
   // instead of as two sequential round trips.
   const [orgRes, teamsRes] = await Promise.all([
@@ -156,7 +181,7 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
       ? supabase.from('team_members').select('id, user_id, team_id, role, profiles(name)').in('team_id', teamIds)
       : Promise.resolve({ data: [], error: null }),
     teamIds.length
-      ? supabase.from('transactions').select('*').in('team_id', teamIds).order('date', { ascending: false })
+      ? supabase.from('transactions').select('*').in('team_id', teamIds).gte('date', floor).order('date', { ascending: false })
       : Promise.resolve({ data: [], error: null }),
     teamIds.length
       ? supabase.from('entry_presets').select('*').in('team_id', teamIds).order('created_at', { ascending: true })
@@ -204,10 +229,7 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
   const transactions: Record<string, Transaction[]> = {};
   (txRes.data || []).forEach((row) => {
     const list = transactions[row.team_id] || (transactions[row.team_id] = []);
-    list.push({
-      id: row.id, type: row.type, title: row.title, amount: Number(row.amount), date: row.date, photo: row.photo_url,
-      createdAt: row.created_at, source: row.source === 'csv' ? 'csv' : 'manual',
-    });
+    list.push(mapTransactionRow(row));
   });
 
   const entryPresets: Record<string, EntryPreset[]> = {};
@@ -275,4 +297,31 @@ export async function fetchOrgData(orgId: string): Promise<LoadedOrgData> {
     orgCreatedAt: orgRow.created_at || null,
     stores, hqMembers, members, transactions, entryPresets, memoTopics, trash, confirmedPeriods, logoMap,
   };
+}
+
+// Expands state.transactions past the current txLoadedFrom floor when a
+// view needs an older period — see ensureTransactionsLoaded in store.tsx.
+// [sinceDate, beforeDate) so the caller can hand it exactly the gap between
+// a new, lower floor and the previous one without re-fetching what's
+// already loaded.
+export async function fetchTransactionsSince(
+  teamIds: string[],
+  sinceDate: string,
+  beforeDate: string,
+): Promise<Record<string, Transaction[]>> {
+  const transactions: Record<string, Transaction[]> = {};
+  if (!teamIds.length) return transactions;
+  const { data, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .in('team_id', teamIds)
+    .gte('date', sinceDate)
+    .lt('date', beforeDate)
+    .order('date', { ascending: false });
+  if (error) throw error;
+  (data || []).forEach((row) => {
+    const list = transactions[row.team_id] || (transactions[row.team_id] = []);
+    list.push(mapTransactionRow(row));
+  });
+  return transactions;
 }
