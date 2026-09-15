@@ -179,15 +179,8 @@ function BootLoading() {
           50%, 100% { transform: scale(1); opacity: .14; }
         }
         /* Impact flourish, timed to the same landing moment (~25%) as the
-           squash above: a ring bursts outward around the whole mark and a
-           fan of dust flecks kicks out past its edges, both invisible the
-           rest of the loop. */
-        @keyframes fc-boot-ring {
-          0%, 25%   { transform: scale(.2); opacity: 0; }
-          29%       { transform: scale(.65); opacity: .5; }
-          42%       { transform: scale(1.75); opacity: 0; }
-          100%      { opacity: 0; }
-        }
+           squash above: a fan of dust flecks kicks out past the mark's
+           edges, invisible the rest of the loop. */
         @keyframes fc-boot-dust-1 {
           0%, 25% { transform: translate(0, 0) scale(0); opacity: 0; }
           29%     { transform: translate(-52px, -18px) scale(1); opacity: .85; }
@@ -235,16 +228,9 @@ function BootLoading() {
           />
         </div>
         {/* Burst layer, centered on where the icon lands (its bottom edge) so
-            the ring and flecks fan out around the whole mark, not just the
-            small shadow beneath it. */}
+            the flecks fan out around the whole mark, not just the small
+            shadow beneath it. */}
         <div style={{ position: 'absolute', left: '50%', top: 95, width: 0, height: 0 }}>
-          <div
-            style={{
-              position: 'absolute', left: 0, top: 0, width: 130, height: 130, marginLeft: -65, marginTop: -65,
-              borderRadius: '50%', border: '2.5px solid rgba(20,40,32,.35)',
-              animation: 'fc-boot-ring 3.5s ease-out infinite',
-            }}
-          />
           {[1, 2, 3, 4, 5].map((n) => (
             <div
               key={n}

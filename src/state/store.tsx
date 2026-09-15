@@ -15,6 +15,8 @@ import { HQ_TEMPLATES } from './hqTemplates';
 
 type Patch = Partial<AppState> | ((s: AppState) => Partial<AppState>);
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 function translateAuthError(err: { message?: string } | null | undefined): string {
   const msg = err?.message || '';
   if (/invalid login credentials/i.test(msg)) return 'メールアドレスまたはパスワードが正しくありません';
@@ -1491,8 +1493,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       // event fires, and on some mobile browsers that's slightly ahead of
       // the client having the fresh session's token fully attached, so RLS
       // silently filters every row out (no error, just zero rows). Refetch
-      // once rather than trusting it and landing on an empty dashboard.
-      const myOrgs = myOrgsFirstTry.length === 0 && savedOrgId ? await fetchMyOrgs(session.user.id) : myOrgsFirstTry;
+      // rather than trusting it and landing on an empty dashboard — a short
+      // pause before retrying gives the race more room to actually resolve
+      // than firing again back-to-back does.
+      let myOrgs = myOrgsFirstTry;
+      for (let attempt = 0; myOrgs.length === 0 && savedOrgId && attempt < 2; attempt++) {
+        await sleep(350 * (attempt + 1));
+        myOrgs = await fetchMyOrgs(session.user.id);
+      }
       const preferredOrgId = getState().activeOrgId || savedOrgId;
       const resolvedOrgId = preferredOrgId && myOrgs.some((o) => o.id === preferredOrgId) ? preferredOrgId : (myOrgs[0]?.id ?? null);
       if (resolvedOrgId) saveActiveOrgId(resolvedOrgId);
@@ -1520,12 +1528,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           let orgData = await fetchOrgData(target);
           // Every org is created together with its first team (see
           // createOrgWithFirstTeam) and teams are never bulk-deleted, so a
-          // resolved, real org coming back with zero stores/HQ members is
-          // never legitimate — it's the same early-auth-event race as
-          // above, just hitting fetchOrgData's own queries instead of
-          // fetchMyOrgs's. Refetch once rather than showing an empty
-          // dashboard the user has to fix by switching orgs themselves.
-          if (orgData.stores.length === 0 && orgData.hqMembers.length === 0) {
+          // resolved, real org coming back with zero stores OR zero HQ
+          // members is never legitimate — it's the same early-auth-event
+          // race as above, just hitting fetchOrgData's own (independent)
+          // queries instead of fetchMyOrgs's, so either one can come back
+          // empty on its own. Retry with a short, growing pause rather than
+          // showing an empty dashboard the user has to fix themselves.
+          for (let attempt = 0; (orgData.stores.length === 0 || orgData.hqMembers.length === 0) && attempt < 2; attempt++) {
+            await sleep(350 * (attempt + 1));
             orgData = await fetchOrgData(target);
           }
           const isOrgMember = orgData.hqMembers.some((m) => m.userId === session.user.id);
