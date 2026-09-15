@@ -1473,7 +1473,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
       // None of these three depend on each other's results — fetch them
       // together instead of as three sequential round trips.
-      const [{ data: profile }, { data: userRes }, myOrgs] = await Promise.all([
+      const [{ data: profile }, { data: userRes }, myOrgsFirstTry] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', session.user.id).single(),
         supabase.auth.getUser(),
         fetchMyOrgs(session.user.id),
@@ -1485,6 +1485,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       // more than one org would land on whichever org happens to come back
       // first from the (unordered) org_members query — effectively random.
       const savedOrgId = loadSavedActiveOrgId();
+      // A returning user with a known org (savedOrgId set) whose org list
+      // still comes back empty is very likely hitting a real race, not an
+      // actually-org-less account — this query runs the instant the auth
+      // event fires, and on some mobile browsers that's slightly ahead of
+      // the client having the fresh session's token fully attached, so RLS
+      // silently filters every row out (no error, just zero rows). Refetch
+      // once rather than trusting it and landing on an empty dashboard.
+      const myOrgs = myOrgsFirstTry.length === 0 && savedOrgId ? await fetchMyOrgs(session.user.id) : myOrgsFirstTry;
       const preferredOrgId = getState().activeOrgId || savedOrgId;
       const resolvedOrgId = preferredOrgId && myOrgs.some((o) => o.id === preferredOrgId) ? preferredOrgId : (myOrgs[0]?.id ?? null);
       if (resolvedOrgId) saveActiveOrgId(resolvedOrgId);
@@ -1509,7 +1517,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const target = resolvedOrgId;
       if (target) {
         try {
-          const orgData = await fetchOrgData(target);
+          let orgData = await fetchOrgData(target);
+          // Every org is created together with its first team (see
+          // createOrgWithFirstTeam) and teams are never bulk-deleted, so a
+          // resolved, real org coming back with zero stores/HQ members is
+          // never legitimate — it's the same early-auth-event race as
+          // above, just hitting fetchOrgData's own queries instead of
+          // fetchMyOrgs's. Refetch once rather than showing an empty
+          // dashboard the user has to fix by switching orgs themselves.
+          if (orgData.stores.length === 0 && orgData.hqMembers.length === 0) {
+            orgData = await fetchOrgData(target);
+          }
           const isOrgMember = orgData.hqMembers.some((m) => m.userId === session.user.id);
           set((s) => ({
             hqNameOverride: orgData.companyInfo.name || null,
