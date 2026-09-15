@@ -179,50 +179,51 @@ function BootLoading() {
           50%, 100% { transform: scale(1); opacity: .14; }
         }
         /* Impact flourish, timed to the same landing moment (~25%) as the
-           squash above: a ring pulses outward from the shadow and a small
-           fan of dust flecks kicks up, both invisible the rest of the loop. */
+           squash above: a ring bursts outward around the whole mark and a
+           fan of dust flecks kicks out past its edges, both invisible the
+           rest of the loop. */
         @keyframes fc-boot-ring {
-          0%, 25%   { transform: scale(.3); opacity: 0; }
-          29%       { transform: scale(.6); opacity: .45; }
-          40%       { transform: scale(1.7); opacity: 0; }
+          0%, 25%   { transform: scale(.2); opacity: 0; }
+          29%       { transform: scale(.65); opacity: .5; }
+          42%       { transform: scale(1.75); opacity: 0; }
           100%      { opacity: 0; }
         }
         @keyframes fc-boot-dust-1 {
           0%, 25% { transform: translate(0, 0) scale(0); opacity: 0; }
-          29%     { transform: translate(-24px, -9px) scale(1); opacity: .8; }
-          40%     { transform: translate(-32px, 1px) scale(.3); opacity: 0; }
+          29%     { transform: translate(-52px, -18px) scale(1); opacity: .85; }
+          42%     { transform: translate(-68px, 2px) scale(.3); opacity: 0; }
           100%    { opacity: 0; }
         }
         @keyframes fc-boot-dust-2 {
           0%, 25% { transform: translate(0, 0) scale(0); opacity: 0; }
-          30%     { transform: translate(-13px, -19px) scale(1); opacity: .8; }
-          41%     { transform: translate(-17px, -10px) scale(.3); opacity: 0; }
+          30%     { transform: translate(-28px, -42px) scale(1); opacity: .85; }
+          43%     { transform: translate(-36px, -22px) scale(.3); opacity: 0; }
           100%    { opacity: 0; }
         }
         @keyframes fc-boot-dust-3 {
           0%, 25% { transform: translate(0, 0) scale(0); opacity: 0; }
-          28%     { transform: translate(0, -23px) scale(1); opacity: .8; }
-          39%     { transform: translate(0, -12px) scale(.3); opacity: 0; }
+          28%     { transform: translate(0, -50px) scale(1); opacity: .85; }
+          41%     { transform: translate(0, -26px) scale(.3); opacity: 0; }
           100%    { opacity: 0; }
         }
         @keyframes fc-boot-dust-4 {
           0%, 25% { transform: translate(0, 0) scale(0); opacity: 0; }
-          30%     { transform: translate(13px, -19px) scale(1); opacity: .8; }
-          41%     { transform: translate(17px, -10px) scale(.3); opacity: 0; }
+          30%     { transform: translate(28px, -42px) scale(1); opacity: .85; }
+          43%     { transform: translate(36px, -22px) scale(.3); opacity: 0; }
           100%    { opacity: 0; }
         }
         @keyframes fc-boot-dust-5 {
           0%, 25% { transform: translate(0, 0) scale(0); opacity: 0; }
-          29%     { transform: translate(24px, -9px) scale(1); opacity: .8; }
-          40%     { transform: translate(32px, 1px) scale(.3); opacity: 0; }
+          29%     { transform: translate(52px, -18px) scale(1); opacity: .85; }
+          42%     { transform: translate(68px, 2px) scale(.3); opacity: 0; }
           100%    { opacity: 0; }
         }
       `}</style>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <img
           src="/icon-mark.png"
           alt=""
-          style={{ width: 116, height: 'auto', transformOrigin: '50% 100%', animation: 'fc-boot-fall 3.5s ease-in-out infinite' }}
+          style={{ width: 116, height: 95, transformOrigin: '50% 100%', animation: 'fc-boot-fall 3.5s ease-in-out infinite', position: 'relative', zIndex: 1 }}
         />
         <div style={{ position: 'relative', width: 64, height: 14, marginTop: 2 }}>
           <div
@@ -232,10 +233,15 @@ function BootLoading() {
               animation: 'fc-boot-shadow 3.5s ease-in-out infinite',
             }}
           />
+        </div>
+        {/* Burst layer, centered on where the icon lands (its bottom edge) so
+            the ring and flecks fan out around the whole mark, not just the
+            small shadow beneath it. */}
+        <div style={{ position: 'absolute', left: '50%', top: 95, width: 0, height: 0 }}>
           <div
             style={{
-              position: 'absolute', left: '50%', top: '50%', width: 20, height: 20, marginLeft: -10, marginTop: -10,
-              borderRadius: '50%', border: '2px solid rgba(20,40,32,.4)',
+              position: 'absolute', left: 0, top: 0, width: 130, height: 130, marginLeft: -65, marginTop: -65,
+              borderRadius: '50%', border: '2.5px solid rgba(20,40,32,.35)',
               animation: 'fc-boot-ring 3.5s ease-out infinite',
             }}
           />
@@ -243,7 +249,7 @@ function BootLoading() {
             <div
               key={n}
               style={{
-                position: 'absolute', left: '50%', top: '50%', width: 4, height: 4, marginLeft: -2, marginTop: -2,
+                position: 'absolute', left: 0, top: 0, width: 7, height: 7, marginLeft: -3.5, marginTop: -3.5,
                 borderRadius: '50%', background: '#3cae7a',
                 animation: `fc-boot-dust-${n} 3.5s ease-out infinite`,
               }}
