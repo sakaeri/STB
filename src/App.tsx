@@ -154,61 +154,61 @@ function BootLoading() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#eceef1' }}>
       <style>{`
-        /* The fall/bounce/settle plays out in the first half of the cycle
-           (same pacing as before, just rescaled) — the second half is a
-           still hold, so a ~7s load shows about two drops instead of the
-           icon replaying nonstop and getting old fast. */
+        /* Falls from higher up (more travel = more energy on impact) and
+           the active fall/bounce/settle now fills most of the cycle —
+           only a short hold at the end, rather than sitting still for as
+           long as it moves. */
         @keyframes fc-boot-fall {
-          0%   { transform: translateY(-140px) scale(.9); opacity: 0; }
-          4%   { opacity: 1; }
-          15%  { transform: translateY(-110px) scale(.94); }
-          25%  { transform: translateY(0) scale(1); }
-          28%  { transform: translateY(2px) scaleX(1.22) scaleY(.8); }
-          32%  { transform: translateY(-16px) scaleX(.92) scaleY(1.12) rotate(-5deg); }
-          36%  { transform: translateY(0) scaleX(1.08) scaleY(.95) rotate(4deg); }
-          40%  { transform: translateY(-5px) scaleX(.97) scaleY(1.04) rotate(-2.5deg); }
-          44%  { transform: translateY(0) scaleX(1.02) scaleY(.99) rotate(1.5deg); }
-          50%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+          0%   { transform: translateY(-220px) scale(.9); opacity: 0; }
+          5%   { opacity: 1; }
+          20%  { transform: translateY(-173px) scale(.94); }
+          33%  { transform: translateY(0) scale(1); }
+          36%  { transform: translateY(2px) scaleX(1.22) scaleY(.8); }
+          42%  { transform: translateY(-16px) scaleX(.92) scaleY(1.12) rotate(-5deg); }
+          47%  { transform: translateY(0) scaleX(1.08) scaleY(.95) rotate(4deg); }
+          52%  { transform: translateY(-5px) scaleX(.97) scaleY(1.04) rotate(-2.5deg); }
+          57%  { transform: translateY(0) scaleX(1.02) scaleY(.99) rotate(1.5deg); }
+          65%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
         }
         @keyframes fc-boot-shadow {
-          0%, 4%  { transform: scale(.4); opacity: 0; }
-          25%     { transform: scale(1); opacity: .16; }
-          28%     { transform: scale(1.15); opacity: .2; }
-          32%     { transform: scale(.75); opacity: .09; }
-          36%     { transform: scale(1.05); opacity: .16; }
-          50%, 100% { transform: scale(1); opacity: .14; }
+          0%, 5%  { transform: scale(.4); opacity: 0; }
+          33%     { transform: scale(1); opacity: .16; }
+          36%     { transform: scale(1.15); opacity: .2; }
+          42%     { transform: scale(.75); opacity: .09; }
+          47%     { transform: scale(1.05); opacity: .16; }
+          65%, 100% { transform: scale(1); opacity: .14; }
         }
-        /* Impact flourish, timed to the same landing moment (~25%) as the
+        /* Impact flourish, timed to the same landing moment (~33%) as the
            squash above: a fan of dust flecks kicks out past the mark's
            edges, invisible the rest of the loop. */
         @keyframes fc-boot-dust-1 {
-          0%, 25% { transform: translate(0, 0) scale(0); opacity: 0; }
-          29%     { transform: translate(-52px, -18px) scale(1); opacity: .85; }
-          42%     { transform: translate(-68px, 2px) scale(.3); opacity: 0; }
+          0%, 33% { transform: translate(0, 0) scale(0); opacity: 0; }
+          38%     { transform: translate(-52px, -18px) scale(1); opacity: .85; }
+          53%     { transform: translate(-68px, 2px) scale(.3); opacity: 0; }
           100%    { opacity: 0; }
         }
         @keyframes fc-boot-dust-2 {
-          0%, 25% { transform: translate(0, 0) scale(0); opacity: 0; }
-          30%     { transform: translate(-28px, -42px) scale(1); opacity: .85; }
-          43%     { transform: translate(-36px, -22px) scale(.3); opacity: 0; }
+          0%, 33% { transform: translate(0, 0) scale(0); opacity: 0; }
+          40%     { transform: translate(-28px, -42px) scale(1); opacity: .85; }
+          54%     { transform: translate(-36px, -22px) scale(.3); opacity: 0; }
           100%    { opacity: 0; }
         }
         @keyframes fc-boot-dust-3 {
-          0%, 25% { transform: translate(0, 0) scale(0); opacity: 0; }
-          28%     { transform: translate(0, -50px) scale(1); opacity: .85; }
-          41%     { transform: translate(0, -26px) scale(.3); opacity: 0; }
+          0%, 33% { transform: translate(0, 0) scale(0); opacity: 0; }
+          37%     { transform: translate(0, -50px) scale(1); opacity: .85; }
+          52%     { transform: translate(0, -26px) scale(.3); opacity: 0; }
           100%    { opacity: 0; }
         }
         @keyframes fc-boot-dust-4 {
-          0%, 25% { transform: translate(0, 0) scale(0); opacity: 0; }
-          30%     { transform: translate(28px, -42px) scale(1); opacity: .85; }
-          43%     { transform: translate(36px, -22px) scale(.3); opacity: 0; }
+          0%, 33% { transform: translate(0, 0) scale(0); opacity: 0; }
+          40%     { transform: translate(28px, -42px) scale(1); opacity: .85; }
+          54%     { transform: translate(36px, -22px) scale(.3); opacity: 0; }
           100%    { opacity: 0; }
         }
         @keyframes fc-boot-dust-5 {
-          0%, 25% { transform: translate(0, 0) scale(0); opacity: 0; }
-          29%     { transform: translate(52px, -18px) scale(1); opacity: .85; }
-          42%     { transform: translate(68px, 2px) scale(.3); opacity: 0; }
+          0%, 33% { transform: translate(0, 0) scale(0); opacity: 0; }
+          38%     { transform: translate(52px, -18px) scale(1); opacity: .85; }
+          53%     { transform: translate(68px, 2px) scale(.3); opacity: 0; }
           100%    { opacity: 0; }
         }
       `}</style>
