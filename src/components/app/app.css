@@ -1,0 +1,55 @@
+/* Hover-only styling for the app shell + sales list — everything else is inline
+   styles, mirroring the design prototype's inline-style approach. */
+
+.stb-nav-btn:hover {
+  background: #f7f8fa;
+}
+.stb-table-row:hover {
+  background: #f8fafc;
+}
+.stb-card:hover {
+  box-shadow: 0 6px 20px rgba(20, 40, 80, 0.1);
+  border-color: #d6dae0;
+}
+.stb-detail-row:hover {
+  border-color: #d6dae0;
+  box-shadow: 0 3px 12px rgba(20, 40, 80, 0.07);
+}
+.stb-icon-btn:hover {
+  background: #f0f2f5;
+}
+.stb-icon-btn-danger:hover {
+  background: #eef0f3;
+  color: #d6453d !important;
+}
+.stb-tx-row:hover {
+  background: #eef0f3;
+}
+
+/* Print/PDF export: the print table is portaled into #print-root (a plain
+   sibling of #root, outside the app's own layout/animation/flex tree, so it
+   can't inherit any positioning quirks from the sidebar/scroll containers).
+   Swapping which of #root/#print-root is displayed — rather than
+   visibility tricks on the live app tree — keeps this immune to whatever
+   layout the rest of the app happens to be using. */
+#print-root {
+  display: none;
+}
+@media print {
+  @page {
+    size: auto;
+    margin: 0;
+  }
+  html,
+  body {
+    background: #fff;
+  }
+  #root {
+    display: none !important;
+  }
+  #print-root {
+    display: block !important;
+    background: #fff;
+    padding: 16mm 14mm;
+  }
+}

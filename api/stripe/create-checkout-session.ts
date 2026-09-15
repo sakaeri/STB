@@ -1,0 +1,145 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { userClient, bearerToken } from '../_lib/supabase.js';
+import { getStripe } from '../_lib/stripe.js';
+import { stepsForCount, parsePricingConfig, effectivePricing } from '../_lib/pricing.js';
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') { res.status(405).json({ error: 'Method not allowed' }); return; }
+
+  const token = bearerToken(req.headers.authorization);
+  if (!token) { res.status(401).json({ error: 'ログインが必要です' }); return; }
+
+  const orgId = (req.body || {}).orgId as string | undefined;
+  if (!orgId) { res.status(400).json({ error: 'orgIdが必要です' }); return; }
+
+  try {
+    const supabase = userClient(token);
+    const { data: userRes, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !userRes.user) { res.status(401).json({ error: 'ログインが必要です' }); return; }
+
+    // Billing is an ownership-level action even though team CRUD is open to
+    // any org member — only オーナー may start/manage the subscription.
+    const { data: memberRow, error: memberErr } = await supabase
+      .from('org_members')
+      .select('role')
+      .eq('org_id', orgId)
+      .eq('user_id', userRes.user.id)
+      .maybeSingle();
+    if (memberErr || !memberRow || memberRow.role !== 'オーナー') {
+      res.status(403).json({ error: 'オーナーのみお支払い手続きができます' });
+      return;
+    }
+
+    const { data: org, error: orgErr } = await supabase
+      .from('orgs').select('id, name, stripe_customer_id, stripe_subscription_id, pricing_model, created_at').eq('id', orgId).single();
+    if (orgErr || !org) {
+      console.error('create-checkout-session: orgs lookup failed', orgErr);
+      res.status(404).json({ error: `本部が見つかりません${orgErr ? `（${orgErr.message}）` : ''}` });
+      return;
+    }
+
+    // Already subscribed (e.g. frozen because a step-up's immediate invoice
+    // — see sync-quantity.ts — failed to charge, not a first-time signup):
+    // starting a brand new Checkout session here would create a *second*
+    // subscription rather than resolving the actual problem. Point them at
+    // the outstanding invoice instead — but only if that subscription is
+    // actually still live. The webhook clears stripe_subscription_id when
+    // it's canceled (customer.subscription.deleted), but defensively check
+    // here too: a canceled subscription has no outstanding invoice to pay,
+    // and would otherwise dead-end with "no invoice found" forever.
+    if (org.stripe_subscription_id && org.stripe_customer_id) {
+      const stripe = getStripe();
+      const sub = await stripe.subscriptions.retrieve(org.stripe_subscription_id).catch(() => null);
+      if (sub && sub.status !== 'canceled') {
+        const openInvoices = await stripe.invoices.list({ customer: org.stripe_customer_id, status: 'open', limit: 1 });
+        const openInvoice = openInvoices.data[0];
+        if (openInvoice?.hosted_invoice_url) {
+          // Resolving an existing unpaid invoice isn't a fresh Checkout
+          // Session, so there's no client_secret to embed here — this one
+          // case still redirects to Stripe's own hosted invoice page.
+          res.status(200).json({ url: openInvoice.hosted_invoice_url });
+          return;
+        }
+        res.status(400).json({ error: '未払いの請求が見つかりませんでした。ページを再読み込みしてから、もう一度お試しください。' });
+        return;
+      }
+      // The subscription is gone (or Stripe no longer knows about it) —
+      // fall through to starting a fresh Checkout below.
+      await supabase.from('orgs').update({ stripe_subscription_id: null }).eq('id', orgId);
+    }
+
+    const { count } = await supabase.from('teams').select('id', { count: 'exact', head: true }).eq('org_id', orgId);
+    const { data: pricingRaw } = await supabase.rpc('get_public_pricing');
+    const pricing = effectivePricing(org.pricing_model === 'trial' ? 'trial' : 'legacy', parsePricingConfig(pricingRaw));
+    // Checkout only ever runs to resolve a frozen/unpaid state, so always
+    // bill at least the first paid step even if team count is technically
+    // still within the free range (e.g. frozen for an unrelated reason).
+    const quantity = Math.max(1, stepsForCount(count || 0, pricing));
+
+    // Trial-model orgs bill at a different per-unit rate (¥600/team vs the
+    // legacy ¥3,000/5-team step) — Stripe has no concept of that split, so
+    // it needs its own Price object (quantity below is already "1 unit per
+    // team" for trial, "1 unit per 5-team step" for legacy either way).
+    const priceId = org.pricing_model === 'trial'
+      ? (process.env.STRIPE_PRICE_ID_TRIAL || process.env.STRIPE_PRICE_ID)
+      : process.env.STRIPE_PRICE_ID;
+    if (!priceId) { res.status(500).json({ error: 'サーバー設定エラー（STRIPE_PRICE_ID未設定）' }); return; }
+
+    const stripe = getStripe();
+
+    let customerId = org.stripe_customer_id as string | null;
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: userRes.user.email || undefined,
+        name: org.name,
+        metadata: { org_id: orgId },
+      });
+      customerId = customer.id;
+      await supabase.from('orgs').update({ stripe_customer_id: customerId }).eq('id', orgId);
+    }
+
+    const origin = (req.headers.origin as string) || `https://${req.headers.host}`;
+    const session = await stripe.checkout.sessions.create({
+      // 'elements' (Stripe's "Custom Checkout") hands us a bare
+      // PaymentElement plus a confirm() action instead of a pre-built
+      // Stripe-branded form/iframe — the surrounding form (labels, submit
+      // button, copy) is entirely our own, styled to match the app.
+      ui_mode: 'elements',
+      mode: 'subscription',
+      customer: customerId,
+      line_items: [{ price: priceId, quantity }],
+      return_url: `${origin}/?billing=success`,
+      metadata: { org_id: orgId },
+      subscription_data: { metadata: { org_id: orgId } },
+    });
+
+    // Freeze immediately rather than waiting on Stripe's own dunning to
+    // notice non-payment: without this, a team created past the free tier
+    // was fully usable the moment it was inserted, checkout or no checkout
+    // (team creation isn't deferred until payment — reworking that would
+    // mean waiting on the webhook round-trip before showing the invite
+    // URL). The checkout.session.completed webhook flips it back to
+    // active on successful payment; abandoning checkout leaves it frozen.
+    //
+    // Exception: a trial-model org still inside its own 30-day grace period
+    // hasn't done anything requiring payment yet — this Checkout session
+    // may just be the owner voluntarily setting up payment early (see the
+    // "今すぐお支払い設定をする" button in Settings). Freezing on session
+    // creation there would punish someone who simply closes the tab without
+    // finishing, despite having legitimate free days left. Once the grace
+    // period has actually run out, fetchOrgData's own lazy check freezes it
+    // regardless, so nothing here needs to race that.
+    const TRIAL_DAYS = 30;
+    const stillInTrialGrace = org.pricing_model === 'trial'
+      && Date.now() <= new Date(org.created_at).getTime() + TRIAL_DAYS * 24 * 60 * 60 * 1000;
+    if (!stillInTrialGrace) {
+      await supabase.from('orgs').update({ status: 'frozen' }).eq('id', orgId);
+    }
+
+    res.status(200).json({ clientSecret: session.client_secret });
+  } catch (e) {
+    console.error('create-checkout-session failed', e);
+    const msg = e instanceof Error ? e.message : '';
+    res.status(500).json({ error: `お支払い手続きの開始に失敗しました${msg ? `（${msg}）` : ''}` });
+  }
+}
