@@ -178,6 +178,45 @@ function BootLoading() {
           36%     { transform: scale(1.05); opacity: .16; }
           50%, 100% { transform: scale(1); opacity: .14; }
         }
+        /* Impact flourish, timed to the same landing moment (~25%) as the
+           squash above: a ring pulses outward from the shadow and a small
+           fan of dust flecks kicks up, both invisible the rest of the loop. */
+        @keyframes fc-boot-ring {
+          0%, 25%   { transform: scale(.3); opacity: 0; }
+          29%       { transform: scale(.6); opacity: .45; }
+          40%       { transform: scale(1.7); opacity: 0; }
+          100%      { opacity: 0; }
+        }
+        @keyframes fc-boot-dust-1 {
+          0%, 25% { transform: translate(0, 0) scale(0); opacity: 0; }
+          29%     { transform: translate(-24px, -9px) scale(1); opacity: .8; }
+          40%     { transform: translate(-32px, 1px) scale(.3); opacity: 0; }
+          100%    { opacity: 0; }
+        }
+        @keyframes fc-boot-dust-2 {
+          0%, 25% { transform: translate(0, 0) scale(0); opacity: 0; }
+          30%     { transform: translate(-13px, -19px) scale(1); opacity: .8; }
+          41%     { transform: translate(-17px, -10px) scale(.3); opacity: 0; }
+          100%    { opacity: 0; }
+        }
+        @keyframes fc-boot-dust-3 {
+          0%, 25% { transform: translate(0, 0) scale(0); opacity: 0; }
+          28%     { transform: translate(0, -23px) scale(1); opacity: .8; }
+          39%     { transform: translate(0, -12px) scale(.3); opacity: 0; }
+          100%    { opacity: 0; }
+        }
+        @keyframes fc-boot-dust-4 {
+          0%, 25% { transform: translate(0, 0) scale(0); opacity: 0; }
+          30%     { transform: translate(13px, -19px) scale(1); opacity: .8; }
+          41%     { transform: translate(17px, -10px) scale(.3); opacity: 0; }
+          100%    { opacity: 0; }
+        }
+        @keyframes fc-boot-dust-5 {
+          0%, 25% { transform: translate(0, 0) scale(0); opacity: 0; }
+          29%     { transform: translate(24px, -9px) scale(1); opacity: .8; }
+          40%     { transform: translate(32px, 1px) scale(.3); opacity: 0; }
+          100%    { opacity: 0; }
+        }
       `}</style>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <img
@@ -185,13 +224,32 @@ function BootLoading() {
           alt=""
           style={{ width: 116, height: 'auto', transformOrigin: '50% 100%', animation: 'fc-boot-fall 3.5s ease-in-out infinite' }}
         />
-        <div
-          style={{
-            width: 64, height: 14, marginTop: 2, borderRadius: '50%',
-            background: 'radial-gradient(closest-side, rgba(20,40,32,.55), transparent)',
-            animation: 'fc-boot-shadow 3.5s ease-in-out infinite',
-          }}
-        />
+        <div style={{ position: 'relative', width: 64, height: 14, marginTop: 2 }}>
+          <div
+            style={{
+              position: 'absolute', inset: 0, borderRadius: '50%',
+              background: 'radial-gradient(closest-side, rgba(20,40,32,.55), transparent)',
+              animation: 'fc-boot-shadow 3.5s ease-in-out infinite',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute', left: '50%', top: '50%', width: 20, height: 20, marginLeft: -10, marginTop: -10,
+              borderRadius: '50%', border: '2px solid rgba(20,40,32,.4)',
+              animation: 'fc-boot-ring 3.5s ease-out infinite',
+            }}
+          />
+          {[1, 2, 3, 4, 5].map((n) => (
+            <div
+              key={n}
+              style={{
+                position: 'absolute', left: '50%', top: '50%', width: 4, height: 4, marginLeft: -2, marginTop: -2,
+                borderRadius: '50%', background: '#3cae7a',
+                animation: `fc-boot-dust-${n} 3.5s ease-out infinite`,
+              }}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
