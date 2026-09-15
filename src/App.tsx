@@ -238,7 +238,24 @@ function OrgLoadDebugBanner({ text }: { text: string }) {
   );
 }
 
+// Same URL LandingPage.tsx loads (a superset of weights) — an identical
+// href means the browser shares one cached stylesheet if a visitor sees
+// both screens in a session, instead of fetching two overlapping ones.
+const BOOT_FONT_HREF = 'https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800;900&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap';
+
 function BootLoading() {
+  // Lazy, not in index.html — the boot screen is the one place in the
+  // main app that wants the brand's display font instead of Noto Sans JP,
+  // so loading it here (rather than globally) means the rest of the app
+  // never pays for a font it doesn't use.
+  useEffect(() => {
+    if (document.querySelector(`link[href="${BOOT_FONT_HREF}"]`)) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = BOOT_FONT_HREF;
+    document.head.appendChild(link);
+  }, []);
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#eceef1' }}>
       <style>{`
@@ -301,11 +318,12 @@ function BootLoading() {
         }
         /* Only visible during the still moment after landing (see the
            65%-100% hold in fc-boot-fall) — hidden through the fall/bounce
-           itself, and faded back out just before the next drop starts. */
+           itself, timed to nearly the whole hold rather than a brief
+           flash in the middle of it. */
         @keyframes fc-boot-textin {
-          0%, 60%  { opacity: 0; transform: translateY(4px); }
-          68%, 94% { opacity: 1; transform: translateY(0); }
-          100%     { opacity: 0; transform: translateY(0); }
+          0%, 60%    { opacity: 0; transform: translateY(4px); }
+          66%, 98.5% { opacity: 1; transform: translateY(0); }
+          100%       { opacity: 0; transform: translateY(0); }
         }
       `}</style>
       <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -344,8 +362,17 @@ function BootLoading() {
             animation: 'fc-boot-textin 3.5s ease-in-out infinite',
           }}
         >
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#1f7a5a', letterSpacing: '.02em' }}>PaILE</div>
-          <div style={{ fontSize: 12, fontWeight: 500, color: '#8a909a', marginTop: 5, whiteSpace: 'nowrap' }}>データを準備しています…</div>
+          <div style={{ fontFamily: '"M PLUS Rounded 1c", "Noto Sans JP", sans-serif', fontSize: 27, fontWeight: 800, color: '#1f7a5a', letterSpacing: '.04em' }}>
+            PaILE
+          </div>
+          <div
+            style={{
+              fontFamily: '"Zen Kaku Gothic New", "Noto Sans JP", sans-serif', fontSize: 11, fontWeight: 500,
+              color: '#8a909a', letterSpacing: '.08em', marginTop: 7, whiteSpace: 'nowrap',
+            }}
+          >
+            データを準備しています…
+          </div>
         </div>
       </div>
     </div>
