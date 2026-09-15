@@ -67,6 +67,7 @@ export function createInitialState(): AppState {
 
     activeOrgId: null,
     orgDataLoaded: false,
+    orgLoadDebug: null,
     hqNameOverride: null,
     orgMaxTeams: {},
     orgDowngradeDismissed: {},

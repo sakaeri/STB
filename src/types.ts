@@ -348,6 +348,13 @@ export interface AppState {
   // stores/transactions/memos fetch does, so this is what actually gates
   // showing MainApp instead of a loading screen over an empty shell.
   orgDataLoaded: boolean;
+  // Temporary diagnostic breadcrumb: set only when the org load ends up
+  // with orgDataLoaded true but empty data even after every retry — a
+  // state that should be impossible. Rendered as a small on-screen note
+  // (see App.tsx) so it can be screenshotted instead of needing a mobile
+  // console. Remove once the underlying mobile empty-dashboard bug is
+  // confirmed fixed.
+  orgLoadDebug: string | null;
   hqNameOverride: string | null;
   orgMaxTeams: Record<string, number>;
   orgDowngradeDismissed: Record<string, number | null>;

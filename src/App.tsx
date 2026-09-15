@@ -180,9 +180,30 @@ export default function App() {
   return (
     <>
       {screen}
+      {state.orgLoadDebug && <OrgLoadDebugBanner text={state.orgLoadDebug} />}
       {state.showTermsModal && <TermsModal />}
       <ConfirmModal />
     </>
+  );
+}
+
+// Temporary — shows only in the exact "should be impossible" empty-org
+// state (see orgLoadDebug in store.tsx), so it can be screenshotted
+// instead of needing to read a mobile browser's console. Remove once the
+// underlying bug is confirmed fixed.
+function OrgLoadDebugBanner({ text }: { text: string }) {
+  return (
+    <div
+      style={{
+        position: 'fixed', left: 8, right: 8, bottom: 8, zIndex: 9999,
+        background: '#3a0d0d', color: '#ffd7d7', fontSize: 10.5, lineHeight: 1.5,
+        padding: '8px 10px', borderRadius: 8, wordBreak: 'break-all',
+      }}
+    >
+      このメッセージが出たら、開発者にスクショを送ってください:
+      <br />
+      {text}
+    </div>
   );
 }
 

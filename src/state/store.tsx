@@ -166,6 +166,15 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     if (!st.activeOrgId) return;
     try {
       const data = await fetchOrgData(st.activeOrgId);
+      // A real org always has ≥1 store and ≥1 HQ member (see the same
+      // check in the initial-load path) — if this refresh raced and came
+      // back empty, applying it would silently wipe out perfectly good,
+      // already-displayed data with nothing. Leave existing state alone
+      // rather than "refreshing" it into blank.
+      if (data.stores.length === 0 && data.hqMembers.length === 0) {
+        console.error('reloadActiveOrg: got suspiciously empty data, keeping existing state', { orgId: st.activeOrgId });
+        return;
+      }
       // fetchOrgData's logoMap only covers the active org's own teams/logo —
       // merge rather than replace, so the operator-wide logo (loaded
       // separately, org-independent) doesn't get wiped out on every reload.
@@ -185,7 +194,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         activeOrgId: orgId, hqNameOverride: data.companyInfo.name || null,
         viewRole: initialViewRole(session, data), selectedStoreId: null,
         page: 'list', ...data, logoMap: { ...s.logoMap, ...data.logoMap },
-        orgDataLoaded: true,
+        orgDataLoaded: true, orgLoadDebug: null,
       }));
     } catch (e) {
       console.error('loadOrg failed', e);
@@ -1470,7 +1479,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
       if (!session) {
         if (stale()) return;
-        set({ authChecked: true, session: null, accounts: [], activeOrgId: null, orgDataLoaded: false, stores: [], members: [], hqMembers: [], transactions: {}, memoTopics: [], trash: [] });
+        set({ authChecked: true, session: null, accounts: [], activeOrgId: null, orgDataLoaded: false, orgLoadDebug: null, stores: [], members: [], hqMembers: [], transactions: {}, memoTopics: [], trash: [] });
         return;
       }
       if (getState().pendingInviteId) {
@@ -1511,9 +1520,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       // pause before retrying gives the race more room to actually resolve
       // than firing again back-to-back does.
       let myOrgs = myOrgsFirstTry;
+      let myOrgsAttempts = 1;
       for (let attempt = 0; myOrgs.length === 0 && savedOrgId && attempt < 2; attempt++) {
         await sleep(350 * (attempt + 1));
         myOrgs = await fetchMyOrgs(session.user.id);
+        myOrgsAttempts++;
       }
       const preferredOrgId = getState().activeOrgId || savedOrgId;
       const resolvedOrgId = preferredOrgId && myOrgs.some((o) => o.id === preferredOrgId) ? preferredOrgId : (myOrgs[0]?.id ?? null);
@@ -1544,6 +1555,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (target) {
         try {
           let orgData = await fetchOrgData(target);
+          let orgDataAttempts = 1;
           // Every org is created together with its first team (see
           // createOrgWithFirstTeam) and teams are never bulk-deleted, so a
           // resolved, real org coming back with zero stores OR zero HQ
@@ -1555,14 +1567,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           for (let attempt = 0; (orgData.stores.length === 0 || orgData.hqMembers.length === 0) && attempt < 2; attempt++) {
             await sleep(350 * (attempt + 1));
             orgData = await fetchOrgData(target);
+            orgDataAttempts++;
           }
           if (stale()) return;
+          // Temporary diagnostic breadcrumb (see AppState.orgLoadDebug) —
+          // every prior fix targeted a specific race, but the empty-
+          // dashboard reports keep coming back, so capture what actually
+          // happened this time instead of guessing at a fourth fix blind.
+          const stillEmpty = orgData.stores.length === 0 || orgData.hqMembers.length === 0;
           const isOrgMember = orgData.hqMembers.some((m) => m.userId === session.user.id);
           set((s) => ({
             hqNameOverride: orgData.companyInfo.name || null,
             viewRole: isOrgMember ? 'hq' : (orgData.stores[0]?.id || 'hq'), selectedStoreId: null,
             ...orgData, logoMap: { ...s.logoMap, ...orgData.logoMap },
             orgDataLoaded: true,
+            orgLoadDebug: stillEmpty
+              ? `DEBUG ${new Date().toISOString()}: myOrgs=${myOrgs.length}(×${myOrgsAttempts}) stores=${orgData.stores.length} hqMembers=${orgData.hqMembers.length} (×${orgDataAttempts}) ua=${navigator.userAgent}`
+              : null,
           }));
         } catch (e) {
           console.error('initial org load failed', e);
