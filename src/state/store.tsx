@@ -1414,6 +1414,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(() => createInitialState());
   const stateRef = useRef(state);
   stateRef.current = state;
+  // onAuthStateChange can fire more than once in quick succession on some
+  // mobile browsers (a spurious extra SIGNED_IN/TOKEN_REFRESHED, or a
+  // session read racing a null one) — each firing runs the same async
+  // profile/org load independently, and without this a slow-to-resolve
+  // older call landing *after* a newer one finishes would silently
+  // overwrite good, already-loaded data (including wiping it back to
+  // logged-out-empty). Every handleAuthChange invocation captures the
+  // generation current at its start and checks it again before each set()
+  // that matters; a mismatch means a newer call has since started, so this
+  // one's result is stale and gets thrown away instead of applied.
+  const authGenRef = useRef(0);
 
   const set = useCallback((patch: Patch) => {
     setState((prev) => {
@@ -1441,6 +1452,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
 
     async function handleAuthChange(event: string, session: { user: { id: string } } | null) {
+      const myGen = ++authGenRef.current;
+      const stale = () => myGen !== authGenRef.current;
       if (event === 'PASSWORD_RECOVERY' || isPasswordRecoveryLink()) {
         // onAuthStateChange always fires an INITIAL_SESSION event first
         // (synchronously as part of subscribing), and only afterward the
@@ -1456,6 +1469,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       if (!session) {
+        if (stale()) return;
         set({ authChecked: true, session: null, accounts: [], activeOrgId: null, orgDataLoaded: false, stores: [], members: [], hqMembers: [], transactions: {}, memoTopics: [], trash: [] });
         return;
       }
@@ -1504,6 +1518,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const preferredOrgId = getState().activeOrgId || savedOrgId;
       const resolvedOrgId = preferredOrgId && myOrgs.some((o) => o.id === preferredOrgId) ? preferredOrgId : (myOrgs[0]?.id ?? null);
       if (resolvedOrgId) saveActiveOrgId(resolvedOrgId);
+      // A newer auth event has already started (and will run this same
+      // sequence itself) — applying this stale result now would only risk
+      // clobbering whatever that one lands on, possibly back to empty.
+      if (stale()) return;
       set({
         authChecked: true,
         session: session.user.id,
@@ -1538,6 +1556,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             await sleep(350 * (attempt + 1));
             orgData = await fetchOrgData(target);
           }
+          if (stale()) return;
           const isOrgMember = orgData.hqMembers.some((m) => m.userId === session.user.id);
           set((s) => ({
             hqNameOverride: orgData.companyInfo.name || null,
@@ -1547,9 +1566,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           }));
         } catch (e) {
           console.error('initial org load failed', e);
-          set({ orgDataLoaded: true });
+          if (!stale()) set({ orgDataLoaded: true });
         }
-      } else {
+      } else if (!stale()) {
         set({ orgDataLoaded: true });
       }
       if (profile?.is_admin) void actions.loadAdminOverview();
