@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from './state/store.tsx';
+import { logOrgLoadDebug } from './state/debugLog';
 import { isPasswordRecoveryLink } from './lib/supabase';
 import AuthScreen from './components/auth/AuthScreen';
 import HqSetupScreen from './components/hqSetup/HqSetupScreen';
@@ -145,9 +146,21 @@ export default function App() {
   // empty dashboard, even from a path this session's fixes didn't
   // anticipate.
   const orgDataReady = state.orgDataLoaded && (state.stores.length > 0 || state.hqMembers.length > 0);
+  // Computed once per episode (inside the effect, not inline in render) and
+  // persisted via logOrgLoadDebug — the banner alone can disappear (once a
+  // retry succeeds) before there's a chance to screenshot it, so every
+  // occurrence is also saved to localStorage and viewable later from
+  // Settings regardless of timing.
+  const [catchAllDebug, setCatchAllDebug] = useState<string | null>(null);
   useEffect(() => {
-    if (!state.orgDataLoaded || orgDataReady || !state.activeOrgId) return;
+    if (!state.orgDataLoaded || orgDataReady || !state.activeOrgId) {
+      setCatchAllDebug(null);
+      return;
+    }
+    const text = `DEBUG ${new Date().toISOString()}: render caught orgDataLoaded=true with stores=${state.stores.length} hqMembers=${state.hqMembers.length} activeOrgId=${state.activeOrgId} ua=${navigator.userAgent}`;
     console.error('App: orgDataLoaded is true but stores/hqMembers are both empty — retrying', { activeOrgId: state.activeOrgId });
+    setCatchAllDebug(text);
+    logOrgLoadDebug(text);
     let cancelled = false;
     let attempt = 0;
     const tryAgain = () => {
@@ -203,10 +216,7 @@ export default function App() {
     screen = <MainApp />;
   }
 
-  const debugText = state.orgLoadDebug
-    || (state.orgDataLoaded && !orgDataReady
-      ? `DEBUG ${new Date().toISOString()}: render caught orgDataLoaded=true with stores=${state.stores.length} hqMembers=${state.hqMembers.length} activeOrgId=${state.activeOrgId} ua=${navigator.userAgent}`
-      : null);
+  const debugText = state.orgLoadDebug || catchAllDebug;
 
   return (
     <>

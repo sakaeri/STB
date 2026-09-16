@@ -12,6 +12,7 @@ import {
 import { planForCount, billedPlanFor, effectivePricing, type PlanStep } from '../tokens';
 import { decodeCsvFile, parseCsvText, rowsFromCsvTable } from './bankCsv';
 import { HQ_TEMPLATES } from './hqTemplates';
+import { logOrgLoadDebug } from './debugLog';
 
 type Patch = Partial<AppState> | ((s: AppState) => Partial<AppState>);
 
@@ -205,14 +206,16 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       const session = getState().session;
       saveActiveOrgId(orgId);
       const stillEmpty = data.stores.length === 0 || data.hqMembers.length === 0;
+      const debugText = stillEmpty
+        ? `DEBUG ${new Date().toISOString()}: loadOrg(${orgId}) stores=${data.stores.length} hqMembers=${data.hqMembers.length} (×${attempts}) ua=${navigator.userAgent}`
+        : null;
+      if (debugText) logOrgLoadDebug(debugText);
       set((s) => ({
         activeOrgId: orgId, hqNameOverride: data.companyInfo.name || null,
         viewRole: initialViewRole(session, data), selectedStoreId: null,
         page: 'list', ...data, logoMap: { ...s.logoMap, ...data.logoMap },
         orgDataLoaded: true, txLoadedFrom: defaultTxFloor(),
-        orgLoadDebug: stillEmpty
-          ? `DEBUG ${new Date().toISOString()}: loadOrg(${orgId}) stores=${data.stores.length} hqMembers=${data.hqMembers.length} (×${attempts}) ua=${navigator.userAgent}`
-          : null,
+        orgLoadDebug: debugText,
       }));
     } catch (e) {
       console.error('loadOrg failed', e);
@@ -1629,15 +1632,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           // dashboard reports keep coming back, so capture what actually
           // happened this time instead of guessing at a fourth fix blind.
           const stillEmpty = orgData.stores.length === 0 || orgData.hqMembers.length === 0;
+          const debugText = stillEmpty
+            ? `DEBUG ${new Date().toISOString()}: myOrgs=${myOrgs.length}(×${myOrgsAttempts}) stores=${orgData.stores.length} hqMembers=${orgData.hqMembers.length} (×${orgDataAttempts}) ua=${navigator.userAgent}`
+            : null;
+          if (debugText) logOrgLoadDebug(debugText);
           const isOrgMember = orgData.hqMembers.some((m) => m.userId === session.user.id);
           set((s) => ({
             hqNameOverride: orgData.companyInfo.name || null,
             viewRole: isOrgMember ? 'hq' : (orgData.stores[0]?.id || 'hq'), selectedStoreId: null,
             ...orgData, logoMap: { ...s.logoMap, ...orgData.logoMap },
             orgDataLoaded: true, txLoadedFrom: defaultTxFloor(),
-            orgLoadDebug: stillEmpty
-              ? `DEBUG ${new Date().toISOString()}: myOrgs=${myOrgs.length}(×${myOrgsAttempts}) stores=${orgData.stores.length} hqMembers=${orgData.hqMembers.length} (×${orgDataAttempts}) ua=${navigator.userAgent}`
-              : null,
+            orgLoadDebug: debugText,
           }));
         } catch (e) {
           console.error('initial org load failed', e);

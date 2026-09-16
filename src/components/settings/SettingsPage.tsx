@@ -4,6 +4,7 @@ import { CLOSING_DAY_OPTIONS, FISCAL_MONTH_OPTIONS, trialDaysLeft } from '../../
 import { accentSoft, roleBg } from '../../tokens';
 import type { Store, TrashItem } from '../../types';
 import { myRole } from '../app/rowHelpers';
+import { readOrgLoadDebugLog, clearOrgLoadDebugLog } from '../../state/debugLog';
 
 const cardStyle: CSSProperties = { background: '#fff', border: '1px solid #e7e9ed', borderRadius: 15, overflow: 'hidden' };
 const cardHeaderStyle: CSSProperties = { padding: '17px 22px', borderBottom: '1px solid #f0f2f5', display: 'flex', alignItems: 'center', gap: 12 };
@@ -91,6 +92,14 @@ export default function SettingsPage() {
   const { state, actions } = useStore();
   const [dangerOpen, setDangerOpen] = useState(false);
   const [trashMenuOpenId, setTrashMenuOpenId] = useState<string | null>(null);
+  // Read fresh on every render (not once on mount) — this page can be
+  // reopened after a new entry was logged elsewhere in the same session,
+  // and localStorage reads are cheap enough not to bother caching. The
+  // tick exists purely to force a re-read after "記録を消す" clears
+  // localStorage, since that alone wouldn't otherwise trigger a render.
+  const [debugLogTick, setDebugLogTick] = useState(0);
+  const debugLogEntries = readOrgLoadDebugLog();
+  void debugLogTick; // forces re-read of localStorage after "記録を消す" clears it
 
   const accent = state.accent;
   const isHqView = state.viewRole === 'hq';
@@ -503,6 +512,39 @@ export default function SettingsPage() {
           )}
         </div>
       </section>
+
+      {debugLogEntries.length > 0 && (
+        <section style={cardStyle}>
+          <div style={cardHeaderStyle}>
+            <div style={{ flex: 1 }}>
+              <h2 style={cardTitleStyle}>読み込みエラーの記録（サポート用）</h2>
+              <p style={cardSubStyle}>データが表示されないエラーが起きた際の記録です。エラーが出た際はここをコピーして開発者に送ってください。</p>
+            </div>
+            <button
+              onClick={() => { clearOrgLoadDebugLog(); setDebugLogTick((t) => t + 1); }}
+              style={{ height: 32, padding: '0 12px', borderRadius: 8, border: '1.5px solid #dfe3e8', color: '#3a4150', fontWeight: 700, fontSize: 11.5, flex: 'none' }}
+            >
+              記録を消す
+            </button>
+          </div>
+          <div style={{ padding: '14px 22px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {debugLogEntries.map((entry, i) => (
+              <div key={i} style={{ background: '#f7f8fa', border: '1px solid #eceff2', borderRadius: 9, padding: '9px 12px', fontFamily: 'monospace', fontSize: 11, color: '#5a616c', wordBreak: 'break-all' }}>
+                {entry.text}
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                const text = debugLogEntries.map((e) => e.text).join('\n');
+                void navigator.clipboard?.writeText(text);
+              }}
+              style={{ alignSelf: 'flex-start', height: 32, padding: '0 12px', borderRadius: 8, border: '1.5px solid #dfe3e8', color: '#3a4150', fontWeight: 700, fontSize: 11.5 }}
+            >
+              すべてコピー
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* Danger zone */}
       {isHqView && isOwner && (
