@@ -68,6 +68,11 @@ export default function MemoPage() {
   const isHq = viewRole === 'hq';
   const role = myRole(state);
   const [memoSearch, setMemoSearch] = useState('');
+  // Fades the sticky search bar to semi-transparent while it's just
+  // sitting over scrolled-past content (so it doesn't permanently block
+  // whatever's underneath), and back to solid the moment it's actually
+  // being used.
+  const [searchFocused, setSearchFocused] = useState(false);
   // A search hit only narrows things down to the topic/detail — the
   // matching record itself could still be buried among several 見出し
   // cards. Jumping here from search scrolls to and briefly highlights it
@@ -92,10 +97,6 @@ export default function MemoPage() {
   const memoLevel0 = !curTopic;
   const memoLevel1 = !!curTopic && !curEntry;
   const memoLevel2 = !!curEntry;
-
-  useEffect(() => {
-    if (!memoLevel0) setMemoSearch('');
-  }, [memoLevel0]);
 
   // Scrolls to (and briefly highlights) the record a search hit was
   // clicked for, once the record-list view it lives in has actually
@@ -189,6 +190,30 @@ export default function MemoPage() {
         .fc-memo-delbtn:hover { background: #f3eef0; color: #d6453d; }
       `}</style>
       <div style={{ padding: '22px 26px 90px', maxWidth: 720, margin: '0 auto' }}>
+        {/* Search is global (not scoped to whatever topic/entry you're
+            currently inside) and always reachable — sticky so it's never
+            more than a tap away no matter how deep you've drilled in or
+            how far you've scrolled. Fades to semi-transparent while idle
+            so it doesn't permanently cover whatever's scrolled underneath
+            it, and back to solid the moment it's focused. */}
+        <div style={{ position: 'sticky', top: 0, zIndex: 5, marginBottom: 16 }}>
+          <input
+            value={memoSearch}
+            onChange={(e) => setMemoSearch(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+            placeholder="キーワードで検索"
+            style={{
+              width: '100%', height: isMobile ? 46 : 40, padding: '0 14px', borderRadius: 10,
+              border: '1px solid #e7e9ed', fontSize: isMobile ? 14 : 13, outline: 'none',
+              background: searchFocused ? '#fff' : 'rgba(255,255,255,.55)',
+              backdropFilter: searchFocused ? 'none' : 'blur(6px)',
+              boxShadow: searchFocused ? '0 2px 10px rgba(20,40,80,.1)' : 'none',
+              transition: 'background .15s ease, box-shadow .15s ease',
+            }}
+          />
+        </div>
+
         {/* breadcrumb — the page title above (Topbar) already says "情報メモ",
             so showing it again here at level 0 is redundant clutter; it only
             earns its place once you've actually drilled into an item. */}
@@ -206,75 +231,50 @@ export default function MemoPage() {
           </div>
         )}
 
+        {searching ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {searchResults.map((h) => (
+              <div
+                key={h.key}
+                className="fc-memo-row"
+                onClick={() => {
+                  actions.openMemoTopic(h.topicId);
+                  if (h.entryId) actions.openMemoEntry(h.entryId);
+                  setHighlightRecordId(h.recordId ?? null);
+                  setMemoSearch('');
+                }}
+                style={rowStyle}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 11.5, color: '#9aa0a8', marginBottom: 3 }}>
+                    {h.topicName}{h.entryName ? ` › ${h.entryName}` : ''} ・ <span style={{ fontWeight: 700 }}>{h.scopeLabel}</span>
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: 14.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {h.snippet || h.entryName || h.topicName}
+                  </div>
+                </div>
+                <span style={{ color: '#c3c8d0', fontSize: 16 }}>›</span>
+              </div>
+            ))}
+            {searchResults.length === 0 && (
+              <div style={emptyCardStyle}>「{memoSearch}」に一致する項目が見つかりませんでした。</div>
+            )}
+          </div>
+        ) : (
+          <>
         {/* level 0: topics */}
         {memoLevel0 && (
           <>
-            {isMobile ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
-                {canCreate && (
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <button
-                      onClick={() => actions.openAddTopic(isHq ? (stores[0]?.id ?? null) : viewRole)}
-                      style={addBtnStyle(accent)}
-                    >
-                      <span style={{ fontSize: 16, fontWeight: 400 }}>＋</span>項目を追加
-                    </button>
-                  </div>
-                )}
-                <input
-                  value={memoSearch}
-                  onChange={(e) => setMemoSearch(e.target.value)}
-                  placeholder="キーワードで検索"
-                  style={{ width: '100%', height: 46, padding: '0 14px', borderRadius: 10, border: '1px solid #e7e9ed', fontSize: 14 }}
-                />
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'row', gap: 8, marginBottom: 10 }}>
-                <input
-                  value={memoSearch}
-                  onChange={(e) => setMemoSearch(e.target.value)}
-                  placeholder="キーワードで検索"
-                  style={{ flex: 1, minWidth: 0, height: 36, padding: '0 12px', borderRadius: 10, border: '1px solid #e7e9ed', fontSize: 13 }}
-                />
-                {canCreate && (
-                  <button
-                    onClick={() => actions.openAddTopic(isHq ? (stores[0]?.id ?? null) : viewRole)}
-                    style={{ ...addBtnStyle(accent), flex: 'none' }}
-                  >
-                    <span style={{ fontSize: 16, fontWeight: 400 }}>＋</span>項目を追加
-                  </button>
-                )}
+            {canCreate && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                <button
+                  onClick={() => actions.openAddTopic(isHq ? (stores[0]?.id ?? null) : viewRole)}
+                  style={addBtnStyle(accent)}
+                >
+                  <span style={{ fontSize: 16, fontWeight: 400 }}>＋</span>項目を追加
+                </button>
               </div>
             )}
-            {searching ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {searchResults.map((h) => (
-                  <div
-                    key={h.key}
-                    className="fc-memo-row"
-                    onClick={() => {
-                      actions.openMemoTopic(h.topicId);
-                      if (h.entryId) actions.openMemoEntry(h.entryId);
-                      setHighlightRecordId(h.recordId ?? null);
-                    }}
-                    style={rowStyle}
-                  >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 11.5, color: '#9aa0a8', marginBottom: 3 }}>
-                        {h.topicName}{h.entryName ? ` › ${h.entryName}` : ''} ・ <span style={{ fontWeight: 700 }}>{h.scopeLabel}</span>
-                      </div>
-                      <div style={{ fontWeight: 700, fontSize: 14.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {h.snippet || h.entryName || h.topicName}
-                      </div>
-                    </div>
-                    <span style={{ color: '#c3c8d0', fontSize: 16 }}>›</span>
-                  </div>
-                ))}
-                {searchResults.length === 0 && (
-                  <div style={emptyCardStyle}>「{memoSearch}」に一致する項目が見つかりませんでした。</div>
-                )}
-              </div>
-            ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 {groups.map((g) =>
                   g.items.length === 0 ? null : (
@@ -335,7 +335,6 @@ export default function MemoPage() {
                   </div>
                 )}
               </div>
-            )}
           </>
         )}
 
@@ -500,6 +499,8 @@ export default function MemoPage() {
                 <div style={emptyCardStyle}>まだ記録がありません。「＋記録を追加」から入力できます。</div>
               )}
             </div>
+          </>
+        )}
           </>
         )}
       </div>
