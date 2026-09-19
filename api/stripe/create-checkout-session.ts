@@ -88,6 +88,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const stripe = getStripe();
 
     let customerId = org.stripe_customer_id as string | null;
+    if (customerId) {
+      // A stored customer id can go stale — deleted in the Stripe
+      // dashboard, or left over from a different Stripe mode/account
+      // (e.g. test-mode testing before switching to live keys) — and
+      // Stripe rejects checkout.sessions.create outright with "No such
+      // customer" in that case. Verify it still resolves before reusing
+      // it, and silently mint a replacement rather than failing checkout.
+      try {
+        const existing = await stripe.customers.retrieve(customerId);
+        if (existing.deleted) customerId = null;
+      } catch {
+        customerId = null;
+      }
+    }
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: userRes.user.email || undefined,

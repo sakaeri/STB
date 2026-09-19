@@ -150,8 +150,8 @@ export async function fetchOrgData(orgId: string, txFloor?: string): Promise<Loa
     supabase.from('orgs').select('*').eq('id', orgId).single(),
     supabase.from('teams').select('*').eq('org_id', orgId).order('created_at', { ascending: true }),
   ]);
-  if (orgRes.error || !orgRes.data) throw orgRes.error || new Error('org not found');
-  if (teamsRes.error) throw teamsRes.error;
+  if (orgRes.error || !orgRes.data) throw new Error(`[orgs] ${orgRes.error?.message || 'org not found'}`);
+  if (teamsRes.error) throw new Error(`[teams] ${teamsRes.error.message}`);
   const orgRow = orgRes.data;
 
   // 'trial'-model orgs (created after the 2026-08 pricing overhaul, see
@@ -196,13 +196,17 @@ export async function fetchOrgData(orgId: string, txFloor?: string): Promise<Loa
       ? supabase.from('confirmed_periods').select('*').in('team_id', teamIds)
       : Promise.resolve({ data: [], error: null }),
   ]);
-  if (orgMembersRes.error) throw orgMembersRes.error;
-  if (teamMembersRes.error) throw teamMembersRes.error;
-  if (txRes.error) throw txRes.error;
-  if (presetsRes.error) throw presetsRes.error;
-  if (topicsRes.error) throw topicsRes.error;
-  if (trashRes.error) throw trashRes.error;
-  if (confirmedRes.error) throw confirmedRes.error;
+  // Prefixed with the source table so a thrown error (e.g. a statement
+  // timeout — see isTimeoutError in store.tsx) says which one of these
+  // seven parallel queries was actually slow, instead of leaving that a
+  // guess every time it shows up in the persisted debug log.
+  if (orgMembersRes.error) throw new Error(`[org_members] ${orgMembersRes.error.message}`);
+  if (teamMembersRes.error) throw new Error(`[team_members] ${teamMembersRes.error.message}`);
+  if (txRes.error) throw new Error(`[transactions] ${txRes.error.message}`);
+  if (presetsRes.error) throw new Error(`[entry_presets] ${presetsRes.error.message}`);
+  if (topicsRes.error) throw new Error(`[memo_topics] ${topicsRes.error.message}`);
+  if (trashRes.error) throw new Error(`[trash_items] ${trashRes.error.message}`);
+  if (confirmedRes.error) throw new Error(`[confirmed_periods] ${confirmedRes.error.message}`);
 
   const topics = topicsRes.data || [];
 

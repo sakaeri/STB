@@ -140,17 +140,19 @@ export default function SettingsPage() {
 
       {/* 凍結中バナー */}
       {isHqView && state.orgStatus === 'frozen' && (
-        <div style={{ background: '#fbe7e5', border: '1px solid #f3d4d0', borderRadius: 13, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 20 }}>🔒</span>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div style={{ fontWeight: 700, fontSize: 13.5, color: '#c2453d' }}>この本部は凍結されています</div>
-            <div style={{ fontSize: 12, color: '#a3453f', marginTop: 2 }}>お支払いが確認できていません。お支払いを完了すると自動的に解除されます。</div>
+        <div style={{ background: '#fbe7e5', border: '1px solid #f3d4d0', borderRadius: 13, padding: '16px 20px', display: 'flex', flexDirection: state.isMobile ? 'column' : 'row', alignItems: state.isMobile ? 'stretch' : 'center', gap: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: 20, flex: 'none' }}>🔒</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: 13.5, color: '#c2453d' }}>この本部は凍結されています</div>
+              <div style={{ fontSize: 12, color: '#a3453f', marginTop: 2 }}>お支払いが確認できていません。お支払いを完了すると自動的に解除されます。</div>
+            </div>
           </div>
           {isOwner && (
             <button
               onClick={actions.startCheckout}
               disabled={state.billingCheckoutLoading}
-              style={{ height: 40, padding: '0 20px', borderRadius: 10, fontWeight: 700, fontSize: 13, color: '#fff', background: '#c2453d', flex: 'none', opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
+              style={{ height: 40, padding: '0 20px', borderRadius: 10, fontWeight: 700, fontSize: 13, color: '#fff', background: '#c2453d', flex: 'none', width: state.isMobile ? '100%' : undefined, opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
             >
               {state.billingCheckoutLoading ? '処理中…' : 'お支払い手続きへ'}
             </button>
@@ -160,14 +162,16 @@ export default function SettingsPage() {
 
       {/* お試し期間終了間近バナー */}
       {showTrialEndingBanner && (
-        <div style={{ background: '#fdf3e3', border: '1px solid #f0dcae', borderRadius: 13, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 20 }}>⏰</span>
-          <div style={{ flex: 1, minWidth: 200, fontWeight: 700, fontSize: 13.5, color: '#8a6a2a' }}>お試し期間終了まであと{daysLeft}日</div>
+        <div style={{ background: '#fdf3e3', border: '1px solid #f0dcae', borderRadius: 13, padding: '16px 20px', display: 'flex', flexDirection: state.isMobile ? 'column' : 'row', alignItems: state.isMobile ? 'stretch' : 'center', gap: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: 20, flex: 'none' }}>⏰</span>
+            <div style={{ flex: 1, minWidth: 0, fontWeight: 700, fontSize: 13.5, color: '#8a6a2a' }}>お試し期間終了まであと{daysLeft}日</div>
+          </div>
           {isOwner && (
             <button
               onClick={actions.startCheckout}
               disabled={state.billingCheckoutLoading}
-              style={{ height: 40, padding: '0 20px', borderRadius: 10, fontWeight: 700, fontSize: 13, color: '#fff', background: '#d99a2b', flex: 'none', opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
+              style={{ height: 40, padding: '0 20px', borderRadius: 10, fontWeight: 700, fontSize: 13, color: '#fff', background: '#d99a2b', flex: 'none', width: state.isMobile ? '100%' : undefined, opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
             >
               {state.billingCheckoutLoading ? '処理中…' : '有料プランへ変更はコチラ'}
             </button>
