@@ -128,6 +128,7 @@ export interface CompanyInfo {
   closingDay: string; // 'eom' or day number as string
   fiscalStartMonth: number;
   dailyClosingEnabled: boolean;
+  mainFeature: 'sales' | 'memo'; // which page to land on right after login
 }
 
 export interface Defaults {
@@ -207,6 +208,7 @@ export interface HqSetupForm {
   rep: string;
   closingDay: string;
   fiscalStartMonth: number;
+  mainFeature: '' | 'sales' | 'memo'; // '' until explicitly chosen — required before creating
 }
 
 export interface AddStoreForm {

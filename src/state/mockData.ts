@@ -43,7 +43,7 @@ export function createInitialState(): AppState {
     entryPresets: {},
     memoTopics: [],
     trash: [],
-    companyInfo: { name: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4, dailyClosingEnabled: false },
+    companyInfo: { name: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4, dailyClosingEnabled: false, mainFeature: 'sales' },
     confirmedPeriods: {},
     defaults: { royaltyRate: 5, useSavings: true, savings: 50000 },
 
@@ -75,7 +75,7 @@ export function createInitialState(): AppState {
     orgDowngradeDismissed: {},
     orgSnapshots: {},
     showNewOrgModal: false,
-    hqSetupForm: { hqName: '', firstTeamName: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4 },
+    hqSetupForm: { hqName: '', firstTeamName: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4, mainFeature: '' },
     hqSetupStep: 'basic',
     hqSetupTemplateId: null,
 

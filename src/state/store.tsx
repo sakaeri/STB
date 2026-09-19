@@ -213,7 +213,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       set((s) => ({
         activeOrgId: orgId, hqNameOverride: data.companyInfo.name || null,
         viewRole: initialViewRole(session, data), selectedStoreId: null,
-        page: 'list', ...data, logoMap: { ...s.logoMap, ...data.logoMap },
+        page: data.companyInfo.mainFeature === 'memo' ? 'memo' : 'list', ...data, logoMap: { ...s.logoMap, ...data.logoMap },
         orgDataLoaded: true, txLoadedFrom: defaultTxFloor(),
         orgLoadDebug: debugText,
       }));
@@ -243,7 +243,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     set({
       session: null, accounts: [], activeOrgId: null, hqNameOverride: null,
       stores: [], members: [], hqMembers: [], transactions: {}, txLoadedFrom: '', memoTopics: [], trash: [],
-      companyInfo: { name: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4, dailyClosingEnabled: false },
+      companyInfo: { name: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4, dailyClosingEnabled: false, mainFeature: 'sales' },
       confirmedPeriods: {}, page: 'list', selectedStoreId: null,
       authEmail: '', authPassword: '',
     });
@@ -352,7 +352,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     onHqSetupTemplate: (id: string | null) => set({ hqSetupTemplateId: id }),
     goHqSetupOptionalStep: () => {
       const f = getState().hqSetupForm;
-      if (!f.hqName.trim() || !f.firstTeamName.trim()) { set({ authError: 'すべての必須項目を入力してください' }); return; }
+      if (!f.hqName.trim() || !f.firstTeamName.trim() || !f.mainFeature) { set({ authError: 'すべての必須項目を入力してください' }); return; }
       set({ hqSetupStep: 'optional', authError: '' });
     },
     backHqSetupBasicStep: () => set({ hqSetupStep: 'basic' }),
@@ -366,6 +366,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         const orgId = await createOrgWithFirstTeam({
           userId: st.session, userName: st.ownerProfile.name, hqName: f.hqName.trim(), firstTeamName: f.firstTeamName.trim(),
           address: (f.address || '').trim(), rep: (f.rep || '').trim(), closingDay: f.closingDay || 'eom', fiscalStartMonth: f.fiscalStartMonth || 4,
+          mainFeature: f.mainFeature || 'sales',
           unitLabel: template?.unitLabel || null, memoTopics: template?.memoTopics || [], templateId: template?.id || null,
         });
         const myOrgs = await fetchMyOrgs(st.session);
@@ -373,7 +374,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         await loadOrg(orgId);
         set({
           authError: '', adminOwnHqSetup: false,
-          hqSetupForm: { hqName: '', firstTeamName: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4 }, hqSetupStep: 'basic', hqSetupTemplateId: null,
+          hqSetupForm: { hqName: '', firstTeamName: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4, mainFeature: '' }, hqSetupStep: 'basic', hqSetupTemplateId: null,
         });
       } catch (e) {
         set({ authError: (e as Error).message || '本部の作成に失敗しました' });
@@ -386,7 +387,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       await loadOrg(id);
       set({ showProfileModal: false });
     },
-    openNewOrg: () => set({ showNewOrgModal: true, showProfileModal: false, hqSetupForm: { hqName: '', firstTeamName: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4 }, hqSetupStep: 'basic', hqSetupTemplateId: null, authError: '' }),
+    openNewOrg: () => set({ showNewOrgModal: true, showProfileModal: false, hqSetupForm: { hqName: '', firstTeamName: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4, mainFeature: '' }, hqSetupStep: 'basic', hqSetupTemplateId: null, authError: '' }),
     closeNewOrg: () => set({ showNewOrgModal: false }),
     createNewOrg: async () => {
       const st = getState();
@@ -398,6 +399,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         const orgId = await createOrgWithFirstTeam({
           userId: st.session, userName: st.ownerProfile.name, hqName: f.hqName.trim(), firstTeamName: f.firstTeamName.trim(),
           address: (f.address || '').trim(), rep: (f.rep || '').trim(), closingDay: f.closingDay || 'eom', fiscalStartMonth: f.fiscalStartMonth || 4,
+          mainFeature: f.mainFeature || 'sales',
           unitLabel: template?.unitLabel || null, memoTopics: template?.memoTopics || [], templateId: template?.id || null,
         });
         const myOrgs = await fetchMyOrgs(st.session);
@@ -405,7 +407,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         await loadOrg(orgId);
         set({
           showNewOrgModal: false, authError: '',
-          hqSetupForm: { hqName: '', firstTeamName: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4 }, hqSetupStep: 'basic', hqSetupTemplateId: null,
+          hqSetupForm: { hqName: '', firstTeamName: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4, mainFeature: '' }, hqSetupStep: 'basic', hqSetupTemplateId: null,
         });
       } catch (e) {
         set({ authError: (e as Error).message || '本部の作成に失敗しました' });
@@ -476,7 +478,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         const c = st.companyInfo;
         await supabase.from('orgs').update({
           name: c.name, address: c.address, rep: c.rep, closing_day: c.closingDay, fiscal_start_month: c.fiscalStartMonth,
-          daily_closing_enabled: c.dailyClosingEnabled, unit_label: st.unitLabel, unit_label_plural: st.unitLabel,
+          daily_closing_enabled: c.dailyClosingEnabled, main_feature: c.mainFeature, unit_label: st.unitLabel, unit_label_plural: st.unitLabel,
         }).eq('id', st.activeOrgId);
         set({ hqNameOverride: c.name });
       }
@@ -486,6 +488,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     onCompanyRep: (v: string) => set((s) => ({ companyInfo: { ...s.companyInfo, rep: v } })),
     onCompanyClosingDay: (v: string) => set((s) => ({ companyInfo: { ...s.companyInfo, closingDay: v } })),
     onCompanyDailyClosingEnabled: (v: boolean) => set((s) => ({ companyInfo: { ...s.companyInfo, dailyClosingEnabled: v } })),
+    onCompanyMainFeature: (v: 'sales' | 'memo') => set((s) => ({ companyInfo: { ...s.companyInfo, mainFeature: v } })),
     onCompanyFiscalStartMonth: (v: number) => set((s) => ({ companyInfo: { ...s.companyInfo, fiscalStartMonth: v } })),
 
     // ===== hq defaults =====
@@ -1401,7 +1404,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       set({
         activeOrgId: null, hqNameOverride: null, showProfileModal: true,
         stores: [], members: [], hqMembers: [], transactions: {}, txLoadedFrom: '', memoTopics: [], trash: [],
-        companyInfo: { name: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4, dailyClosingEnabled: false },
+        companyInfo: { name: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4, dailyClosingEnabled: false, mainFeature: 'sales' },
         page: 'list' as const, selectedStoreId: null,
       });
     });
@@ -1640,6 +1643,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           set((s) => ({
             hqNameOverride: orgData.companyInfo.name || null,
             viewRole: isOrgMember ? 'hq' : (orgData.stores[0]?.id || 'hq'), selectedStoreId: null,
+            page: orgData.companyInfo.mainFeature === 'memo' ? 'memo' : 'list',
             ...orgData, logoMap: { ...s.logoMap, ...orgData.logoMap },
             orgDataLoaded: true, txLoadedFrom: defaultTxFloor(),
             orgLoadDebug: debugText,

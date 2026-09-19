@@ -61,7 +61,7 @@ export default function HqSetupScreen() {
   const f = state.hqSetupForm;
   const isBasic = state.hqSetupStep === 'basic';
   const isOptional = state.hqSetupStep === 'optional';
-  const canProceed = !!(f.hqName.trim() && f.firstTeamName.trim());
+  const canProceed = !!(f.hqName.trim() && f.firstTeamName.trim() && f.mainFeature);
   const isAdmin = !!state.accounts.find((a) => a.id === state.session)?.isAdmin;
   const selectedTemplate = HQ_TEMPLATES.find((t) => t.id === state.hqSetupTemplateId) || null;
 
@@ -161,6 +161,23 @@ export default function HqSetupScreen() {
                   placeholder={selectedTemplate?.teamNamePlaceholder || '例：渋谷店'}
                   style={inputStyle}
                 />
+              </div>
+              <div>
+                <label style={labelStyle}>
+                  メインで使う機能 <span style={{ color: '#d6453d' }}>*</span>
+                </label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {(['sales', 'memo'] as const).map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => actions.onHqSetupField('mainFeature', opt)}
+                      style={{ flex: 1, height: 44, borderRadius: 10, fontSize: 13, fontWeight: 700, border: `1.5px solid ${f.mainFeature === opt ? state.accent : '#dfe3e8'}`, background: f.mainFeature === opt ? `${state.accent}14` : '#fff', color: f.mainFeature === opt ? state.accent : '#6b7280' }}
+                    >
+                      {opt === 'sales' ? '売上管理' : '情報メモ'}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ fontSize: 11, color: '#aab0b8', marginTop: 6 }}>ログイン直後に表示する画面です。あとで変更できます。</div>
               </div>
               {!!state.authError && <div style={errorBannerStyle}>{state.authError}</div>}
               <button

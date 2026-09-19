@@ -91,6 +91,7 @@ export async function fetchMyOrgs(userId: string): Promise<Org[]> {
 export async function createOrgWithFirstTeam(params: {
   userId: string; userName: string; hqName: string; firstTeamName: string;
   address: string; rep: string; closingDay: string; fiscalStartMonth: number;
+  mainFeature: 'sales' | 'memo';
   // Set when an HQ setup template was picked — prefills the unit label
   // and seeds a few starter 情報メモ topics (shared org-wide) so the org
   // doesn't start on a completely blank slate. Both optional/empty for
@@ -98,7 +99,7 @@ export async function createOrgWithFirstTeam(params: {
   // admin dashboard's own reference), independent of the other two.
   unitLabel?: string | null; memoTopics?: string[]; templateId?: string | null;
 }): Promise<string> {
-  const { userId, userName, hqName, firstTeamName, address, rep, closingDay, fiscalStartMonth, unitLabel, memoTopics, templateId } = params;
+  const { userId, userName, hqName, firstTeamName, address, rep, closingDay, fiscalStartMonth, mainFeature, unitLabel, memoTopics, templateId } = params;
 
   // Generate the org id client-side and skip `.select()` on this insert:
   // right after creating the org there's no org_members row yet, so the
@@ -111,7 +112,7 @@ export async function createOrgWithFirstTeam(params: {
     .from('orgs')
     .insert({
       id: orgId, name: hqName, address, rep, closing_day: closingDay, fiscal_start_month: fiscalStartMonth, created_by: userId,
-      unit_label: unitLabel || null, unit_label_plural: unitLabel || null, signup_template_id: templateId || null,
+      main_feature: mainFeature, unit_label: unitLabel || null, unit_label_plural: unitLabel || null, signup_template_id: templateId || null,
       // Every org created going forward is on the new 30-day-trial-then-
       // freeze model (see fetchOrgData below) — 'legacy' is reserved for
       // orgs that already existed before this pricing change shipped.
@@ -282,6 +283,7 @@ export async function fetchOrgData(orgId: string, txFloor?: string): Promise<Loa
       name: orgRow.name, address: orgRow.address, rep: orgRow.rep,
       closingDay: orgRow.closing_day, fiscalStartMonth: orgRow.fiscal_start_month,
       dailyClosingEnabled: !!orgRow.daily_closing_enabled,
+      mainFeature: orgRow.main_feature === 'memo' ? 'memo' : 'sales',
     },
     defaults: {
       royaltyRate: Number(orgRow.default_royalty_rate), useRoyalty: orgRow.default_use_royalty,

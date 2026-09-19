@@ -189,42 +189,63 @@ export default function MemoPage() {
         .fc-memo-delbtn:hover { background: #f3eef0; color: #d6453d; }
       `}</style>
       <div style={{ padding: '22px 26px 90px', maxWidth: 720, margin: '0 auto' }}>
-        {/* breadcrumb */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: '#8a909a', marginBottom: 16, flexWrap: 'wrap' }}>
-          <button onClick={actions.memoBack0} style={crumbBtnStyle(memoLevel0)}>情報メモ</button>
-          {curTopic && (
-            <>
-              <span>›</span>
-              <button onClick={actions.memoBack1} style={crumbBtnStyle(memoLevel1)}>{curTopic.name}</button>
-            </>
-          )}
-          {curEntry && (
-            <>
-              <span>›</span>
-              <span style={{ fontWeight: 700, color: '#3a4150' }}>{curEntry.name}</span>
-            </>
-          )}
-        </div>
+        {/* breadcrumb — the page title above (Topbar) already says "情報メモ",
+            so showing it again here at level 0 is redundant clutter; it only
+            earns its place once you've actually drilled into an item. */}
+        {curTopic && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: '#8a909a', marginBottom: 16, flexWrap: 'wrap' }}>
+            <button onClick={actions.memoBack0} style={crumbBtnStyle(memoLevel0)}>情報メモ</button>
+            <span>›</span>
+            <button onClick={actions.memoBack1} style={crumbBtnStyle(memoLevel1)}>{curTopic.name}</button>
+            {curEntry && (
+              <>
+                <span>›</span>
+                <span style={{ fontWeight: 700, color: '#3a4150' }}>{curEntry.name}</span>
+              </>
+            )}
+          </div>
+        )}
 
         {/* level 0: topics */}
         {memoLevel0 && (
           <>
-            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 8, marginBottom: 10 }}>
-              <input
-                value={memoSearch}
-                onChange={(e) => setMemoSearch(e.target.value)}
-                placeholder="キーワードで検索"
-                style={{ flex: 1, minWidth: 0, height: 36, padding: '0 12px', borderRadius: 10, border: '1px solid #e7e9ed', fontSize: 13 }}
-              />
-              {canCreate && (
-                <button
-                  onClick={() => actions.openAddTopic(isHq ? (stores[0]?.id ?? null) : viewRole)}
-                  style={{ ...addBtnStyle(accent), flex: 'none', justifyContent: isMobile ? 'center' : undefined }}
-                >
-                  <span style={{ fontSize: 16, fontWeight: 400 }}>＋</span>項目を追加
-                </button>
-              )}
-            </div>
+            {isMobile ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
+                {canCreate && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                      onClick={() => actions.openAddTopic(isHq ? (stores[0]?.id ?? null) : viewRole)}
+                      style={addBtnStyle(accent)}
+                    >
+                      <span style={{ fontSize: 16, fontWeight: 400 }}>＋</span>項目を追加
+                    </button>
+                  </div>
+                )}
+                <input
+                  value={memoSearch}
+                  onChange={(e) => setMemoSearch(e.target.value)}
+                  placeholder="キーワードで検索"
+                  style={{ width: '100%', height: 46, padding: '0 14px', borderRadius: 10, border: '1px solid #e7e9ed', fontSize: 14 }}
+                />
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'row', gap: 8, marginBottom: 10 }}>
+                <input
+                  value={memoSearch}
+                  onChange={(e) => setMemoSearch(e.target.value)}
+                  placeholder="キーワードで検索"
+                  style={{ flex: 1, minWidth: 0, height: 36, padding: '0 12px', borderRadius: 10, border: '1px solid #e7e9ed', fontSize: 13 }}
+                />
+                {canCreate && (
+                  <button
+                    onClick={() => actions.openAddTopic(isHq ? (stores[0]?.id ?? null) : viewRole)}
+                    style={{ ...addBtnStyle(accent), flex: 'none' }}
+                  >
+                    <span style={{ fontSize: 16, fontWeight: 400 }}>＋</span>項目を追加
+                  </button>
+                )}
+              </div>
+            )}
             {searching ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {searchResults.map((h) => (

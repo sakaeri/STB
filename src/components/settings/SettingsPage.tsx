@@ -269,6 +269,16 @@ export default function SettingsPage() {
               })()}
             </div>
             <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 16 }}>
+              <label style={fieldLabelStyle}>メインで使う機能</label>
+              <div style={{ display: 'flex', background: '#eceef1', borderRadius: 9, padding: 3, width: 220 }}>
+                <button onClick={() => actions.onCompanyMainFeature('sales')} style={modeSegStyle(state.companyInfo.mainFeature === 'sales', accent)}>売上管理</button>
+                <button onClick={() => actions.onCompanyMainFeature('memo')} style={modeSegStyle(state.companyInfo.mainFeature === 'memo', accent)}>情報メモ</button>
+              </div>
+              <div style={{ fontSize: 11, color: '#aab0b8', marginTop: 8, lineHeight: 1.6 }}>
+                ログイン直後に表示される画面を選べます。両方の機能はいつでも利用できます。
+              </div>
+            </div>
+            <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 16 }}>
               <button onClick={actions.closeCompanyInfoEdit} style={{ height: 38, padding: '0 18px', borderRadius: 9, background: accentSoft(accent), color: accent, fontWeight: 700, fontSize: 12.5 }}>完了</button>
             </div>
           </div>
@@ -281,6 +291,7 @@ export default function SettingsPage() {
             <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 14 }}><div style={roTitleStyle}>締め日</div><div style={roValueStyle}>{closingDayTxt}</div></div>
             <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 14 }}><div style={roTitleStyle}>決算期（年度の開始月）</div><div style={roValueStyle}>{fiscalStartMonthTxt}</div></div>
             <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 14 }}><div style={roTitleStyle}>日次確定</div><div style={roValueStyle}>{state.companyInfo.dailyClosingEnabled ? '使用する' : '使用しない'}</div></div>
+            <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 14 }}><div style={roTitleStyle}>メインで使う機能</div><div style={roValueStyle}>{state.companyInfo.mainFeature === 'memo' ? '情報メモ' : '売上管理'}</div></div>
           </div>
         )}
       </section>
