@@ -18,6 +18,13 @@ type Patch = Partial<AppState> | ((s: AppState) => Partial<AppState>);
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// A statement timeout means the query itself is too slow (not a transient
+// auth/session race) — retrying the identical query is very unlikely to
+// finish faster and just makes the user wait through the same timeout
+// multiple times before finally failing. Fail fast on this one specific
+// error class instead of burning through the full retry budget.
+const isTimeoutError = (e: unknown) => /timeout/i.test((e as { message?: string })?.message || '');
+
 function translateAuthError(err: { message?: string } | null | undefined): string {
   const msg = err?.message || '';
   if (/invalid login credentials/i.test(msg)) return 'メールアドレスまたはパスワードが正しくありません';
@@ -210,6 +217,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         lastErr = null;
       } catch (e) {
         lastErr = e;
+        if (isTimeoutError(e)) break;
       }
     }
     if (!data) {
@@ -1650,6 +1658,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             lastErr = null;
           } catch (e) {
             lastErr = e;
+            if (isTimeoutError(e)) break;
           }
         }
         if (stale()) return;

@@ -207,57 +207,29 @@ export default function MemoPage() {
             how far you've scrolled. Fades to semi-transparent while idle
             so it doesn't permanently cover whatever's scrolled underneath
             it, and back to solid the moment it's focused. The level's
-            "＋追加" button rides along in the same sticky row — side by
-            side on desktop (room to spare), stacked above it on mobile. */}
-        <div style={{ position: 'sticky', top: 0, zIndex: 5, marginBottom: 16 }}>
-          {isMobile ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {canCreate && addAction && (
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <button onClick={addAction.onClick} style={addBtnStyle(accent)}>
-                    <span style={{ fontSize: 16, fontWeight: 400 }}>＋</span>{addAction.label}
-                  </button>
-                </div>
-              )}
-              <input
-                value={memoSearch}
-                onChange={(e) => setMemoSearch(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setSearchFocused(false)}
-                placeholder="キーワードで検索"
-                style={{
-                  width: '100%', height: 46, padding: '0 14px', borderRadius: 10,
-                  border: '1px solid #e7e9ed', fontSize: 14, outline: 'none',
-                  background: searchFocused ? '#fff' : 'rgba(255,255,255,.55)',
-                  backdropFilter: searchFocused ? 'none' : 'blur(6px)',
-                  boxShadow: searchFocused ? '0 2px 10px rgba(20,40,80,.1)' : 'none',
-                  transition: 'background .15s ease, box-shadow .15s ease',
-                }}
-              />
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
-              <input
-                value={memoSearch}
-                onChange={(e) => setMemoSearch(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setSearchFocused(false)}
-                placeholder="キーワードで検索"
-                style={{
-                  flex: 1, minWidth: 0, height: 40, padding: '0 14px', borderRadius: 10,
-                  border: '1px solid #e7e9ed', fontSize: 13, outline: 'none',
-                  background: searchFocused ? '#fff' : 'rgba(255,255,255,.55)',
-                  backdropFilter: searchFocused ? 'none' : 'blur(6px)',
-                  boxShadow: searchFocused ? '0 2px 10px rgba(20,40,80,.1)' : 'none',
-                  transition: 'background .15s ease, box-shadow .15s ease',
-                }}
-              />
-              {canCreate && addAction && (
-                <button onClick={addAction.onClick} style={{ ...addBtnStyle(accent), flex: 'none' }}>
-                  <span style={{ fontSize: 16, fontWeight: 400 }}>＋</span>{addAction.label}
-                </button>
-              )}
-            </div>
+            "＋追加" button rides along side by side, even on mobile — a
+            search term is rarely more than a few characters, so the input
+            just shrinks rather than needing its own row. */}
+        <div style={{ position: 'sticky', top: 0, zIndex: 5, marginBottom: 16, display: 'flex', flexDirection: 'row', gap: 8 }}>
+          <input
+            value={memoSearch}
+            onChange={(e) => setMemoSearch(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
+            placeholder="キーワードで検索"
+            style={{
+              flex: 1, minWidth: 0, height: isMobile ? 46 : 40, padding: '0 14px', borderRadius: 10,
+              border: '1px solid #e7e9ed', fontSize: isMobile ? 14 : 13, outline: 'none',
+              background: searchFocused ? '#fff' : 'rgba(255,255,255,.55)',
+              backdropFilter: searchFocused ? 'none' : 'blur(6px)',
+              boxShadow: searchFocused ? '0 2px 10px rgba(20,40,80,.1)' : 'none',
+              transition: 'background .15s ease, box-shadow .15s ease',
+            }}
+          />
+          {canCreate && addAction && (
+            <button onClick={addAction.onClick} style={{ ...addBtnStyle(accent), flex: 'none' }}>
+              <span style={{ fontSize: 16, fontWeight: 400 }}>＋</span>{addAction.label}
+            </button>
           )}
         </div>
 
