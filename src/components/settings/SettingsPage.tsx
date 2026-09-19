@@ -141,10 +141,8 @@ export default function SettingsPage() {
       {/* 凍結中バナー */}
       {isHqView && state.orgStatus === 'frozen' && (
         <div style={{ background: '#fbe7e5', border: '1px solid #f3d4d0', borderRadius: 13, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ fontSize: 20, flex: 'none' }}>🔒</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: 13.5, color: '#c2453d' }}>この本部は凍結されています</div>
-            <div style={{ fontSize: 12, color: '#a3453f', marginTop: 2 }}>お支払いが確認できていません。お支払いを完了すると自動的に解除されます。</div>
+          <div style={{ flex: 1, minWidth: 0, fontSize: 13.5, color: '#c2453d', fontWeight: 700 }}>
+            🔒 この本部は凍結されています。お支払いを完了すると自動的に解除されます。
           </div>
           {isOwner && (
             <button
