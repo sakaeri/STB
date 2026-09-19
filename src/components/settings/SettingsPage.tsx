@@ -154,7 +154,7 @@ export default function SettingsPage() {
               disabled={state.billingCheckoutLoading}
               style={{ height: 40, padding: '0 20px', borderRadius: 10, fontWeight: 700, fontSize: 13, color: '#fff', background: '#c2453d', flex: 'none', width: state.isMobile ? '100%' : undefined, opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
             >
-              {state.billingCheckoutLoading ? '処理中…' : 'お支払い手続きへ'}
+              {state.billingCheckoutLoading ? '処理中…' : (state.isMobile ? 'お支払いへ' : 'お支払い手続きへ')}
             </button>
           )}
         </div>
@@ -173,7 +173,7 @@ export default function SettingsPage() {
               disabled={state.billingCheckoutLoading}
               style={{ height: 40, padding: '0 20px', borderRadius: 10, fontWeight: 700, fontSize: 13, color: '#fff', background: '#d99a2b', flex: 'none', width: state.isMobile ? '100%' : undefined, opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
             >
-              {state.billingCheckoutLoading ? '処理中…' : '有料プランへ変更はコチラ'}
+              {state.billingCheckoutLoading ? '処理中…' : (state.isMobile ? 'プラン変更' : '有料プランへ変更はコチラ')}
             </button>
           )}
         </div>

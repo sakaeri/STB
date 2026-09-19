@@ -343,33 +343,33 @@ export default function SalesListPage() {
 
       <div style={{ padding: '22px 26px 90px', maxWidth: 1280, margin: '0 auto' }}>
         {frozen && (
-          <div style={{ marginBottom: 14, background: colors.dangerBg, border: `1px solid ${colors.dangerBorder}`, borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: 200, fontSize: 12.5, color: colors.danger, fontWeight: 700 }}>
+          <div style={{ marginBottom: 14, background: colors.dangerBg, border: `1px solid ${colors.dangerBorder}`, borderRadius: 12, padding: '12px 16px', display: 'flex', flexDirection: state.isMobile ? 'column' : 'row', alignItems: state.isMobile ? 'stretch' : 'center', gap: 12 }}>
+            <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: colors.danger, fontWeight: 700 }}>
               🔒 この本部は凍結されています。{unitLabel}別の一覧はお支払い手続き完了後に確認できます。
             </div>
             {isOwner && (
               <button
                 onClick={actions.startCheckout}
                 disabled={state.billingCheckoutLoading}
-                style={{ height: 34, padding: '0 16px', borderRadius: 9, fontWeight: 700, fontSize: 12.5, color: '#fff', background: colors.danger, flex: 'none', opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
+                style={{ height: 34, padding: '0 16px', borderRadius: 9, fontWeight: 700, fontSize: 12.5, color: '#fff', background: colors.danger, flex: 'none', width: state.isMobile ? '100%' : undefined, opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
               >
-                {state.billingCheckoutLoading ? '処理中…' : 'お支払い手続きへ'}
+                {state.billingCheckoutLoading ? '処理中…' : (state.isMobile ? 'お支払いへ' : 'お支払い手続きへ')}
               </button>
             )}
           </div>
         )}
         {!frozen && showTrialEndingBanner && (
-          <div style={{ marginBottom: 14, background: colors.warnBg, border: `1px solid ${colors.warnBorder}`, borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: 200, fontSize: 12.5, color: colors.warnText, fontWeight: 700 }}>
+          <div style={{ marginBottom: 14, background: colors.warnBg, border: `1px solid ${colors.warnBorder}`, borderRadius: 12, padding: '12px 16px', display: 'flex', flexDirection: state.isMobile ? 'column' : 'row', alignItems: state.isMobile ? 'stretch' : 'center', gap: 12 }}>
+            <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: colors.warnText, fontWeight: 700 }}>
               ⏰ お試し期間終了まであと{trialDaysLeftCount}日
             </div>
             {isOwner && (
               <button
                 onClick={actions.startCheckout}
                 disabled={state.billingCheckoutLoading}
-                style={{ height: 34, padding: '0 16px', borderRadius: 9, fontWeight: 700, fontSize: 12.5, color: '#fff', background: colors.warn, flex: 'none', opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
+                style={{ height: 34, padding: '0 16px', borderRadius: 9, fontWeight: 700, fontSize: 12.5, color: '#fff', background: colors.warn, flex: 'none', width: state.isMobile ? '100%' : undefined, opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
               >
-                {state.billingCheckoutLoading ? '処理中…' : '有料プランへ変更はコチラ'}
+                {state.billingCheckoutLoading ? '処理中…' : (state.isMobile ? 'プラン変更' : '有料プランへ変更はコチラ')}
               </button>
             )}
           </div>
