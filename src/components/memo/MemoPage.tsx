@@ -227,7 +227,7 @@ export default function MemoPage() {
             }}
           />
           {canCreate && addAction && (
-            <button onClick={addAction.onClick} style={{ ...addBtnStyle(accent), flex: 'none' }}>
+            <button onClick={addAction.onClick} style={{ ...addBtnStyle(accent), height: isMobile ? 46 : 40, flex: 'none' }}>
               <span style={{ fontSize: 16, fontWeight: 400 }}>＋</span>{addAction.label}
             </button>
           )}
