@@ -191,36 +191,48 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
 
   async function loadOrg(orgId: string) {
     set({ orgDataLoaded: false });
-    try {
-      let data = await fetchOrgData(orgId);
-      let attempts = 1;
-      // Same empty-data race as the initial auth-load path (see its own
-      // comment) — this was the one org-loading path that never got the
-      // same protection, so it could still land on orgDataLoaded=true with
-      // an empty dashboard (org switch, org creation, invite redemption).
-      for (let attempt = 0; (data.stores.length === 0 || data.hqMembers.length === 0) && attempt < 2; attempt++) {
-        await sleep(350 * (attempt + 1));
+    let data: Awaited<ReturnType<typeof fetchOrgData>> | null = null;
+    let attempts = 0;
+    let lastErr: unknown = null;
+    // Same empty-data race as the initial auth-load path (see its own
+    // comment) — this was the one org-loading path that never got the
+    // same protection, so it could still land on orgDataLoaded=true with
+    // an empty dashboard (org switch, org creation, invite redemption). A
+    // thrown exception used to skip retrying entirely and fall straight
+    // to the catch block, landing on orgDataLoaded=true with whatever
+    // stores/hqMembers happened to already be in state — retrying on
+    // either failure mode keeps this in step with the initial-load path.
+    for (let attempt = 0; attempt < 3 && (!data || data.stores.length === 0 || data.hqMembers.length === 0); attempt++) {
+      if (attempt > 0) await sleep(350 * attempt);
+      attempts++;
+      try {
         data = await fetchOrgData(orgId);
-        attempts++;
+        lastErr = null;
+      } catch (e) {
+        lastErr = e;
       }
-      const session = getState().session;
-      saveActiveOrgId(orgId);
-      const stillEmpty = data.stores.length === 0 || data.hqMembers.length === 0;
-      const debugText = stillEmpty
-        ? `DEBUG ${new Date().toISOString()}: loadOrg(${orgId}) stores=${data.stores.length} hqMembers=${data.hqMembers.length} (×${attempts}) ua=${navigator.userAgent}`
-        : null;
-      if (debugText) logOrgLoadDebug(debugText);
-      set((s) => ({
-        activeOrgId: orgId, hqNameOverride: data.companyInfo.name || null,
-        viewRole: initialViewRole(session, data), selectedStoreId: null,
-        page: data.companyInfo.mainFeature === 'memo' ? 'memo' : 'list', ...data, logoMap: { ...s.logoMap, ...data.logoMap },
-        orgDataLoaded: true, txLoadedFrom: defaultTxFloor(),
-        orgLoadDebug: debugText,
-      }));
-    } catch (e) {
-      console.error('loadOrg failed', e);
-      set({ authError: '本部データの読み込みに失敗しました', orgDataLoaded: true });
     }
+    if (!data) {
+      console.error('loadOrg failed', lastErr);
+      const debugText = `DEBUG ${new Date().toISOString()}: loadOrg(${orgId}) fetchOrgData threw (×${attempts}): ${String((lastErr as Error)?.message || lastErr)} ua=${navigator.userAgent}`;
+      logOrgLoadDebug(debugText);
+      set({ authError: '本部データの読み込みに失敗しました', orgDataLoaded: true, orgLoadDebug: debugText });
+      return;
+    }
+    const session = getState().session;
+    saveActiveOrgId(orgId);
+    const stillEmpty = data.stores.length === 0 || data.hqMembers.length === 0;
+    const debugText = stillEmpty
+      ? `DEBUG ${new Date().toISOString()}: loadOrg(${orgId}) stores=${data.stores.length} hqMembers=${data.hqMembers.length} (×${attempts}) ua=${navigator.userAgent}`
+      : null;
+    if (debugText) logOrgLoadDebug(debugText);
+    set((s) => ({
+      activeOrgId: orgId, hqNameOverride: data.companyInfo.name || null,
+      viewRole: initialViewRole(session, data), selectedStoreId: null,
+      page: data.companyInfo.mainFeature === 'memo' ? 'memo' : 'list', ...data, logoMap: { ...s.logoMap, ...data.logoMap },
+      orgDataLoaded: true, txLoadedFrom: defaultTxFloor(),
+      orgLoadDebug: debugText,
+    }));
   }
 
   async function loadAdminOverview() {
@@ -1613,23 +1625,40 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       // value that was just set — no need to read it back at all.
       const target = resolvedOrgId;
       if (target) {
-        try {
-          let orgData = await fetchOrgData(target);
-          let orgDataAttempts = 1;
-          // Every org is created together with its first team (see
-          // createOrgWithFirstTeam) and teams are never bulk-deleted, so a
-          // resolved, real org coming back with zero stores OR zero HQ
-          // members is never legitimate — it's the same early-auth-event
-          // race as above, just hitting fetchOrgData's own (independent)
-          // queries instead of fetchMyOrgs's, so either one can come back
-          // empty on its own. Retry with a short, growing pause rather than
-          // showing an empty dashboard the user has to fix themselves.
-          for (let attempt = 0; (orgData.stores.length === 0 || orgData.hqMembers.length === 0) && attempt < 2; attempt++) {
-            await sleep(350 * (attempt + 1));
+        let orgData: Awaited<ReturnType<typeof fetchOrgData>> | null = null;
+        let orgDataAttempts = 0;
+        let lastErr: unknown = null;
+        // Every org is created together with its first team (see
+        // createOrgWithFirstTeam) and teams are never bulk-deleted, so a
+        // resolved, real org coming back with zero stores OR zero HQ
+        // members — or fetchOrgData throwing outright — is never
+        // legitimate; it's the same early-auth-event race as above, just
+        // hitting fetchOrgData's own (independent) queries instead of
+        // fetchMyOrgs's. A thrown exception used to skip this retry
+        // entirely and fall straight to the catch block below, which set
+        // orgDataLoaded=true while stores/hqMembers were still at their []
+        // initial defaults — the exact "0 data" dashboard, and silently:
+        // that branch never logged anything to orgLoadDebug, so it never
+        // showed up as anything more specific than the render-time
+        // catch-all in App.tsx. Retrying on either failure mode, with a
+        // short growing pause, keeps the two paths from diverging again.
+        for (let attempt = 0; attempt < 3 && (!orgData || orgData.stores.length === 0 || orgData.hqMembers.length === 0); attempt++) {
+          if (attempt > 0) await sleep(350 * attempt);
+          orgDataAttempts++;
+          try {
             orgData = await fetchOrgData(target);
-            orgDataAttempts++;
+            lastErr = null;
+          } catch (e) {
+            lastErr = e;
           }
-          if (stale()) return;
+        }
+        if (stale()) return;
+        if (!orgData) {
+          console.error('initial org load failed', lastErr);
+          const debugText = `DEBUG ${new Date().toISOString()}: myOrgs=${myOrgs.length}(×${myOrgsAttempts}) fetchOrgData threw (×${orgDataAttempts}): ${String((lastErr as Error)?.message || lastErr)} ua=${navigator.userAgent}`;
+          logOrgLoadDebug(debugText);
+          set({ orgDataLoaded: true, orgLoadDebug: debugText });
+        } else {
           // Temporary diagnostic breadcrumb (see AppState.orgLoadDebug) —
           // every prior fix targeted a specific race, but the empty-
           // dashboard reports keep coming back, so capture what actually
@@ -1648,9 +1677,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             orgDataLoaded: true, txLoadedFrom: defaultTxFloor(),
             orgLoadDebug: debugText,
           }));
-        } catch (e) {
-          console.error('initial org load failed', e);
-          if (!stale()) set({ orgDataLoaded: true });
         }
       } else if (!stale()) {
         set({ orgDataLoaded: true });

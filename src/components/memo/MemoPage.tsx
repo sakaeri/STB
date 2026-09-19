@@ -183,6 +183,17 @@ export default function MemoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groups, query]);
 
+  // The "＋追加" action differs by level (topic / detail / record), but
+  // always sits alongside the one shared search bar rather than each level
+  // owning its own separate button row.
+  const addAction = memoLevel0
+    ? { label: '項目を追加', onClick: () => actions.openAddTopic(isHq ? (stores[0]?.id ?? null) : viewRole) }
+    : memoLevel1 && curTopic
+      ? { label: '詳細を追加', onClick: () => actions.openAddEntry(curTopic.id) }
+      : memoLevel2 && curTopic && curEntry
+        ? { label: '記録を追加', onClick: () => actions.openAddRecord(curTopic.id, curEntry.id) }
+        : null;
+
   return (
     <div style={{ height: '100%', overflowY: 'auto', animation: 'scIn .25s ease both', background: '#f7f8fa' }}>
       <style>{`
@@ -195,23 +206,59 @@ export default function MemoPage() {
             more than a tap away no matter how deep you've drilled in or
             how far you've scrolled. Fades to semi-transparent while idle
             so it doesn't permanently cover whatever's scrolled underneath
-            it, and back to solid the moment it's focused. */}
+            it, and back to solid the moment it's focused. The level's
+            "＋追加" button rides along in the same sticky row — side by
+            side on desktop (room to spare), stacked above it on mobile. */}
         <div style={{ position: 'sticky', top: 0, zIndex: 5, marginBottom: 16 }}>
-          <input
-            value={memoSearch}
-            onChange={(e) => setMemoSearch(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
-            placeholder="キーワードで検索"
-            style={{
-              width: '100%', height: isMobile ? 46 : 40, padding: '0 14px', borderRadius: 10,
-              border: '1px solid #e7e9ed', fontSize: isMobile ? 14 : 13, outline: 'none',
-              background: searchFocused ? '#fff' : 'rgba(255,255,255,.55)',
-              backdropFilter: searchFocused ? 'none' : 'blur(6px)',
-              boxShadow: searchFocused ? '0 2px 10px rgba(20,40,80,.1)' : 'none',
-              transition: 'background .15s ease, box-shadow .15s ease',
-            }}
-          />
+          {isMobile ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {canCreate && addAction && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button onClick={addAction.onClick} style={addBtnStyle(accent)}>
+                    <span style={{ fontSize: 16, fontWeight: 400 }}>＋</span>{addAction.label}
+                  </button>
+                </div>
+              )}
+              <input
+                value={memoSearch}
+                onChange={(e) => setMemoSearch(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                placeholder="キーワードで検索"
+                style={{
+                  width: '100%', height: 46, padding: '0 14px', borderRadius: 10,
+                  border: '1px solid #e7e9ed', fontSize: 14, outline: 'none',
+                  background: searchFocused ? '#fff' : 'rgba(255,255,255,.55)',
+                  backdropFilter: searchFocused ? 'none' : 'blur(6px)',
+                  boxShadow: searchFocused ? '0 2px 10px rgba(20,40,80,.1)' : 'none',
+                  transition: 'background .15s ease, box-shadow .15s ease',
+                }}
+              />
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
+              <input
+                value={memoSearch}
+                onChange={(e) => setMemoSearch(e.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                placeholder="キーワードで検索"
+                style={{
+                  flex: 1, minWidth: 0, height: 40, padding: '0 14px', borderRadius: 10,
+                  border: '1px solid #e7e9ed', fontSize: 13, outline: 'none',
+                  background: searchFocused ? '#fff' : 'rgba(255,255,255,.55)',
+                  backdropFilter: searchFocused ? 'none' : 'blur(6px)',
+                  boxShadow: searchFocused ? '0 2px 10px rgba(20,40,80,.1)' : 'none',
+                  transition: 'background .15s ease, box-shadow .15s ease',
+                }}
+              />
+              {canCreate && addAction && (
+                <button onClick={addAction.onClick} style={{ ...addBtnStyle(accent), flex: 'none' }}>
+                  <span style={{ fontSize: 16, fontWeight: 400 }}>＋</span>{addAction.label}
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* breadcrumb — the page title above (Topbar) already says "情報メモ",
@@ -265,16 +312,6 @@ export default function MemoPage() {
         {/* level 0: topics */}
         {memoLevel0 && (
           <>
-            {canCreate && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
-                <button
-                  onClick={() => actions.openAddTopic(isHq ? (stores[0]?.id ?? null) : viewRole)}
-                  style={addBtnStyle(accent)}
-                >
-                  <span style={{ fontSize: 16, fontWeight: 400 }}>＋</span>項目を追加
-                </button>
-              </div>
-            )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 {groups.map((g) =>
                   g.items.length === 0 ? null : (
@@ -341,13 +378,6 @@ export default function MemoPage() {
         {/* level 1: entries */}
         {memoLevel1 && curTopic && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
-              {canCreate && (
-                <button onClick={() => actions.openAddEntry(curTopic.id)} style={addBtnStyle(accent)}>
-                  <span style={{ fontSize: 16, fontWeight: 400 }}>＋</span>詳細を追加
-                </button>
-              )}
-            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {curTopic.entries
                 .slice()
@@ -387,13 +417,6 @@ export default function MemoPage() {
         {/* level 2: records */}
         {memoLevel2 && curTopic && curEntry && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
-              {canCreate && (
-                <button onClick={() => actions.openAddRecord(curTopic.id, curEntry.id)} style={addBtnStyle(accent)}>
-                  <span style={{ fontSize: 16, fontWeight: 400 }}>＋</span>記録を追加
-                </button>
-              )}
-            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {(() => {
                 // Records sharing a 見出し stack inside one card (oldest on
