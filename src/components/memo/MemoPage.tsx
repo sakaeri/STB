@@ -210,7 +210,7 @@ export default function MemoPage() {
             "＋追加" button rides along side by side, even on mobile — a
             search term is rarely more than a few characters, so the input
             just shrinks rather than needing its own row. */}
-        <div style={{ position: 'sticky', top: 0, zIndex: 5, marginBottom: 16, display: 'flex', flexDirection: 'row', gap: 8 }}>
+        <div style={{ position: 'sticky', top: 0, zIndex: 5, marginBottom: 16, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <input
             value={memoSearch}
             onChange={(e) => setMemoSearch(e.target.value)}
@@ -227,7 +227,11 @@ export default function MemoPage() {
             }}
           />
           {canCreate && addAction && (
-            <button onClick={addAction.onClick} style={{ ...addBtnStyle(accent), height: isMobile ? 46 : 40, flex: 'none' }}>
+            // A solid, saturated fill (this button) reads visually larger
+            // than an outlined/neutral shape of the identical size (the
+            // search input) — the classic size-illusion optical designers
+            // correct for by drawing the filled shape a couple px smaller.
+            <button onClick={addAction.onClick} style={{ ...addBtnStyle(accent), height: (isMobile ? 46 : 40) - 2, flex: 'none' }}>
               <span style={{ fontSize: 16, fontWeight: 400 }}>＋</span>{addAction.label}
             </button>
           )}

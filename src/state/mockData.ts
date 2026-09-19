@@ -144,7 +144,7 @@ export function createInitialState(): AppState {
     // ===== admin/operator dashboard — populated from Supabase on login for
     // accounts with profiles.is_admin = true (see src/state/adminData.ts) =====
     adminView: true,
-    adminOwnHqSetup: false,
+    adminOwnHqSetup: true,
     adminSearch: '',
     adminPrefFilter: '',
     adminSelectedOrgId: null,
