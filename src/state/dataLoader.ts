@@ -176,10 +176,10 @@ export async function fetchOrgData(orgId: string, txFloor?: string): Promise<Loa
   const teamIds = teams.map((t) => t.id);
   const teamNameById = new Map(teams.map((t) => [t.id, t.name]));
 
-  const [orgMembersRes, teamMembersRes, txRes, presetsRes, topicsRes, trashRes, confirmedRes] = await Promise.all([
-    supabase.from('org_members').select('id, user_id, role, profiles(name)').eq('org_id', orgId),
+  const [orgMembersRes, teamMembersRes, txRes, presetsRes, topicsRes, trashRes, confirmedRes, peopleRes] = await Promise.all([
+    supabase.from('org_members').select('id, user_id, role').eq('org_id', orgId),
     teamIds.length
-      ? supabase.from('team_members').select('id, user_id, team_id, role, profiles(name)').in('team_id', teamIds)
+      ? supabase.from('team_members').select('id, user_id, team_id, role').in('team_id', teamIds)
       : Promise.resolve({ data: [], error: null }),
     teamIds.length
       ? supabase.from('transactions').select('*').in('team_id', teamIds).gte('date', floor).order('date', { ascending: false })
@@ -195,11 +195,18 @@ export async function fetchOrgData(orgId: string, txFloor?: string): Promise<Loa
     teamIds.length
       ? supabase.from('confirmed_periods').select('*').in('team_id', teamIds)
       : Promise.resolve({ data: [], error: null }),
+    // Resolves every member's display name in one bypass-RLS lookup
+    // instead of embedding profiles(name) on org_members/team_members —
+    // that embed made profiles' RLS policy (a 3-way self-join checking
+    // "do we share an org") run once per member row, scaling with member
+    // count on top of everything else here. See org_people's migration
+    // for the full reasoning.
+    supabase.rpc('org_people', { p_org_id: orgId }),
   ]);
   // Prefixed with the source table so a thrown error (e.g. a statement
   // timeout — see isTimeoutError in store.tsx) says which one of these
-  // seven parallel queries was actually slow, instead of leaving that a
-  // guess every time it shows up in the persisted debug log.
+  // parallel queries was actually slow, instead of leaving that a guess
+  // every time it shows up in the persisted debug log.
   if (orgMembersRes.error) throw new Error(`[org_members] ${orgMembersRes.error.message}`);
   if (teamMembersRes.error) throw new Error(`[team_members] ${teamMembersRes.error.message}`);
   if (txRes.error) throw new Error(`[transactions] ${txRes.error.message}`);
@@ -207,6 +214,9 @@ export async function fetchOrgData(orgId: string, txFloor?: string): Promise<Loa
   if (topicsRes.error) throw new Error(`[memo_topics] ${topicsRes.error.message}`);
   if (trashRes.error) throw new Error(`[trash_items] ${trashRes.error.message}`);
   if (confirmedRes.error) throw new Error(`[confirmed_periods] ${confirmedRes.error.message}`);
+  if (peopleRes.error) throw new Error(`[org_people] ${peopleRes.error.message}`);
+  const people = (peopleRes.data || []) as { user_id: string; name: string }[];
+  const nameByUserId = new Map<string, string>(people.map((p) => [p.user_id, p.name]));
 
   const topics = topicsRes.data || [];
 
@@ -222,13 +232,13 @@ export async function fetchOrgData(orgId: string, txFloor?: string): Promise<Loa
   if (orgRow.logo_url) logoMap['app-logo'] = orgRow.logo_url;
 
   const hqMembers: HqMember[] = (orgMembersRes.data || []).map((row) => {
-    const r = row as unknown as { id: string; user_id: string; role: string; profiles: { name: string } | null };
-    return { id: r.id, userId: r.user_id, name: r.profiles?.name || '(不明)', role: r.role as HqMember['role'] };
+    const r = row as unknown as { id: string; user_id: string; role: string };
+    return { id: r.id, userId: r.user_id, name: nameByUserId.get(r.user_id) || '(不明)', role: r.role as HqMember['role'] };
   });
 
   const members: Member[] = (teamMembersRes.data || []).map((row) => {
-    const r = row as unknown as { id: string; user_id: string; role: string; team_id: string; profiles: { name: string } | null };
-    return { id: r.id, userId: r.user_id, name: r.profiles?.name || '(不明)', role: r.role as Member['role'], store: teamNameById.get(r.team_id) || '' };
+    const r = row as unknown as { id: string; user_id: string; role: string; team_id: string };
+    return { id: r.id, userId: r.user_id, name: nameByUserId.get(r.user_id) || '(不明)', role: r.role as Member['role'], store: teamNameById.get(r.team_id) || '' };
   });
 
   const transactions: Record<string, Transaction[]> = {};
