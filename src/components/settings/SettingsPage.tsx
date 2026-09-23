@@ -142,7 +142,7 @@ export default function SettingsPage() {
       {isHqView && state.orgStatus === 'frozen' && (
         <div style={{ background: '#fbe7e5', border: '1px solid #f3d4d0', borderRadius: 13, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ flex: 1, minWidth: 0, fontSize: 13.5, color: '#c2453d', fontWeight: 700 }}>
-            🔒 この本部は凍結されています。お支払いを完了すると自動的に解除されます。
+            💳 ご利用ありがとうございます。お支払い設定を完了すると、引き続きすべての機能をご利用いただけます。
           </div>
           {isOwner && (
             <button

@@ -345,7 +345,7 @@ export default function SalesListPage() {
         {frozen && (
           <div style={{ marginBottom: 14, background: colors.dangerBg, border: `1px solid ${colors.dangerBorder}`, borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: colors.danger, fontWeight: 700 }}>
-              🔒 この本部は凍結されています。{unitLabel}別の一覧はお支払い手続き完了後に確認できます。
+              💳 ご利用ありがとうございます。お支払い設定を完了すると、{unitLabel}別の一覧も引き続きご覧いただけます。
             </div>
             {isOwner && (
               <button
