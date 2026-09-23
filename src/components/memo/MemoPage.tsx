@@ -3,7 +3,7 @@ import { useStore } from '../../state/store.tsx';
 import type { MemoTopic, MemoRecord } from '../../types';
 import MemoAddModal from './MemoAddModal';
 import { myRole } from '../app/rowHelpers';
-import { accentSoft } from '../../tokens';
+import { accentSoft, colors } from '../../tokens';
 
 const crumbBtnStyle = (active: boolean): React.CSSProperties => ({
   fontSize: 12.5,
@@ -67,6 +67,11 @@ export default function MemoPage() {
   const { memoTopics, memoNav, viewRole, stores, accent, isMobile } = state;
   const isHq = viewRole === 'hq';
   const role = myRole(state);
+  // Same rule as 売上一覧: only the HQ (aggregate, cross-store) view is
+  // restricted when frozen — a team member looking at only their own
+  // store's memo is unaffected, same as their own store's sales.
+  const frozen = state.orgStatus === 'frozen' && isHq;
+  const isOwner = role === 'オーナー';
   const [memoSearch, setMemoSearch] = useState('');
   // Fades the sticky search bar to semi-transparent while it's just
   // sitting over scrolled-past content (so it doesn't permanently block
@@ -201,6 +206,23 @@ export default function MemoPage() {
         .fc-memo-delbtn:hover { background: #f3eef0; color: #d6453d; }
       `}</style>
       <div style={{ padding: '22px 26px 90px', maxWidth: 720, margin: '0 auto' }}>
+        {frozen && (
+          <div style={{ marginBottom: 14, background: colors.dangerBg, border: `1px solid ${colors.dangerBorder}`, borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ flex: 1, minWidth: 0, fontSize: 12.5, color: colors.danger, fontWeight: 700 }}>
+              💳 ご利用ありがとうございます。お支払い設定を完了すると、情報メモも引き続きご覧いただけます。
+            </div>
+            {isOwner && (
+              <button
+                onClick={actions.startCheckout}
+                disabled={state.billingCheckoutLoading}
+                style={{ height: 34, padding: '0 16px', borderRadius: 9, fontWeight: 700, fontSize: 12.5, color: '#fff', background: colors.danger, flex: 'none', opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
+              >
+                {state.billingCheckoutLoading ? '処理中…' : (state.isMobile ? 'お支払いへ' : 'お支払い手続きへ')}
+              </button>
+            )}
+          </div>
+        )}
+        <div style={{ filter: frozen ? 'blur(6px)' : 'none', userSelect: frozen ? 'none' : 'auto', pointerEvents: frozen ? 'none' : 'auto' }}>
         {/* Search is global (not scoped to whatever topic/entry you're
             currently inside) and always reachable — sticky so it's never
             more than a tap away no matter how deep you've drilled in or
@@ -502,6 +524,7 @@ export default function MemoPage() {
         )}
           </>
         )}
+        </div>
       </div>
       <MemoAddModal />
     </div>
