@@ -58,13 +58,28 @@ export default function StoreDrawer() {
               お支払いが確認できていないため、{store.name}の詳細はご確認いただけません。お支払いを完了すると自動的に解除されます。
             </p>
             {isOwner ? (
-              <button
-                onClick={actions.startCheckout}
-                disabled={state.billingCheckoutLoading}
-                style={{ height: 42, padding: '0 22px', borderRadius: 10, fontWeight: 700, fontSize: 13.5, color: '#fff', background: state.accent, opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
-              >
-                {state.billingCheckoutLoading ? '処理中…' : 'お支払い手続きへ'}
-              </button>
+              <>
+                <button
+                  onClick={actions.startCheckout}
+                  disabled={state.billingCheckoutLoading}
+                  style={{ height: 42, padding: '0 22px', borderRadius: 10, fontWeight: 700, fontSize: 13.5, color: '#fff', background: state.accent, opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
+                >
+                  {state.billingCheckoutLoading ? '処理中…' : 'お支払い手続きへ'}
+                </button>
+                {/* Deleting isn't gated server-side (no RLS check on
+                    orgs.status) and doesn't amount to "using" the paid
+                    product — it's the opposite, cleaning data up — so it
+                    stays reachable even while frozen. Without this, a
+                    frozen org could never be deleted at all: 本部削除 in
+                    Settings requires every team gone first, and this was
+                    the only place to remove one. */}
+                <button
+                  onClick={() => actions.requestDeleteTeam(store)}
+                  style={{ height: 38, padding: '0 16px', borderRadius: 10, border: `1.5px solid ${colors.dangerBorder}`, color: colors.danger, fontWeight: 700, fontSize: 12.5, background: 'transparent' }}
+                >
+                  {store.name}を削除
+                </button>
+              </>
             ) : (
               <p style={{ margin: 0, fontSize: 11.5, color: colors.faint2 }}>お支払い手続きはオーナー権限のメンバーのみ行えます。</p>
             )}
