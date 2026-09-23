@@ -526,7 +526,14 @@ export default function SalesListPage() {
             opacity: state.txRangeLoading ? 0.4 : 1,
             transition: 'opacity .15s',
             userSelect: frozen ? 'none' : 'auto',
-            pointerEvents: frozen || state.txRangeLoading ? 'none' : 'auto',
+            // Rows stay clickable even while frozen — StoreDrawer itself
+            // already refuses to show any real data when frozen (just the
+            // payment prompt + a delete-team button), so blocking clicks
+            // here on top of that only closed off the one path to actually
+            // deleting a team, with no data-safety benefit (the blur is a
+            // visual nudge only; the underlying numbers are already on the
+            // client regardless, same as any other client-rendered state).
+            pointerEvents: state.txRangeLoading ? 'none' : 'auto',
           }}
         >
           {state.layout === 'table' && (
