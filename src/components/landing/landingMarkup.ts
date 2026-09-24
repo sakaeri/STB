@@ -77,30 +77,30 @@ export const landingMarkup = `
     <span class="eyebrow">よくある悩み</span>
     <h2>こんな<span class="hl">お悩み</span>、ありませんか。</h2>
   </div>
-  <div class="problem-cards">
-    <div class="problem-card">
-      <div class="ico" style="background:#fdf3e3">
-        <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a67a2a" stroke-width="1.7"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M8 8h8M7.5 12h2M11.5 12h2M15.5 12h2M7.5 16h2M11.5 16h2M15.5 16h2"/></svg>
-      </div>
-      <p class="q">ロイヤリティ・貯蓄の計算を<br>毎月手計算で出している</p>
+  <div class="problem-list">
+    <div class="problem-row">
+      <span class="ico" style="background:#fdf3e3">
+        <svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a67a2a" stroke-width="1.7"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M8 8h8M7.5 12h2M11.5 12h2M15.5 12h2M7.5 16h2M11.5 16h2M15.5 16h2"/></svg>
+      </span>
+      <p class="q">ロイヤリティ・貯蓄の計算を毎月手計算で出している</p>
     </div>
-    <div class="problem-card">
-      <div class="ico" style="background:#eef0f7">
-        <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5a6b9e" stroke-width="1.7"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M3.5 9.5h17M9.5 3.5v17M15.5 3.5v17"/></svg>
-      </div>
-      <p class="q">店舗ごとにExcelが<br>バラバラで集計が大変</p>
+    <div class="problem-row">
+      <span class="ico" style="background:#eef0f7">
+        <svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5a6b9e" stroke-width="1.7"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M3.5 9.5h17M9.5 3.5v17M15.5 3.5v17"/></svg>
+      </span>
+      <p class="q">店舗ごとにExcelがバラバラで集計が大変</p>
     </div>
-    <div class="problem-card">
-      <div class="ico" style="background:#e5f4e3">
-        <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3aa036" stroke-width="1.7"><path d="M4 12a8 8 0 1 1 3.5 6.6L4 20l1.4-3.6A7.96 7.96 0 0 1 4 12Z"/></svg>
-      </div>
-      <p class="q">売上や連絡事項を<br>LINEで個別に聞いて回っている</p>
+    <div class="problem-row">
+      <span class="ico" style="background:#e5f4e3">
+        <svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3aa036" stroke-width="1.7"><path d="M4 12a8 8 0 1 1 3.5 6.6L4 20l1.4-3.6A7.96 7.96 0 0 1 4 12Z"/></svg>
+      </span>
+      <p class="q">売上や連絡事項をLINEで個別に聞いて回っている</p>
     </div>
-    <div class="problem-card">
-      <div class="ico" style="background:#fbeaea">
-        <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b5453d" stroke-width="1.7"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M3.7 19c.6-3 2.7-5 5.3-5s4.7 2 5.3 5M14.8 15.3c2 .1 3.6 1.7 4 3.7"/></svg>
-      </div>
-      <p class="q">店舗ごとの情報が混ざり、<br>全体が把握しにくい</p>
+    <div class="problem-row">
+      <span class="ico" style="background:#fbeaea">
+        <svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b5453d" stroke-width="1.7"><circle cx="9" cy="9" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M3.7 19c.6-3 2.7-5 5.3-5s4.7 2 5.3 5M14.8 15.3c2 .1 3.6 1.7 4 3.7"/></svg>
+      </span>
+      <p class="q">店舗ごとの情報が混ざり、全体が把握しにくい</p>
     </div>
   </div>
   <p class="problem-turn">それ、PaILEにまとめられます。</p>
