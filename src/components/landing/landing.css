@@ -118,15 +118,16 @@
   .paile-landing .ic-bars { width: 13px; height: 11px; flex: none; display: flex; flex-direction: column; justify-content: space-between; }
   .paile-landing .ic-bars i { display: block; height: 1.6px; background: currentColor; border-radius: 2px; }
   .paile-landing .ic-note { width: 12px; height: 11px; flex: none; border: 1.6px solid currentColor; border-radius: 4px 4px 4px 1px; }
-  .paile-landing .ic-dial { width: 13px; height: 11px; flex: none; display: flex; flex-direction: column; justify-content: space-between; }
-  .paile-landing .ic-dial i { position: relative; display: block; height: 1.6px; background: currentColor; border-radius: 2px; }
-  .paile-landing .ic-dial i::after { content: ''; position: absolute; top: -1.6px; width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
-  .paile-landing .ic-dial i:nth-child(1)::after { left: 1px; } .paile-landing .ic-dial i:nth-child(2)::after { right: 1px; } .paile-landing .ic-dial i:nth-child(3)::after { left: 5px; }
+  .paile-landing .ic-gear { width: 13px; height: 13px; flex: none; }
+  .paile-landing .ic-gear svg { width: 100%; height: 100%; display: block; }
 
   .paile-landing .scr-main { flex: 1; min-width: 0; padding: 17px 17px 15px; }
-  .paile-landing .scr-topline { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
-  .paile-landing .scr-topline .ttl { font-size: 13px; font-weight: 700; color: var(--app-ink); }
-  .paile-landing .scr-topline .period { font-size: 10.5px; font-weight: 700; color: var(--app-faint); }
+  .paile-landing .scr-topline { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+  .paile-landing .scr-topline .ttl { font-size: 13px; font-weight: 700; color: var(--app-ink); flex: none; }
+  .paile-landing .scr-topline .period { font-size: 10.5px; font-weight: 700; color: var(--app-faint); flex: none; }
+  .paile-landing .scr-seg { display: flex; background: var(--surface-2); border-radius: 6px; padding: 2px; gap: 1px; }
+  .paile-landing .scr-seg .s { font-size: 9px; font-weight: 700; color: var(--app-faint); padding: 3px 7px; border-radius: 5px; }
+  .paile-landing .scr-seg .s.active { background: #fff; color: var(--app-ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
   .paile-landing .scr-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-bottom: 12px; }
   .paile-landing .scr-kpi { background: var(--surface); border: 1px solid var(--app-border); border-radius: 9px; padding: 9px 10px; }
   .paile-landing .scr-kpi .lbl { font-size: 9px; color: var(--app-faint); font-weight: 500; margin-bottom: 4px; }

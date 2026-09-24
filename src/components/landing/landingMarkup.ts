@@ -43,10 +43,14 @@ export const landingMarkup = `
             <div class="scr-brand"><span class="logo hero-logo-icon"></span><span>PaILE</span></div>
             <div class="scr-nav-item active"><span class="ic-bars"><i></i><i></i><i></i></span>売上一覧</div>
             <div class="scr-nav-item"><span class="ic-note"></span>情報メモ</div>
-            <div class="scr-nav-item"><span class="ic-dial"><i></i><i></i><i></i></span>本部情報</div>
+            <div class="scr-nav-item"><span class="ic-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></span>本部情報</div>
           </div>
           <div class="scr-main">
-            <div class="scr-topline"><span class="ttl">本部（全店舗）</span><span class="period">2026年9月 ‹ ›</span></div>
+            <div class="scr-topline">
+              <span class="ttl">本部（全店舗）</span>
+              <div class="scr-seg"><span class="s">日別</span><span class="s active">月別</span><span class="s">年間</span></div>
+              <span class="period">2026年9月 ‹ ›</span>
+            </div>
             <div class="scr-kpis">
               <div class="scr-kpi"><div class="lbl">総売上</div><div class="val">¥2,643,000</div><div class="sub">前月比 <b>+8.4%</b></div></div>
               <div class="scr-kpi"><div class="lbl">総利益</div><div class="val">¥1,250,000</div><div class="sub">利益率 47.3%</div></div>
