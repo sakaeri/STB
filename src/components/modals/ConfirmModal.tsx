@@ -23,7 +23,7 @@ export default function ConfirmModal() {
         <div style={{ padding: '24px 24px 16px', textAlign: 'center' }}>
           <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#fbe7e5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', color: '#d6453d', fontSize: 20, fontWeight: 700 }}>!</div>
           <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>{cd.label}</h2>
-          <p style={{ margin: '8px 0 0', fontSize: 12.5, color: '#8a909a', lineHeight: 1.7 }}>{cd.note}</p>
+          <p style={{ margin: '8px 0 0', fontSize: 12.5, color: '#8a909a', lineHeight: 1.7, whiteSpace: 'pre-line' }}>{cd.note}</p>
         </div>
         {needsCheckbox && (
           <div style={{ padding: '16px 24px 4px' }}>

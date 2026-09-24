@@ -648,7 +648,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
 
     requestDeleteTeam: (store: Store) => openConfirm(
       `「${store.name}」を削除`,
-      `${store.name}と、そこに紐づく情報メモもまとめてゴミ箱に移動します。30日間はゴミ箱から復元できますが、31日目以降は自動的に完全削除されます。残しておきたい情報メモは、先に区分を「全体」や「本部のみ」に変更しておくと削除されません。`,
+      `${store.name}と、そこに紐づく情報メモもまとめてゴミ箱に移動します。\n30日間は復元できますが、31日目以降は自動的に完全削除されます。\n\n残したい情報メモは、先に区分を「全体」や「本部のみ」に変更しておくと削除されません。`,
       () => deleteTeam(store),
     ),
 
