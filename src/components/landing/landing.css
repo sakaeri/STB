@@ -174,7 +174,9 @@
     display: flex; align-items: center; justify-content: center; gap: 10px;
     margin-top: 22px; background: var(--accent-soft); border-radius: 12px; padding: 14px 20px;
     font-family: "M PLUS Rounded 1c", sans-serif; font-size: 18px; color: var(--accent-deep); font-weight: 700;
+    text-decoration: none; cursor: pointer; transition: background .15s ease, transform .15s ease;
   }
+  .paile-landing .problem-turn:hover { background: color-mix(in srgb, var(--accent-soft) 65%, var(--accent) 35%); transform: translateY(-1px); }
   .paile-landing .problem-turn .arrow { font-family: "Zen Kaku Gothic New", sans-serif; font-size: 18px; }
 
   /* ---------- memo spotlight ---------- */

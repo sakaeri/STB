@@ -103,7 +103,7 @@ export const landingMarkup = `
       <p class="q">店舗ごとの情報が混ざり、全体が把握しにくい</p>
     </div>
   </div>
-  <p class="problem-turn">それ、PaILEにまとめられます。</p>
+  <a class="problem-turn" href="/login" data-action="signup">PaILEで計算してみる<span class="arrow">→</span></a>
 </section>
 
 <section class="features wrap" id="features">
