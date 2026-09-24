@@ -3,7 +3,7 @@
 // instead of a huge JSX tree.
 export const landingMarkup = `
 <header class="site">
-  <div class="wordmark">PaILE<small>SALES &amp; TEAM SHARING</small></div>
+  <div class="wordmark">PaILE<small>FC ROYALTY &amp; SALES</small></div>
   <nav class="site-nav">
     <a class="navlink" href="#problem">こんなお悩みありませんか</a>
     <a class="navlink" href="#features">できること</a>
@@ -19,9 +19,9 @@ export const landingMarkup = `
   <div class="hero-blobs"></div>
   <section class="hero">
     <div>
-      <span class="eyebrow">多店舗・FC運営の売上管理＆情報共有</span>
-      <h1>店舗ごとのExcel、LINE、手計算。<br>全部、PaILEにまとめませんか？</h1>
-      <p class="lede">売上・経費の管理と、店舗との情報共有。本部の"締め作業"や日々の連絡に必要なものを、PaILEひとつにまとめます。（ロイヤリティ・貯蓄の計算が必要な店舗にも対応）</p>
+      <span class="eyebrow">FC本部のロイヤリティ計算に特化</span>
+      <h1>毎月のロイヤリティ・貯蓄計算、<br>まだ手計算ですか？</h1>
+      <p class="lede">料率を設定するだけで、粗利からロイヤリティ・貯蓄を自動計算。売上・経費の入力や、店舗との情報共有も、PaILEひとつにまとめます。</p>
 
       <div class="price-strip">
         <div class="ps-item"><div class="n">¥600</div><div class="c">1店舗・月額</div></div>
@@ -74,6 +74,12 @@ export const landingMarkup = `
   </div>
   <div class="problem-cards">
     <div class="problem-card">
+      <div class="ico" style="background:#fdf3e3">
+        <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a67a2a" stroke-width="1.7"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M8 8h8M7.5 12h2M11.5 12h2M15.5 12h2M7.5 16h2M11.5 16h2M15.5 16h2"/></svg>
+      </div>
+      <p class="q">ロイヤリティ・貯蓄の計算を<br>毎月手計算で出している</p>
+    </div>
+    <div class="problem-card">
       <div class="ico" style="background:#eef0f7">
         <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5a6b9e" stroke-width="1.7"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M3.5 9.5h17M9.5 3.5v17M15.5 3.5v17"/></svg>
       </div>
@@ -84,12 +90,6 @@ export const landingMarkup = `
         <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3aa036" stroke-width="1.7"><path d="M4 12a8 8 0 1 1 3.5 6.6L4 20l1.4-3.6A7.96 7.96 0 0 1 4 12Z"/></svg>
       </div>
       <p class="q">売上や連絡事項を<br>LINEで個別に聞いて回っている</p>
-    </div>
-    <div class="problem-card">
-      <div class="ico" style="background:#fdf3e3">
-        <svg class="ic" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a67a2a" stroke-width="1.7"><rect x="4" y="3.5" width="16" height="17" rx="2.5"/><path d="M8 8h8M7.5 12h2M11.5 12h2M15.5 12h2M7.5 16h2M11.5 16h2M15.5 16h2"/></svg>
-      </div>
-      <p class="q">ロイヤリティ・貯蓄の計算を<br>毎月手計算で出している</p>
     </div>
     <div class="problem-card">
       <div class="ico" style="background:#fbeaea">
@@ -132,16 +132,16 @@ export const landingMarkup = `
 <section class="features wrap" id="features">
   <div class="section-head">
     <span class="eyebrow">できること</span>
-    <h2>本部の"締め作業"を、<span class="hl">シンプルに</span>。</h2>
+    <h2>面倒な<span class="hl">ロイヤリティ計算</span>も、自動で。</h2>
   </div>
   <div class="feat-grid">
     <div class="feat-card">
-      <div class="ico" style="background:var(--accent-soft)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-deep)" stroke-width="1.8"><path d="M4 20V10M11 20V4M18 20v-7"/></svg></div>
-      <div class="name">売上一覧</div><div class="desc">日次・月次・年次で、自動集計。</div>
-    </div>
-    <div class="feat-card">
       <div class="ico" style="background:#eef0f7"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5a6b9e" stroke-width="1.8"><ellipse cx="12" cy="6" rx="7" ry="2.6"/><path d="M5 6v6c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6V6M5 12v6c0 1.4 3.1 2.6 7 2.6s7-1.2 7-2.6v-6"/></svg></div>
       <div class="name">ロイヤリティ・貯蓄</div><div class="desc">料率を設定すれば、粗利から自動計算。</div>
+    </div>
+    <div class="feat-card">
+      <div class="ico" style="background:var(--accent-soft)"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-deep)" stroke-width="1.8"><path d="M4 20V10M11 20V4M18 20v-7"/></svg></div>
+      <div class="name">売上一覧</div><div class="desc">日次・月次・年次で、自動集計。</div>
     </div>
     <div class="feat-card">
       <div class="ico" style="background:#fbeaea"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b5453d" stroke-width="1.8"><path d="M3 10 12 4l9 6"/><path d="M5 10v9M9.5 10v9M14.5 10v9M19 10v9"/><path d="M3 19h18"/></svg></div>
@@ -222,7 +222,7 @@ export const landingMarkup = `
 </section>
 
 <section class="final-cta">
-  <div class="tag">面倒な集計・連絡から、解放されよう。</div>
+  <div class="tag">面倒なロイヤリティ計算から、解放されよう。</div>
   <h2>まずは30日間、無料でPaILEを試してみませんか？</h2>
   <div class="cta-row2">
     <a class="btn btn-primary btn-lg" href="/login" data-action="signup">今すぐ無料で試す →</a>
@@ -233,7 +233,7 @@ export const landingMarkup = `
 <footer class="site">
   <div>
     <div class="fwordmark">PaILE</div>
-    <div class="fnote">多店舗・FC運営のための売上管理・情報共有サービス</div>
+    <div class="fnote">FC本部のためのロイヤリティ計算・売上管理サービス</div>
   </div>
   <div class="flinks">
     <a href="#memo">情報メモ</a><a href="#features">できること</a><a href="#pricing">料金</a><a href="#faq">よくある質問</a>
