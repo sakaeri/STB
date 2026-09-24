@@ -3,7 +3,7 @@
 // instead of a huge JSX tree.
 export const landingMarkup = `
 <header class="site">
-  <div class="wordmark">PaILE<small>FC ROYALTY &amp; SALES</small></div>
+  <div class="brand-row"><img class="header-icon" src="/icon.png" alt="" /><div class="wordmark">PaILE<small>FC ROYALTY &amp; SALES</small></div></div>
   <nav class="site-nav">
     <a class="navlink" href="#problem">こんなお悩みありませんか</a>
     <a class="navlink" href="#features">できること</a>
@@ -17,10 +17,11 @@ export const landingMarkup = `
 
 <div class="wrap">
   <div class="hero-blobs"></div>
+  <div class="hero-mark" aria-hidden="true"></div>
   <section class="hero">
     <div>
       <span class="eyebrow">FC本部のロイヤリティ計算に特化</span>
-      <h1>毎月のロイヤリティ・貯蓄計算、<br>まだ手計算ですか？</h1>
+      <h1><span class="hl">ロイヤリティ・貯蓄計算</span>、<br>まだ毎月手計算ですか？</h1>
       <p class="lede">料率を設定するだけで、粗利からロイヤリティ・貯蓄を自動計算。売上・経費の入力や、店舗との情報共有も、PaILEひとつにまとめます。</p>
 
       <div class="price-strip">

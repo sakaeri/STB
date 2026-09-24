@@ -40,6 +40,8 @@
     display: flex; align-items: center; justify-content: space-between;
     padding-block: 18px; max-width: 1120px; margin: 0 auto; position: relative; z-index: 3;
   }
+  .paile-landing .brand-row { display: flex; align-items: center; gap: 10px; }
+  .paile-landing .header-icon { width: 34px; height: 34px; border-radius: 9px; display: block; }
   .paile-landing .wordmark { font-family: "M PLUS Rounded 1c", sans-serif; font-weight: 700; font-size: 22px; letter-spacing: .04em; color: var(--ink); }
   .paile-landing .wordmark small { font-family: "Zen Kaku Gothic New", sans-serif; font-size: 10px; font-weight: 500; color: var(--muted); letter-spacing: .16em; display: block; margin-top: 2px; }
   .paile-landing nav.site-nav { display: flex; align-items: center; gap: 24px; }
@@ -59,11 +61,16 @@
 
   /* ---------- hero ---------- */
   .paile-landing .hero-blobs {
-    position: absolute; inset: -50px -10% auto -10%; height: 520px; z-index: 0; pointer-events: none;
+    position: absolute; inset: -50px -10% auto -10%; height: 560px; z-index: 0; pointer-events: none;
     background:
-      radial-gradient(480px 320px at 80% 10%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 70%),
-      radial-gradient(420px 300px at 8% 46%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%);
+      radial-gradient(520px 360px at 80% 10%, color-mix(in srgb, var(--accent) 32%, transparent), transparent 70%),
+      radial-gradient(460px 320px at 8% 46%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 70%);
     filter: blur(6px);
+  }
+  .paile-landing .hero-mark {
+    position: absolute; top: -70px; right: -100px; width: 560px; height: 560px; z-index: 0; pointer-events: none;
+    background-image: url(/icon-mark.png); background-size: contain; background-repeat: no-repeat;
+    opacity: .16; filter: saturate(1.3);
   }
   .paile-landing .hero {
     max-width: 1120px; margin: 0 auto; padding-block: 26px 34px;
@@ -76,8 +83,8 @@
     letter-spacing: .14em; color: var(--accent); text-transform: uppercase;
     background: var(--accent-soft); border-radius: 20px; padding: 6px 14px; margin-bottom: 14px;
   }
-  .paile-landing .hero h1 { font-size: 29px; line-height: 1.48; font-weight: 700; }
-  .paile-landing .hero p.lede { font-size: 13.5px; line-height: 1.85; margin-top: 14px; max-width: 38ch; }
+  .paile-landing .hero h1 { font-size: 38px; line-height: 1.4; font-weight: 800; letter-spacing: -.01em; }
+  .paile-landing .hero p.lede { font-size: 13.5px; line-height: 1.85; margin-top: 16px; max-width: 38ch; }
 
   .paile-landing .price-strip { display: flex; align-items: center; gap: 0; margin-top: 18px; flex-wrap: wrap; }
   .paile-landing .ps-item { padding-right: 18px; }
@@ -288,7 +295,8 @@
 
   @media (max-width: 940px) {
     .paile-landing .hero { grid-template-columns: 1fr; padding-block: 22px 30px; gap: 32px; }
-    .paile-landing .hero h1 { font-size: 27px; }
+    .paile-landing .hero h1 { font-size: 30px; }
+    .paile-landing .hero-mark { width: 360px; height: 360px; top: -40px; right: -80px; opacity: .13; }
     .paile-landing .phone { display: none; }
     .paile-landing .problem-cards { grid-template-columns: repeat(2, 1fr); }
     .paile-landing .spot-layout { grid-template-columns: 1fr; gap: 26px; }
