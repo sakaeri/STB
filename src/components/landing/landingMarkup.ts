@@ -106,34 +106,6 @@ export const landingMarkup = `
   <p class="problem-turn">それ、PaILEにまとめられます。</p>
 </section>
 
-<section class="spotlight wrap" id="memo">
-  <div class="spot-layout">
-    <div class="spot-copy">
-      <div class="kicker">お気に入り機能</div>
-      <h3>店舗との連絡は、<br>情報メモへ。</h3>
-      <p>LINEでもExcelでもなく、PaILEの中に残す連絡ノート。公開範囲を選べるから、共有すべきでない情報が混ざりません。</p>
-      <div class="spot-points">
-        <div class="spot-point"><span class="mk">＋</span>全体・本部のみ・店舗ごと、公開範囲を選んで作成</div>
-        <div class="spot-point"><span class="mk">＋</span>画像やPDFも添付して、そのまま残せる</div>
-        <div class="spot-point"><span class="mk">＋</span>キーワード検索で、あとから迷わず探せる</div>
-      </div>
-    </div>
-    <div class="card-mock mock-in">
-      <div class="memo-top"><span class="ttl">情報メモ</span><span class="memo-search">キーワードで検索</span></div>
-      <div class="memo-list">
-        <div class="memo-row"><span class="memo-sq" style="background:var(--app-store-green)">設</span><div class="memo-mid"><div class="n">設備・什器</div><div class="s">3件</div></div><span class="memo-scope" style="background:var(--surface-2);color:var(--app-faint)">全体</span></div>
-        <div class="memo-row"><span class="memo-sq" style="background:var(--app-store-blue)">ス</span><div class="memo-mid"><div class="n">スタッフ情報</div><div class="s">5件</div></div><span class="memo-scope" style="background:#fbeaea;color:#b5453d">本部のみ</span></div>
-        <div class="memo-row"><span class="memo-sq" style="background:var(--app-store-violet)">契</span><div class="memo-mid"><div class="n">契約書類</div><div class="s">2件</div></div><span class="memo-scope" style="background:var(--accent-soft);color:var(--accent-deep)">渋谷店</span></div>
-      </div>
-      <div class="memo-detail">
-        <div class="h">設備・什器</div>
-        <div class="t">POSレジ入れ替え：10/1〜 新機種に変更予定。取扱説明書を添付します。</div>
-        <div class="att"><span>📎 取扱説明書.pdf</span><span>🖼 設置後.jpg</span></div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <section class="features wrap" id="features">
   <div class="section-head">
     <span class="eyebrow">できること</span>
@@ -159,6 +131,34 @@ export const landingMarkup = `
     <div class="feat-card">
       <div class="ico" style="background:#e4eaf5"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3f6fb5" stroke-width="1.8"><path d="M12 3.5 5 6v6c0 5 3 8 7 8.5 4-.5 7-3.5 7-8.5V6z"/><path d="m9 12 2 2 4-4"/></svg></div>
       <div class="name">権限管理</div><div class="desc">4段階の権限で、安心して招待できる。</div>
+    </div>
+  </div>
+</section>
+
+<section class="spotlight wrap" id="memo">
+  <div class="spot-layout">
+    <div class="spot-copy">
+      <div class="kicker">お気に入り機能</div>
+      <h3>店舗との連絡は、<br>情報メモへ。</h3>
+      <p>LINEでもExcelでもなく、PaILEの中に残す連絡ノート。公開範囲を選べるから、共有すべきでない情報が混ざりません。</p>
+      <div class="spot-points">
+        <div class="spot-point"><span class="mk">＋</span>全体・本部のみ・店舗ごと、公開範囲を選んで作成</div>
+        <div class="spot-point"><span class="mk">＋</span>画像やPDFも添付して、そのまま残せる</div>
+        <div class="spot-point"><span class="mk">＋</span>キーワード検索で、あとから迷わず探せる</div>
+      </div>
+    </div>
+    <div class="card-mock mock-in">
+      <div class="memo-top"><span class="ttl">情報メモ</span><span class="memo-search">キーワードで検索</span></div>
+      <div class="memo-list">
+        <div class="memo-row"><span class="memo-sq" style="background:var(--app-store-green)">設</span><div class="memo-mid"><div class="n">設備・什器</div><div class="s">3件</div></div><span class="memo-scope" style="background:var(--surface-2);color:var(--app-faint)">全体</span></div>
+        <div class="memo-row"><span class="memo-sq" style="background:var(--app-store-blue)">ス</span><div class="memo-mid"><div class="n">スタッフ情報</div><div class="s">5件</div></div><span class="memo-scope" style="background:#fbeaea;color:#b5453d">本部のみ</span></div>
+        <div class="memo-row"><span class="memo-sq" style="background:var(--app-store-violet)">契</span><div class="memo-mid"><div class="n">契約書類</div><div class="s">2件</div></div><span class="memo-scope" style="background:var(--accent-soft);color:var(--accent-deep)">渋谷店</span></div>
+      </div>
+      <div class="memo-detail">
+        <div class="h">設備・什器</div>
+        <div class="t">POSレジ入れ替え：10/1〜 新機種に変更予定。取扱説明書を添付します。</div>
+        <div class="att"><span>📎 取扱説明書.pdf</span><span>🖼 設置後.jpg</span></div>
+      </div>
     </div>
   </div>
 </section>
@@ -241,7 +241,7 @@ export const landingMarkup = `
     <div class="fnote">FC本部のためのロイヤリティ計算・売上管理サービス</div>
   </div>
   <div class="flinks">
-    <a href="#memo">情報メモ</a><a href="#features">できること</a><a href="#pricing">料金</a><a href="#faq">よくある質問</a>
+    <a href="#features">できること</a><a href="#memo">情報メモ</a><a href="#pricing">料金</a><a href="#faq">よくある質問</a>
   </div>
   <div class="fnote">© 2026 PaILE</div>
 </footer>
