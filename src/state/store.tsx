@@ -13,6 +13,7 @@ import { planForCount, billedPlanFor, effectivePricing, type PlanStep } from '..
 import { decodeCsvFile, parseCsvText, rowsFromCsvTable } from './bankCsv';
 import { HQ_TEMPLATES } from './hqTemplates';
 import { logOrgLoadDebug } from './debugLog';
+import { trackSignupConversion } from '../lib/analytics';
 
 type Patch = Partial<AppState> | ((s: AppState) => Partial<AppState>);
 
@@ -346,6 +347,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       if (data.user && data.user.identities && data.user.identities.length === 0) {
         set({ authError: 'このメールアドレスは既に使用されています' }); return;
       }
+      trackSignupConversion();
       set({ pendingAccountId: email, authView: 'verify', authError: '' });
     },
     logout: async () => {
