@@ -3,7 +3,7 @@
 // instead of a huge JSX tree.
 export const landingMarkup = `
 <header class="site">
-  <div class="wordmark">PaILE<small>SALES &amp; STORE MANAGEMENT</small></div>
+  <div class="wordmark">PaILE<small>SALES &amp; TEAM SHARING</small></div>
   <nav class="site-nav">
     <a class="navlink" href="#problem">こんなお悩みありませんか</a>
     <a class="navlink" href="#features">できること</a>
@@ -19,9 +19,9 @@ export const landingMarkup = `
   <div class="hero-blobs"></div>
   <section class="hero">
     <div>
-      <span class="eyebrow">多店舗・FC運営のための売上管理</span>
+      <span class="eyebrow">多店舗・FC運営の売上管理＆情報共有</span>
       <h1>店舗ごとのExcel、LINE、手計算。<br>全部、PaILEにまとめませんか？</h1>
-      <p class="lede">売上・経費の管理、店舗との情報共有。本部の"締め作業"に必要なものを、PaILEひとつにまとめます。（ロイヤリティ・貯蓄の計算が必要な店舗にも対応）</p>
+      <p class="lede">売上・経費の管理と、店舗との情報共有。本部の"締め作業"や日々の連絡に必要なものを、PaILEひとつにまとめます。（ロイヤリティ・貯蓄の計算が必要な店舗にも対応）</p>
 
       <div class="price-strip">
         <div class="ps-item"><div class="n">¥600</div><div class="c">1店舗・月額</div></div>
@@ -222,7 +222,7 @@ export const landingMarkup = `
 </section>
 
 <section class="final-cta">
-  <div class="tag">面倒な集計から、解放されよう。</div>
+  <div class="tag">面倒な集計・連絡から、解放されよう。</div>
   <h2>まずは30日間、無料でPaILEを試してみませんか？</h2>
   <div class="cta-row2">
     <a class="btn btn-primary btn-lg" href="/login" data-action="signup">今すぐ無料で試す →</a>
@@ -233,7 +233,7 @@ export const landingMarkup = `
 <footer class="site">
   <div>
     <div class="fwordmark">PaILE</div>
-    <div class="fnote">多店舗・FC運営のための売上管理サービス</div>
+    <div class="fnote">多店舗・FC運営のための売上管理・情報共有サービス</div>
   </div>
   <div class="flinks">
     <a href="#memo">情報メモ</a><a href="#features">できること</a><a href="#pricing">料金</a><a href="#faq">よくある質問</a>
