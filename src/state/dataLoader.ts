@@ -32,6 +32,38 @@ export function mapTransactionRow(row: TxRow): Transaction {
   };
 }
 
+type MemoTopicRow = {
+  id: string; name: string; team_id: string | null; hq_only: boolean | null;
+  created_at: string; created_by: string | null;
+  memo_entries?: {
+    id: string; name: string; created_at: string; created_by: string | null;
+    memo_records?: {
+      id: string; label: string; text: string; date: string; created_at: string; created_by: string | null;
+      images: string[] | null; pdfs: { url: string; name: string }[] | null;
+    }[];
+  }[];
+};
+
+export function mapMemoTopicRow(t: MemoTopicRow, nameByUserId: Map<string, string>): MemoTopic {
+  const entries = t.memo_entries || [];
+  const lastActivityAt = [
+    t.created_at,
+    ...entries.map((e) => e.created_at),
+    ...entries.flatMap((e) => (e.memo_records || []).map((r) => r.created_at)),
+  ].sort().pop();
+  return {
+    id: t.id, name: t.name, storeId: t.team_id, hqOnly: !!t.hq_only, lastActivityAt, createdBy: t.created_by,
+    entries: entries.map((e) => ({
+      id: e.id, name: e.name, createdBy: e.created_by,
+      lastActivityAt: [e.created_at, ...(e.memo_records || []).map((r) => r.created_at)].sort().pop(),
+      records: (e.memo_records || []).map((r) => ({
+        id: r.id, label: r.label, text: r.text, date: r.date, createdAt: r.created_at,
+        images: r.images || [], pdfs: r.pdfs || [], authorName: (r.created_by && nameByUserId.get(r.created_by)) || null, createdBy: r.created_by,
+      })),
+    })),
+  };
+}
+
 export interface LoadedOrgData {
   companyInfo: CompanyInfo;
   defaults: Defaults;
@@ -262,36 +294,7 @@ export async function fetchOrgData(orgId: string, txFloor?: string): Promise<Loa
     list.push({ id: row.id, type: row.type, title: row.title, amount: Number(row.amount) });
   });
 
-  const memoTopics: MemoTopic[] = topics.map((t) => {
-    const row = t as unknown as {
-      created_at: string;
-      created_by: string | null;
-      memo_entries?: {
-        id: string; name: string; created_at: string; created_by: string | null;
-        memo_records?: {
-          id: string; label: string; text: string; date: string; created_at: string; created_by: string | null;
-          images: string[] | null; pdfs: { url: string; name: string }[] | null;
-        }[];
-      }[];
-    };
-    const entries = row.memo_entries || [];
-    const lastActivityAt = [
-      row.created_at,
-      ...entries.map((e) => e.created_at),
-      ...entries.flatMap((e) => (e.memo_records || []).map((r) => r.created_at)),
-    ].sort().pop();
-    return {
-      id: t.id, name: t.name, storeId: t.team_id, hqOnly: !!t.hq_only, lastActivityAt, createdBy: row.created_by,
-      entries: entries.map((e) => ({
-        id: e.id, name: e.name, createdBy: e.created_by,
-        lastActivityAt: [e.created_at, ...(e.memo_records || []).map((r) => r.created_at)].sort().pop(),
-        records: (e.memo_records || []).map((r) => ({
-          id: r.id, label: r.label, text: r.text, date: r.date, createdAt: r.created_at,
-          images: r.images || [], pdfs: r.pdfs || [], authorName: (r.created_by && nameByUserId.get(r.created_by)) || null, createdBy: r.created_by,
-        })),
-      })),
-    };
-  });
+  const memoTopics: MemoTopic[] = topics.map((t: MemoTopicRow) => mapMemoTopicRow(t, nameByUserId));
 
   const trash: TrashItem[] = (trashRes.data || []).map((row) => ({
     id: row.id, type: row.type as TrashItem['type'], label: row.label, deletedAt: new Date(row.deleted_at).getTime(),
@@ -343,4 +346,37 @@ export async function fetchTransactionsSince(
     list.push(mapTransactionRow(row));
   });
   return transactions;
+}
+
+// A single memo save (add a topic/entry/record, or edit one) used to
+// trigger reloadActiveOrg — a full re-fetch of all 8 of fetchOrgData's
+// parallel queries (transactions, members, presets, trash, ...) even
+// though only memo_topics actually changed. Fine for an occasional edit,
+// but rapid back-to-back saves (typing in many memo records in one
+// sitting) pile up that many full reloads at once, which is enough
+// concurrent load to trip a statement timeout on an unrelated query —
+// see reloadMemoTopics/reloadMemoAndTrash in store.tsx, which use this
+// instead for memo-only mutations.
+export async function fetchMemoTopics(orgId: string): Promise<MemoTopic[]> {
+  const [topicsRes, peopleRes] = await Promise.all([
+    supabase.from('memo_topics').select('*, memo_entries(*, memo_records(*))').eq('org_id', orgId),
+    supabase.rpc('org_people', { p_org_id: orgId }),
+  ]);
+  if (topicsRes.error) throw new Error(`[memo_topics] ${topicsRes.error.message}`);
+  if (peopleRes.error) throw new Error(`[org_people] ${peopleRes.error.message}`);
+  const people = (peopleRes.data || []) as { user_id: string; name: string }[];
+  const nameByUserId = new Map<string, string>(people.map((p) => [p.user_id, p.name]));
+  return (topicsRes.data || []).map((t: MemoTopicRow) => mapMemoTopicRow(t, nameByUserId));
+}
+
+// Used alongside fetchMemoTopics for the memo-delete paths, which also
+// add a trash_items row that needs to show up in state without paying
+// for a full reloadActiveOrg.
+export async function fetchTrashItems(orgId: string): Promise<TrashItem[]> {
+  const { data, error } = await supabase.from('trash_items').select('*').eq('org_id', orgId).order('deleted_at', { ascending: false });
+  if (error) throw new Error(`[trash_items] ${error.message}`);
+  return (data || []).map((row) => ({
+    id: row.id, type: row.type as TrashItem['type'], label: row.label, deletedAt: new Date(row.deleted_at).getTime(),
+    data: row.data, storeId: row.team_id,
+  }));
 }

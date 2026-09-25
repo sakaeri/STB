@@ -4,7 +4,10 @@ import type {
 } from '../types';
 import { createInitialState } from './mockData';
 import { supabase, isPasswordRecoveryLink, clearPasswordRecoveryLink } from '../lib/supabase';
-import { fetchMyOrgs, fetchOrgData, createOrgWithFirstTeam, defaultTxFloor, fetchTransactionsSince, mapTransactionRow } from './dataLoader';
+import {
+  fetchMyOrgs, fetchOrgData, createOrgWithFirstTeam, defaultTxFloor, fetchTransactionsSince, mapTransactionRow,
+  fetchMemoTopics, fetchTrashItems,
+} from './dataLoader';
 import {
   fetchAdminOrgs, fetchAuditLog, fetchAppSettings, addAuditLog,
   saveAppSettingsBilling, saveAppSettingsTerms, fetchPublicTerms, fetchPublicAppLogo, fetchPublicPricing,
@@ -194,6 +197,39 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       set((s) => ({ ...data, logoMap: { ...s.logoMap, ...data.logoMap } }));
     } catch (e) {
       console.error('reloadActiveOrg failed', e);
+    }
+  }
+
+  // Lighter-weight alternatives to reloadActiveOrg for memo-only
+  // mutations — see fetchMemoTopics's comment (dataLoader.ts) for why:
+  // a full reloadActiveOrg re-runs all 8 of fetchOrgData's queries for
+  // what's really just a memo_topics change, and rapid successive memo
+  // saves (typing in many records in one sitting) turned that into enough
+  // concurrent load to trip an unrelated query's statement timeout.
+  async function reloadMemoTopics() {
+    const st = getState();
+    if (!st.activeOrgId) return;
+    try {
+      const memoTopics = await fetchMemoTopics(st.activeOrgId);
+      set({ memoTopics });
+    } catch (e) {
+      console.error('reloadMemoTopics failed', e);
+    }
+  }
+
+  // Same as reloadMemoTopics, plus trash_items — for the memo-delete
+  // paths, which also add a trash entry that needs to show up in state.
+  async function reloadMemoAndTrash() {
+    const st = getState();
+    if (!st.activeOrgId) return;
+    try {
+      const [memoTopics, trash] = await Promise.all([
+        fetchMemoTopics(st.activeOrgId),
+        fetchTrashItems(st.activeOrgId),
+      ]);
+      set({ memoTopics, trash });
+    } catch (e) {
+      console.error('reloadMemoAndTrash failed', e);
     }
   }
 
@@ -930,14 +966,14 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         const { error } = await supabase.from('memo_topics').insert({ org_id: st.activeOrgId, team_id: m.storeId || null, hq_only: !!m.hqOnly, name, created_by: st.session });
         if (error) { console.error(error); alert(`保存に失敗しました（${error.message}）`); return; }
         set({ memoModal: null });
-        await reloadActiveOrg();
+        await reloadMemoTopics();
       } else if (m.kind === 'entry') {
         const name = (m.name || '').trim();
         if (!name || !m.topicId) return;
         const { error } = await supabase.from('memo_entries').insert({ topic_id: m.topicId, name, created_by: st.session });
         if (error) { console.error(error); alert(`保存に失敗しました（${error.message}）`); return; }
         set({ memoModal: null });
-        await reloadActiveOrg();
+        await reloadMemoTopics();
       } else if (m.kind === 'record') {
         const label = (m.label || '').trim(); const text = (m.text || '').trim();
         if (!label || !m.entryId) return;
@@ -952,7 +988,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         });
         if (error) { console.error(error); alert(`保存に失敗しました（${error.message}）`); return; }
         set({ memoModal: null });
-        await reloadActiveOrg();
+        await reloadMemoTopics();
       }
     },
     // Any scope change is possible after the fact, not a one-way "share
@@ -963,7 +999,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       const apply = async () => {
         const patch = v === '' ? { team_id: null, hq_only: false } : v === 'hq' ? { team_id: null, hq_only: true } : { team_id: v, hq_only: false };
         await supabase.from('memo_topics').update(patch).eq('id', topic.id);
-        await reloadActiveOrg();
+        await reloadMemoTopics();
       };
       const wasAlreadyShared = !topic.storeId && !topic.hqOnly;
       if (v === '' && !wasAlreadyShared) {
@@ -977,7 +1013,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         await addTrash('memoTopic', topic.name, topic, topic.storeId || null);
         set((s) => ({ memoNav: s.memoNav.topicId === topic.id ? { topicId: null, entryId: null } : s.memoNav }));
         await supabase.from('memo_topics').delete().eq('id', topic.id);
-        await reloadActiveOrg();
+        await reloadMemoAndTrash();
       });
     },
     requestDeleteMemoEntry: (topicId: string, entry: { id: string; name: string }) => {
@@ -987,7 +1023,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         await addTrash('memoEntry', entry.name, { topicId, entry }, t ? t.storeId || null : null);
         set((s) => ({ memoNav: s.memoNav.entryId === entry.id ? { ...s.memoNav, entryId: null } : s.memoNav }));
         await supabase.from('memo_entries').delete().eq('id', entry.id);
-        await reloadActiveOrg();
+        await reloadMemoAndTrash();
       });
     },
     requestDeleteMemoRecord: (topicId: string, entryId: string, rec: { id: string; label: string }) => {
@@ -996,7 +1032,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         const t = st.memoTopics.find((x) => x.id === topicId);
         await addTrash('memoRecord', rec.label, { topicId, entryId, record: rec }, t ? t.storeId || null : null);
         await supabase.from('memo_records').delete().eq('id', rec.id);
-        await reloadActiveOrg();
+        await reloadMemoAndTrash();
       });
     },
 
