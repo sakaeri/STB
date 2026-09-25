@@ -20,10 +20,12 @@ export function defaultTxFloor(): string {
   return `${yr}-${String(mi + 1).padStart(2, '0')}-01`;
 }
 
-export function mapTransactionRow(row: {
+export type TxRow = {
   id: string; team_id: string; type: string; title: string; amount: number | string; date: string;
   photo_url: string | null; created_at: string; source: string | null;
-}): Transaction {
+};
+
+export function mapTransactionRow(row: TxRow): Transaction {
   return {
     id: row.id, type: row.type as Transaction['type'], title: row.title, amount: Number(row.amount), date: row.date,
     photo: row.photo_url, createdAt: row.created_at, source: row.source === 'csv' ? 'csv' : 'manual',
@@ -182,7 +184,11 @@ export async function fetchOrgData(orgId: string, txFloor?: string): Promise<Loa
       ? supabase.from('team_members').select('id, user_id, team_id, role').in('team_id', teamIds)
       : Promise.resolve({ data: [], error: null }),
     teamIds.length
-      ? supabase.from('transactions').select('*').in('team_id', teamIds).gte('date', floor).order('date', { ascending: false })
+      // Goes through org_transactions (see its migration) instead of a
+      // plain select — transactions' own RLS policy calls can_access_team
+      // once per row, which scales badly with row count. The RPC checks
+      // access once and does the per-team filtering as a single query.
+      ? supabase.rpc('org_transactions', { p_org_id: orgId, p_since: floor })
       : Promise.resolve({ data: [], error: null }),
     teamIds.length
       ? supabase.from('entry_presets').select('*').in('team_id', teamIds).order('created_at', { ascending: true })
@@ -190,7 +196,10 @@ export async function fetchOrgData(orgId: string, txFloor?: string): Promise<Loa
     // Nested embed pulls topics + their entries + those entries' records in
     // one round trip instead of three sequential ones (each still scoped by
     // its own RLS policy).
-    supabase.from('memo_topics').select('*, memo_entries(*, memo_records(*, profiles(name)))').eq('org_id', orgId),
+    // No profiles(name) embed here — same per-row RLS cost as the
+    // org_members/team_members case org_people already fixes below, so
+    // memo record authors are resolved from that same lookup instead.
+    supabase.from('memo_topics').select('*, memo_entries(*, memo_records(*))').eq('org_id', orgId),
     supabase.from('trash_items').select('*').eq('org_id', orgId).order('deleted_at', { ascending: false }),
     teamIds.length
       ? supabase.from('confirmed_periods').select('*').in('team_id', teamIds)
@@ -242,7 +251,7 @@ export async function fetchOrgData(orgId: string, txFloor?: string): Promise<Loa
   });
 
   const transactions: Record<string, Transaction[]> = {};
-  (txRes.data || []).forEach((row) => {
+  ((txRes.data || []) as TxRow[]).forEach((row) => {
     const list = transactions[row.team_id] || (transactions[row.team_id] = []);
     list.push(mapTransactionRow(row));
   });
@@ -261,7 +270,7 @@ export async function fetchOrgData(orgId: string, txFloor?: string): Promise<Loa
         id: string; name: string; created_at: string; created_by: string | null;
         memo_records?: {
           id: string; label: string; text: string; date: string; created_at: string; created_by: string | null;
-          images: string[] | null; pdfs: { url: string; name: string }[] | null; profiles: { name: string } | null;
+          images: string[] | null; pdfs: { url: string; name: string }[] | null;
         }[];
       }[];
     };
@@ -278,7 +287,7 @@ export async function fetchOrgData(orgId: string, txFloor?: string): Promise<Loa
         lastActivityAt: [e.created_at, ...(e.memo_records || []).map((r) => r.created_at)].sort().pop(),
         records: (e.memo_records || []).map((r) => ({
           id: r.id, label: r.label, text: r.text, date: r.date, createdAt: r.created_at,
-          images: r.images || [], pdfs: r.pdfs || [], authorName: r.profiles?.name || null, createdBy: r.created_by,
+          images: r.images || [], pdfs: r.pdfs || [], authorName: (r.created_by && nameByUserId.get(r.created_by)) || null, createdBy: r.created_by,
         })),
       })),
     };
@@ -321,21 +330,15 @@ export async function fetchOrgData(orgId: string, txFloor?: string): Promise<Loa
 // a new, lower floor and the previous one without re-fetching what's
 // already loaded.
 export async function fetchTransactionsSince(
-  teamIds: string[],
+  orgId: string,
   sinceDate: string,
   beforeDate: string,
 ): Promise<Record<string, Transaction[]>> {
   const transactions: Record<string, Transaction[]> = {};
-  if (!teamIds.length) return transactions;
   const { data, error } = await supabase
-    .from('transactions')
-    .select('*')
-    .in('team_id', teamIds)
-    .gte('date', sinceDate)
-    .lt('date', beforeDate)
-    .order('date', { ascending: false });
+    .rpc('org_transactions', { p_org_id: orgId, p_since: sinceDate, p_before: beforeDate });
   if (error) throw error;
-  (data || []).forEach((row) => {
+  ((data || []) as TxRow[]).forEach((row) => {
     const list = transactions[row.team_id] || (transactions[row.team_id] = []);
     list.push(mapTransactionRow(row));
   });

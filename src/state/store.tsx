@@ -720,8 +720,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       if (!st.activeOrgId || neededFloor >= st.txLoadedFrom) return;
       set({ txRangeLoading: true });
       try {
-        const teamIds = st.stores.map((s) => s.id);
-        const extra = await fetchTransactionsSince(teamIds, neededFloor, st.txLoadedFrom);
+        const extra = await fetchTransactionsSince(st.activeOrgId, neededFloor, st.txLoadedFrom);
         set((s) => ({
           transactions: Object.fromEntries(
             st.stores.map((store) => [store.id, [...(extra[store.id] || []), ...(s.transactions[store.id] || [])]]),
