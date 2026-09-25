@@ -1598,6 +1598,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         set({ authChecked: true, authView: 'reset', authError: '', resetPassword: '', resetPasswordConfirm: '' });
         return;
       }
+      // A token refresh (Supabase rotates the JWT roughly every ~55 min a
+      // tab stays open) doesn't change any data — the client already swaps
+      // in the new token on its own. Every event used to re-run the same
+      // full profile/org fetch regardless of event type, so an open tab
+      // silently re-fetched everything in the background on a timer, for
+      // no reason — pure extra load, and one more chance to land on a
+      // slow query (see the [transactions] timeout investigation) at a
+      // moment with nothing on screen to explain it. Falls through to the
+      // normal flow if we don't already have this exact session/org
+      // loaded, so anything genuinely unresolved still gets handled.
+      if (event === 'TOKEN_REFRESHED' && session && getState().session === session.user.id && getState().orgDataLoaded) {
+        return;
+      }
       if (!session) {
         if (stale()) return;
         set({ authChecked: true, session: null, accounts: [], activeOrgId: null, orgDataLoaded: false, orgLoadDebug: null, stores: [], members: [], hqMembers: [], transactions: {}, memoTopics: [], trash: [] });
