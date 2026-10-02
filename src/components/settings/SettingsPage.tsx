@@ -15,6 +15,10 @@ const inputStyle: CSSProperties = { width: '100%', maxWidth: 340, border: '1.5px
 const roTitleStyle: CSSProperties = { fontSize: 11.5, color: '#9aa0a8', marginBottom: 4 };
 const roValueStyle: CSSProperties = { fontSize: 14, fontWeight: 700 };
 
+function modeSegStyle(active: boolean, accent: string): CSSProperties {
+  return { flex: 1, padding: '5px 10px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, color: active ? accent : '#8a909a', background: active ? '#fff' : 'transparent', boxShadow: active ? '0 1px 2px rgba(0,0,0,.08)' : 'none' };
+}
+
 const TRASH_META: Record<TrashItem['type'], { icon: string; color: string }> = {
   team: { icon: '🏢', color: '#3f6fb5' },
   member: { icon: '👤', color: '#5a6b9e' },
@@ -186,6 +190,16 @@ export default function SettingsPage() {
               <div style={{ fontSize: 11, color: '#aab0b8', marginTop: 8, lineHeight: 1.6 }}>売上一覧の「年間」表示に使う事業年度の起点です。</div>
             </div>
             <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 16 }}>
+              <label style={fieldLabelStyle}>メインで使う機能</label>
+              <div style={{ display: 'flex', background: '#eceef1', borderRadius: 9, padding: 3, width: 220 }}>
+                <button onClick={() => actions.onCompanyMainFeature('sales')} style={modeSegStyle(state.companyInfo.mainFeature === 'sales', accent)}>売上管理</button>
+                <button onClick={() => actions.onCompanyMainFeature('memo')} style={modeSegStyle(state.companyInfo.mainFeature === 'memo', accent)}>情報メモ</button>
+              </div>
+              <div style={{ fontSize: 11, color: '#aab0b8', marginTop: 8, lineHeight: 1.6 }}>
+                ログイン直後に表示される画面を選べます。両方の機能はいつでも利用できます。
+              </div>
+            </div>
+            <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 16 }}>
               <button onClick={actions.closeCompanyInfoEdit} style={{ height: 38, padding: '0 18px', borderRadius: 9, background: accentSoft(accent), color: accent, fontWeight: 700, fontSize: 12.5 }}>完了</button>
             </div>
           </div>
@@ -193,6 +207,7 @@ export default function SettingsPage() {
           <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div><div style={roTitleStyle}>締め日</div><div style={roValueStyle}>{closingDayTxt}</div></div>
             <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 14 }}><div style={roTitleStyle}>決算期（年度の開始月）</div><div style={roValueStyle}>{fiscalStartMonthTxt}</div></div>
+            <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 14 }}><div style={roTitleStyle}>メインで使う機能</div><div style={roValueStyle}>{state.companyInfo.mainFeature === 'memo' ? '情報メモ' : '売上管理'}</div></div>
           </div>
         )}
       </section>
