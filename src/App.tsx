@@ -5,7 +5,6 @@ import { isPasswordRecoveryLink } from './lib/supabase';
 import AuthScreen from './components/auth/AuthScreen';
 import HqSetupScreen from './components/hqSetup/HqSetupScreen';
 import MainApp from './components/app/MainApp';
-import AdminDashboard from './components/admin/AdminDashboard';
 import InviteScreen from './components/invite/InviteScreen';
 import TermsModal from './components/modals/TermsModal';
 import ConfirmModal from './components/modals/ConfirmModal';
@@ -197,17 +196,6 @@ export default function App() {
     ) : (
       <AuthScreen />
     );
-  } else if (account.isAdmin) {
-    if (state.adminOwnHqSetup) {
-      // account.hqCreated flips true as soon as the light "which orgs am I
-      // in" check comes back — well before the heavier per-org data fetch
-      // does, so without this the app briefly renders MainApp over an
-      // empty shell (no stores/sales yet) that reads as broken rather than
-      // loading.
-      screen = !account.hqCreated ? <HqSetupScreen /> : orgDataReady ? <MainApp /> : <BootLoading />;
-    } else {
-      screen = <AdminDashboard />;
-    }
   } else if (!account.hqCreated) {
     screen = <HqSetupScreen />;
   } else if (!orgDataReady) {

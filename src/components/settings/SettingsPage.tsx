@@ -103,8 +103,6 @@ export default function SettingsPage() {
   const canPermanentDelete = isOwnerOrAdmin;
   const canInviteHqMember = isOwnerOrAdmin;
 
-  const plan = actions.effectivePlan();
-  const downgradeCand = actions.downgradeCandidatePlan();
   // Trial-model orgs have no free tier baked into the price math (see
   // effectivePricing) — so `plan` alone would show a yen amount from the
   // very first team, even though nothing is actually charged until the
@@ -118,8 +116,6 @@ export default function SettingsPage() {
   // banner (mirroring the frozen banner's style/CTA) once the trial is
   // close to running out, rather than showing it for the entire 30 days.
   const showTrialEndingBanner = isHqView && showTrialBadge && daysLeft !== null && daysLeft <= 7;
-  const orgKey = state.activeOrgId ?? 'default';
-  const showDowngradePrompt = isHqView && isOwner && !!downgradeCand && state.orgDowngradeDismissed[orgKey] !== state.stores.length;
 
   const closingDayTxt = CLOSING_DAY_OPTIONS.find((o) => o.value === state.companyInfo.closingDay)?.label || '末日';
   const fiscalStartMonthTxt = FISCAL_MONTH_OPTIONS.find((o) => o.value === state.companyInfo.fiscalStartMonth)?.label || `${state.companyInfo.fiscalStartMonth}月`;
@@ -173,38 +169,6 @@ export default function SettingsPage() {
             <button onClick={actions.openCompanyInfoEdit} style={{ height: 32, padding: '0 14px', borderRadius: 9, background: accentSoft(accent), color: accent, fontWeight: 700, fontSize: 12.5, flex: 'none' }}>変更</button>
           )}
         </div>
-        {isHqView && (
-          <div style={{ padding: '14px 22px 0', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fff', background: daysLeft !== null ? accent : plan.color, padding: '6px 12px', borderRadius: 8, flex: 'none' }}>
-              {daysLeft !== null ? `お試し中（残り${daysLeft}日）` : plan.label} ・ {state.stores.length}{unitLabel}
-            </span>
-            {/* Trial owners don't have to wait for the last-7-days banner
-                (or being frozen) to set up payment — this lets them opt in
-                whenever they're ready. */}
-            {daysLeft !== null && isOwner && (
-              <button
-                onClick={actions.startCheckout}
-                disabled={state.billingCheckoutLoading}
-                style={{ fontSize: 11, fontWeight: 700, color: accent, background: accentSoft(accent), padding: '6px 10px', borderRadius: 8, flex: 'none', opacity: state.billingCheckoutLoading ? 0.6 : 1 }}
-              >
-                {state.billingCheckoutLoading ? '処理中…' : '今すぐお支払い設定をする'}
-              </button>
-            )}
-            {showDowngradePrompt && downgradeCand && (
-              <button
-                onClick={actions.confirmDowngrade}
-                disabled={state.planChangeLoading}
-                title={`次回更新分から${downgradeCand.label}に変更します`}
-                style={{ fontSize: 11, fontWeight: 700, color: accent, background: accentSoft(accent), padding: '6px 10px', borderRadius: 8, flex: 'none', opacity: state.planChangeLoading ? 0.6 : 1 }}
-              >
-                {state.planChangeLoading ? '変更中…' : `${downgradeCand.label}に変更`}
-              </button>
-            )}
-            {state.planChangeSaved && (
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#1f9d6b' }}>✓ 変更しました</span>
-            )}
-          </div>
-        )}
         {canEditCompanyInfo && state.editingCompanyInfo ? (
           <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 18 }}>
             <div>

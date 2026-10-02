@@ -19,7 +19,6 @@ export default function Topbar() {
   };
 
   const label = periodLabel(state.aggUnit, state.month, state.year, state.periodDate, state.companyInfo.fiscalStartMonth || 4);
-  const isAdmin = !!state.accounts.find((a) => a.id === state.session)?.isAdmin;
   const brandLogoUrl = state.logoMap['app-logo'] || state.logoMap['operator-logo'] || null;
 
   const periodNav = state.page === 'list' && (
@@ -99,27 +98,6 @@ export default function Topbar() {
             {subs[state.page]}
           </p>
         </div>
-        {state.isMobile && isAdmin && (
-          <button
-            onClick={actions.goAdminDashboard}
-            aria-label="運営ダッシュボードに戻る"
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: '50%',
-              background: '#f0f2f5',
-              color: '#6b7280',
-              fontWeight: 700,
-              fontSize: 14,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flex: 'none',
-            }}
-          >
-            ⚙
-          </button>
-        )}
         {state.isMobile && (
           <button
             onClick={actions.openProfileModal}
@@ -147,14 +125,6 @@ export default function Topbar() {
         state.page === 'list' && <div style={{ display: 'flex', alignItems: 'center' }}>{periodNav}</div>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto', flexWrap: 'wrap' }}>
-          {isAdmin && (
-            <button
-              onClick={actions.goAdminDashboard}
-              style={{ height: 36, padding: '0 14px', borderRadius: 9, background: '#f0f2f5', color: '#6b7280', fontWeight: 700, fontSize: 12.5, whiteSpace: 'nowrap' }}
-            >
-              ← 運営ダッシュボードに戻る
-            </button>
-          )}
           {periodNav}
         </div>
       )}
