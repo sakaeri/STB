@@ -15,17 +15,6 @@ const inputStyle: CSSProperties = { width: '100%', maxWidth: 340, border: '1.5px
 const roTitleStyle: CSSProperties = { fontSize: 11.5, color: '#9aa0a8', marginBottom: 4 };
 const roValueStyle: CSSProperties = { fontSize: 14, fontWeight: 700 };
 
-function switchStyle(on: boolean, accent: string): [CSSProperties, CSSProperties] {
-  return [
-    { width: 42, height: 24, borderRadius: 12, background: on ? accent : '#cdd3da', position: 'relative', flex: 'none', transition: 'background .15s' },
-    { position: 'absolute', top: 3, left: on ? 21 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left .15s', boxShadow: '0 1px 2px rgba(0,0,0,.2)' },
-  ];
-}
-
-function modeSegStyle(active: boolean, accent: string): CSSProperties {
-  return { flex: 1, padding: '5px 10px', borderRadius: 6, fontSize: 11.5, fontWeight: 700, color: active ? accent : '#8a909a', background: active ? '#fff' : 'transparent', boxShadow: active ? '0 1px 2px rgba(0,0,0,.08)' : 'none' };
-}
-
 const TRASH_META: Record<TrashItem['type'], { icon: string; color: string }> = {
   team: { icon: '🏢', color: '#3f6fb5' },
   member: { icon: '👤', color: '#5a6b9e' },
@@ -298,104 +287,6 @@ export default function SettingsPage() {
               <div style={{ background: '#f7f8fa', border: '1px dashed #d8dce2', borderRadius: 11, padding: 16, textAlign: 'center', fontSize: 12, color: '#9aa0a8' }}>まだメンバーがいません。</div>
             )}
           </div>
-        </section>
-      )}
-
-      {/* 新規{unitLabel}のデフォルト設定 */}
-      {isHqView && isOwner && (
-        <section style={cardStyle}>
-          <div style={cardHeaderStyle}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <h2 style={cardTitleStyle}>新規{unitLabel}のデフォルト設定</h2>
-              <p style={cardSubStyle}>{unitLabel}を招待する際の初期値。{unitLabel}ごとに後から変更できます。</p>
-            </div>
-            {!state.editingHqDefaults && (
-              <button onClick={actions.openHqDefaultsEdit} style={{ height: 32, padding: '0 14px', borderRadius: 9, background: accentSoft(accent), color: accent, fontWeight: 700, fontSize: 12.5, flex: 'none' }}>変更</button>
-            )}
-          </div>
-          {!state.editingHqDefaults ? (
-            (() => {
-              const d = state.defaults;
-              const royaltyMode = d.royaltyMode || 'rate';
-              const savingsMode = d.savingsMode || 'amount';
-              const royaltyTxt = d.useRoyalty === false ? '未使用' : (royaltyMode === 'rate' ? `${d.royaltyRate || 0}%` : `¥${Math.round(d.royaltyAmount || 0).toLocaleString('ja-JP')}/月`);
-              const savingsTxt = !d.useSavings ? '未使用' : (savingsMode === 'rate' ? `${d.savingsRate || 0}%` : `¥${Math.round(d.savings || 0).toLocaleString('ja-JP')}/月`);
-              return (
-                <div style={{ padding: '20px 22px', display: 'flex', flexWrap: 'wrap', gap: 24 }}>
-                  <div><div style={roTitleStyle}>ロイヤリティ</div><div style={roValueStyle}>{royaltyTxt}</div></div>
-                  <div><div style={roTitleStyle}>貯蓄設定</div><div style={roValueStyle}>{savingsTxt}</div></div>
-                </div>
-              );
-            })()
-          ) : (
-            (() => {
-              const d = state.defaults;
-              const useRoyalty = d.useRoyalty !== false;
-              const royaltyMode = d.royaltyMode || 'rate';
-              const [roySw, royKn] = switchStyle(useRoyalty, accent);
-              const [savSw, savKn] = switchStyle(!!d.useSavings, accent);
-              const savingsMode = d.savingsMode || 'amount';
-              return (
-                <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <label style={{ fontSize: 12.5, fontWeight: 700, color: '#46505e' }}>ロイヤリティを使う</label>
-                        <button onClick={() => actions.setDefaults({ useRoyalty: d.useRoyalty === false })} style={roySw}><span style={royKn} /></button>
-                      </div>
-                      <div style={{ display: 'flex', background: '#eceef1', borderRadius: 9, padding: 3, width: 140, opacity: useRoyalty ? 1 : 0.4 }}>
-                        <button onClick={() => actions.setDefaults({ royaltyMode: 'rate' })} style={modeSegStyle(royaltyMode === 'rate', accent)}>率</button>
-                        <button onClick={() => actions.setDefaults({ royaltyMode: 'amount' })} style={modeSegStyle(royaltyMode === 'amount', accent)}>金額</button>
-                      </div>
-                    </div>
-                    <div style={{ opacity: useRoyalty ? 1 : 0.4 }}>
-                      {royaltyMode === 'rate' ? (
-                        <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #dfe3e8', borderRadius: 10, padding: '0 14px', maxWidth: 180 }}>
-                          <input type="number" min={0} step={0.5} value={d.royaltyRate || ''} onChange={(e) => actions.setDefaults({ royaltyRate: Math.max(0, parseFloat(e.target.value) || 0) })} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, padding: '11px 0', fontVariantNumeric: 'tabular-nums', background: 'transparent' }} />
-                          <span style={{ fontSize: 15, color: '#8a909a', fontWeight: 700 }}>%</span>
-                        </div>
-                      ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #dfe3e8', borderRadius: 10, padding: '0 14px', maxWidth: 240 }}>
-                          <span style={{ fontSize: 15, color: '#8a909a', fontWeight: 700 }}>¥</span>
-                          <input type="number" step={1000} value={d.royaltyAmount || ''} onChange={(e) => actions.setDefaults({ royaltyAmount: Math.max(0, parseInt(e.target.value || '0', 10)) })} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, padding: '11px 0 11px 7px', fontVariantNumeric: 'tabular-nums', background: 'transparent' }} />
-                          <span style={{ fontSize: 11, color: '#aab0b8' }}>/月</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 16 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <label style={{ fontSize: 12.5, fontWeight: 700, color: '#46505e' }}>貯蓄設定を使う</label>
-                        <button onClick={() => actions.setDefaults({ useSavings: !d.useSavings })} style={savSw}><span style={savKn} /></button>
-                      </div>
-                      <div style={{ display: 'flex', background: '#eceef1', borderRadius: 9, padding: 3, width: 140, opacity: d.useSavings ? 1 : 0.4 }}>
-                        <button onClick={() => actions.setDefaults({ savingsMode: 'amount' })} style={modeSegStyle(savingsMode === 'amount', accent)}>金額</button>
-                        <button onClick={() => actions.setDefaults({ savingsMode: 'rate' })} style={modeSegStyle(savingsMode === 'rate', accent)}>率</button>
-                      </div>
-                    </div>
-                    <div style={{ opacity: d.useSavings ? 1 : 0.4 }}>
-                      {savingsMode === 'amount' ? (
-                        <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #dfe3e8', borderRadius: 10, padding: '0 14px', maxWidth: 240 }}>
-                          <span style={{ fontSize: 15, color: '#8a909a', fontWeight: 700 }}>¥</span>
-                          <input type="number" step={1000} value={d.savings || ''} onChange={(e) => actions.setDefaults({ savings: Math.max(0, parseInt(e.target.value || '0', 10)) })} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, padding: '11px 0 11px 7px', fontVariantNumeric: 'tabular-nums', background: 'transparent' }} />
-                          <span style={{ fontSize: 11, color: '#aab0b8' }}>/月</span>
-                        </div>
-                      ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #dfe3e8', borderRadius: 10, padding: '0 14px', maxWidth: 180 }}>
-                          <input type="number" min={0} step={0.5} value={d.savingsRate || ''} onChange={(e) => actions.setDefaults({ savingsRate: Math.max(0, parseFloat(e.target.value) || 0) })} style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, padding: '11px 0', fontVariantNumeric: 'tabular-nums', background: 'transparent' }} />
-                          <span style={{ fontSize: 15, color: '#8a909a', fontWeight: 700 }}>%</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 16 }}>
-                    <button onClick={actions.closeHqDefaultsEdit} style={{ height: 38, padding: '0 18px', borderRadius: 9, background: accentSoft(accent), color: accent, fontWeight: 700, fontSize: 12.5 }}>完了</button>
-                  </div>
-                </div>
-              );
-            })()
-          )}
         </section>
       )}
 
