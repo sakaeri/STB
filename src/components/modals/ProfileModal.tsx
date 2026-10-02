@@ -114,9 +114,6 @@ export default function ProfileModal() {
                 </button>
               );
             })}
-            <button onClick={actions.openNewOrg} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, width: '100%', height: 44, borderRadius: 11, border: '1.5px dashed #d8dce2', color: '#6b7280', fontWeight: 700, fontSize: 12.5 }}>
-              <span style={{ fontSize: 16, fontWeight: 400 }}>＋</span>本部を作成
-            </button>
           </div>
         </div>
         {isAdmin && (

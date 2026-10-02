@@ -396,9 +396,6 @@ export default function SalesListPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, marginTop: 18, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: '#3a4150' }}>{isHq ? `${unitLabel}別 売上一覧` : '売上明細'}</span>
           <div style={{ display: 'flex', background: colors.bg, borderRadius: 9, padding: 3 }}>
-            <button onClick={() => actions.setAggUnit('day')} style={segStyle(state.aggUnit === 'day')}>
-              日別
-            </button>
             <button onClick={() => actions.setAggUnit('month')} style={segStyle(state.aggUnit === 'month')}>
               月別
             </button>

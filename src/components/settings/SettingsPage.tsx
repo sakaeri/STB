@@ -219,24 +219,6 @@ export default function SettingsPage() {
         {canEditCompanyInfo && state.editingCompanyInfo ? (
           <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 18 }}>
             <div>
-              <label style={fieldLabelStyle}>本部名 <span style={{ color: '#d6453d' }}>*</span></label>
-              <input type="text" value={state.companyInfo.name} onChange={(e) => actions.onCompanyName(e.target.value)} placeholder="例：株式会社〇〇" style={{ ...inputStyle, border: `1.5px solid ${state.companyNameError ? '#d6453d' : '#dfe3e8'}` }} />
-              {state.companyNameError && <div style={{ fontSize: 11.5, color: '#d6453d', marginTop: 6 }}>会社名を入力してください</div>}
-            </div>
-            <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 16 }}>
-              <label style={fieldLabelStyle}>拠点の呼び方</label>
-              <input type="text" value={state.unitLabel || ''} onChange={(e) => actions.onUnitLabel(e.target.value)} placeholder="例：店舗・支部・物件" style={{ ...inputStyle, maxWidth: 260 }} />
-              <div style={{ fontSize: 11, color: '#aab0b8', marginTop: 8, lineHeight: 1.6 }}>業態に合わせて呼び方を変更できます（例：FC＝店舗／協会＝支部／不動産＝物件）</div>
-            </div>
-            <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 16 }}>
-              <label style={fieldLabelStyle}>本部所在地</label>
-              <input type="text" value={state.companyInfo.address} onChange={(e) => actions.onCompanyAddress(e.target.value)} placeholder="例：東京都渋谷区〇〇1-2-3" style={{ ...inputStyle, maxWidth: 400 }} />
-            </div>
-            <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 16 }}>
-              <label style={fieldLabelStyle}>代表者名</label>
-              <input type="text" value={state.companyInfo.rep} onChange={(e) => actions.onCompanyRep(e.target.value)} style={inputStyle} />
-            </div>
-            <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 16 }}>
               <label style={fieldLabelStyle}>締め日</label>
               <select value={state.companyInfo.closingDay} onChange={(e) => actions.onCompanyClosingDay(e.target.value)} style={{ ...inputStyle, maxWidth: 180 }}>
                 {CLOSING_DAY_OPTIONS.map((cd) => <option key={cd.value} value={cd.value}>{cd.label}</option>)}
@@ -251,45 +233,13 @@ export default function SettingsPage() {
               <div style={{ fontSize: 11, color: '#aab0b8', marginTop: 8, lineHeight: 1.6 }}>売上一覧の「年間」表示に使う事業年度の起点です。</div>
             </div>
             <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 16 }}>
-              {(() => {
-                const [dailySw, dailyKn] = switchStyle(!!state.companyInfo.dailyClosingEnabled, accent);
-                return (
-                  <>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <label style={fieldLabelStyle}>日次確定を使う</label>
-                      <button onClick={() => actions.onCompanyDailyClosingEnabled(!state.companyInfo.dailyClosingEnabled)} style={dailySw}><span style={dailyKn} /></button>
-                    </div>
-                    <div style={{ fontSize: 11, color: '#aab0b8', marginTop: 8, lineHeight: 1.6 }}>
-                      有効にすると、月次の締めとは別に、各{unitLabel}に前日分の売上・経費を毎日確定してもらう機能が使えるようになります。
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-            <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 16 }}>
-              <label style={fieldLabelStyle}>メインで使う機能</label>
-              <div style={{ display: 'flex', background: '#eceef1', borderRadius: 9, padding: 3, width: 220 }}>
-                <button onClick={() => actions.onCompanyMainFeature('sales')} style={modeSegStyle(state.companyInfo.mainFeature === 'sales', accent)}>売上管理</button>
-                <button onClick={() => actions.onCompanyMainFeature('memo')} style={modeSegStyle(state.companyInfo.mainFeature === 'memo', accent)}>情報メモ</button>
-              </div>
-              <div style={{ fontSize: 11, color: '#aab0b8', marginTop: 8, lineHeight: 1.6 }}>
-                ログイン直後に表示される画面を選べます。両方の機能はいつでも利用できます。
-              </div>
-            </div>
-            <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 16 }}>
               <button onClick={actions.closeCompanyInfoEdit} style={{ height: 38, padding: '0 18px', borderRadius: 9, background: accentSoft(accent), color: accent, fontWeight: 700, fontSize: 12.5 }}>完了</button>
             </div>
           </div>
         ) : (
           <div style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div><div style={roTitleStyle}>本部名</div><div style={roValueStyle}>{state.companyInfo.name || '—'}</div></div>
-            <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 14 }}><div style={roTitleStyle}>拠点の呼び方</div><div style={roValueStyle}>{unitLabel}</div></div>
-            <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 14 }}><div style={roTitleStyle}>本部所在地</div><div style={roValueStyle}>{state.companyInfo.address || '—'}</div></div>
-            <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 14 }}><div style={roTitleStyle}>代表者名</div><div style={roValueStyle}>{state.companyInfo.rep || '—'}</div></div>
-            <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 14 }}><div style={roTitleStyle}>締め日</div><div style={roValueStyle}>{closingDayTxt}</div></div>
+            <div><div style={roTitleStyle}>締め日</div><div style={roValueStyle}>{closingDayTxt}</div></div>
             <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 14 }}><div style={roTitleStyle}>決算期（年度の開始月）</div><div style={roValueStyle}>{fiscalStartMonthTxt}</div></div>
-            <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 14 }}><div style={roTitleStyle}>日次確定</div><div style={roValueStyle}>{state.companyInfo.dailyClosingEnabled ? '使用する' : '使用しない'}</div></div>
-            <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 14 }}><div style={roTitleStyle}>メインで使う機能</div><div style={roValueStyle}>{state.companyInfo.mainFeature === 'memo' ? '情報メモ' : '売上管理'}</div></div>
           </div>
         )}
       </section>
@@ -453,13 +403,13 @@ export default function SettingsPage() {
       <section style={{ ...cardStyle, overflow: 'visible' }}>
         <div style={{ padding: '17px 22px', borderBottom: '1px solid #f0f2f5' }}>
           <h2 style={cardTitleStyle}>ゴミ箱</h2>
-          <p style={cardSubStyle}>削除されたチーム・メンバー・情報メモは30日間ここに保存され、31日目に自動的に完全削除されます。</p>
+          <p style={cardSubStyle}>削除されたチーム・メンバー・情報メモは7日間ここに保存され、8日目に自動的に完全削除されます。</p>
         </div>
         <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           {state.trash.map((item) => {
             const meta = TRASH_META[item.type];
             const daysAgo = Math.floor((Date.now() - item.deletedAt) / 86400000);
-            const daysLeft = Math.max(0, 30 - daysAgo);
+            const daysLeft = Math.max(0, 7 - daysAgo);
             const menuOpen = trashMenuOpenId === item.id;
             return (
               <div key={item.id} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 11, background: '#f7f8fa', borderRadius: 11, padding: '10px 13px' }}>
