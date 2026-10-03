@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type {
-  AppState, Store, Transaction, TrashItem, ConfirmDialogState, MemoModalState, Member, HqMember, MemoTopic, MemoPdf,
+  AppState, Store, Transaction, TrashItem, ConfirmDialogState, MemoModalState, Member, HqMember, MemoTopic, MemoPdf, PageId,
 } from '../types';
 import { createInitialState } from './mockData';
 import { supabase, isPasswordRecoveryLink, clearPasswordRecoveryLink } from '../lib/supabase';
@@ -113,6 +113,25 @@ function saveActiveOrgId(orgId: string) {
 }
 function loadSavedActiveOrgId(): string | null {
   try { return localStorage.getItem(ACTIVE_ORG_STORAGE_KEY); } catch { return null; }
+}
+
+const LAST_PAGE_STORAGE_KEY = 'stb_last_page';
+
+// A tab going to sleep (e.g. Edge's "sleeping tabs") and waking back up
+// re-runs this app's boot sequence exactly like a fresh page load — there's
+// no signal telling it "this was a reload, not a new login" — so without
+// this, whichever page the user had open (情報メモ, say) got silently
+// replaced by メインで使う機能's default the moment that happened. Persisting
+// the page actually being viewed, per org, fixes that while still falling
+// back to mainFeature for a genuinely fresh login (no saved value yet).
+function saveLastPage(orgId: string, page: string) {
+  try { localStorage.setItem(`${LAST_PAGE_STORAGE_KEY}:${orgId}`, page); } catch { /* noop */ }
+}
+function loadLastPage(orgId: string): PageId | null {
+  try {
+    const v = localStorage.getItem(`${LAST_PAGE_STORAGE_KEY}:${orgId}`);
+    return v === 'list' || v === 'memo' || v === 'settings' ? v : null;
+  } catch { return null; }
 }
 
 export interface StoreApi {
@@ -274,7 +293,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     set((s) => ({
       activeOrgId: orgId, hqNameOverride: data.companyInfo.name || null,
       viewRole: initialViewRole(session, data), selectedStoreId: null,
-      page: data.companyInfo.mainFeature === 'memo' ? 'memo' : 'list', ...data, logoMap: { ...s.logoMap, ...data.logoMap },
+      page: loadLastPage(orgId) || (data.companyInfo.mainFeature === 'memo' ? 'memo' : 'list'), ...data, logoMap: { ...s.logoMap, ...data.logoMap },
       orgDataLoaded: true, txLoadedFrom: defaultTxFloor(),
       orgLoadDebug: debugText,
     }));
@@ -1242,9 +1261,21 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     reloadOrgData: () => reloadActiveOrg(),
 
     // ===== navigation =====
-    goList: () => set({ page: 'list' }),
-    goMemo: () => set({ page: 'memo', memoNav: { topicId: null, entryId: null } }),
-    goSettings: () => set({ page: 'settings' }),
+    goList: () => {
+      const orgId = getState().activeOrgId;
+      if (orgId) saveLastPage(orgId, 'list');
+      set({ page: 'list' });
+    },
+    goMemo: () => {
+      const orgId = getState().activeOrgId;
+      if (orgId) saveLastPage(orgId, 'memo');
+      set({ page: 'memo', memoNav: { topicId: null, entryId: null } });
+    },
+    goSettings: () => {
+      const orgId = getState().activeOrgId;
+      if (orgId) saveLastPage(orgId, 'settings');
+      set({ page: 'settings' });
+    },
     setLayout: (v: AppState['layout']) => set({ layout: v }),
     setAggUnit: (v: AppState['aggUnit']) => set({ aggUnit: v }),
     toggleCloseBanner: () => set((s) => ({ closeBannerOpen: !s.closeBannerOpen })),
@@ -1735,7 +1766,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           set((s) => ({
             hqNameOverride: orgData.companyInfo.name || null,
             viewRole: isOrgMember ? 'hq' : (orgData.stores[0]?.id || 'hq'), selectedStoreId: null,
-            page: orgData.companyInfo.mainFeature === 'memo' ? 'memo' : 'list',
+            page: loadLastPage(target) || (orgData.companyInfo.mainFeature === 'memo' ? 'memo' : 'list'),
             ...orgData, logoMap: { ...s.logoMap, ...orgData.logoMap },
             orgDataLoaded: true, txLoadedFrom: defaultTxFloor(),
             orgLoadDebug: debugText,
