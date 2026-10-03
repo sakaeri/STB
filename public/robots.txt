@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://stb.s-stylegolf.com/sitemap.xml
