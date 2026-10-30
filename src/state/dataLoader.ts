@@ -36,7 +36,7 @@ type MemoTopicRow = {
   id: string; name: string; team_id: string | null; hq_only: boolean | null;
   created_at: string; created_by: string | null;
   memo_entries?: {
-    id: string; name: string; created_at: string; created_by: string | null;
+    id: string; name: string; team_id: string | null; created_at: string; created_by: string | null;
     memo_records?: {
       id: string; label: string; text: string; date: string; created_at: string; created_by: string | null;
       images: string[] | null; pdfs: { url: string; name: string }[] | null;
@@ -54,7 +54,7 @@ export function mapMemoTopicRow(t: MemoTopicRow, nameByUserId: Map<string, strin
   return {
     id: t.id, name: t.name, storeId: t.team_id, hqOnly: !!t.hq_only, lastActivityAt, createdBy: t.created_by,
     entries: entries.map((e) => ({
-      id: e.id, name: e.name, createdBy: e.created_by,
+      id: e.id, name: e.name, storeId: e.team_id, createdBy: e.created_by,
       lastActivityAt: [e.created_at, ...(e.memo_records || []).map((r) => r.created_at)].sort().pop(),
       records: (e.memo_records || []).map((r) => ({
         id: r.id, label: r.label, text: r.text, date: r.date, createdAt: r.created_at,

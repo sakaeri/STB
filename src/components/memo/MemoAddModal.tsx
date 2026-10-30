@@ -89,16 +89,36 @@ export default function MemoAddModal() {
           )}
 
           {mm.kind === 'entry' && (
-            <div>
-              <label style={labelStyle}>詳細</label>
-              <input
-                type="text"
-                value={mm.name || ''}
-                onChange={(e) => actions.onMemoModalName(e.target.value)}
-                placeholder="例：山田 太郎、渋谷店"
-                style={inputStyle}
-              />
-            </div>
+            <>
+              <div>
+                <label style={labelStyle}>詳細</label>
+                <input
+                  type="text"
+                  value={mm.name || ''}
+                  onChange={(e) => actions.onMemoModalName(e.target.value)}
+                  placeholder="例：山田 太郎、渋谷店"
+                  style={inputStyle}
+                />
+              </div>
+              {isHq && (
+                <div>
+                  <label style={labelStyle}>閲覧を制限する店舗（任意）</label>
+                  <select
+                    value={mm.storeId || ''}
+                    onChange={(e) => actions.onMemoModalScope(e.target.value)}
+                    style={inputStyle}
+                  >
+                    <option value="">制限しない（項目と同じ範囲で共有）</option>
+                    {state.stores.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}のみに表示</option>
+                    ))}
+                  </select>
+                  <div style={{ fontSize: 11, color: '#aab0b8', marginTop: 6 }}>
+                    店舗を選ぶと、この詳細はその店舗の担当者だけに表示されます（本部は引き続きすべて見られます）。あとから変更できます。
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {mm.kind === 'record' && (() => {

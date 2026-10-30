@@ -383,6 +383,8 @@ export default function MemoPage() {
                 .map((e) => {
                 const latest = e.records.slice().sort((x, y) => y.date.localeCompare(x.date))[0];
                 const latestLabel = latest ? `${latest.label} ・ ${e.records.length}件の記録` : '記録なし';
+                const canEditEntryScope = role === 'オーナー' && isHq;
+                const entryScopeLabel = e.storeId ? stores.find((s) => s.id === e.storeId)?.name || '' : '';
                 return (
                   <div key={e.id} className="fc-memo-row" onClick={() => actions.openMemoEntry(e.id)} style={rowStyle}>
                     <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#eef0f3', color: '#5a6270', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
@@ -390,8 +392,25 @@ export default function MemoPage() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 700, fontSize: 14.5 }}>{e.name}</div>
-                      <div style={{ fontSize: 12, color: '#9aa0a8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{latestLabel}</div>
+                      <div style={{ fontSize: 12, color: '#9aa0a8', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {latestLabel}
+                        {entryScopeLabel && <> ・ <span style={{ color: '#2f8f6b', fontWeight: 700 }}>{entryScopeLabel}限定</span></>}
+                      </div>
                     </div>
+                    {canEditEntryScope && (
+                      <select
+                        value={e.storeId || ''}
+                        onClick={(ev) => ev.stopPropagation()}
+                        onChange={(ev) => { ev.stopPropagation(); actions.changeMemoEntryScope(e, ev.target.value); }}
+                        style={{ fontSize: 11, fontWeight: 700, color: '#5a6b9e', background: '#eef0f7', padding: '5px 8px', borderRadius: 7, flex: 'none', border: 'none', outline: 'none' }}
+                        title="閲覧を制限する店舗"
+                      >
+                        <option value="">制限なし</option>
+                        {stores.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name}のみ</option>
+                        ))}
+                      </select>
+                    )}
                     {canDeleteMemoItem(curTopic, e.createdBy) && (
                       <button
                         className="fc-memo-delbtn"

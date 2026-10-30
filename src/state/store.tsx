@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type {
-  AppState, Store, Transaction, TrashItem, ConfirmDialogState, MemoModalState, Member, HqMember, MemoTopic, MemoPdf, PageId,
+  AppState, Store, Transaction, TrashItem, ConfirmDialogState, MemoModalState, Member, HqMember, MemoTopic, MemoEntry, MemoPdf, PageId,
 } from '../types';
 import { createInitialState } from './mockData';
 import { supabase, isPasswordRecoveryLink, clearPasswordRecoveryLink } from '../lib/supabase';
@@ -989,7 +989,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       } else if (m.kind === 'entry') {
         const name = (m.name || '').trim();
         if (!name || !m.topicId) return;
-        const { error } = await supabase.from('memo_entries').insert({ topic_id: m.topicId, name, created_by: st.session });
+        const { error } = await supabase.from('memo_entries').insert({ topic_id: m.topicId, name, team_id: m.storeId || null, created_by: st.session });
         if (error) { console.error(error); alert(`保存に失敗しました（${error.message}）`); return; }
         set({ memoModal: null });
         await reloadMemoTopics();
@@ -1023,6 +1023,21 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
       const wasAlreadyShared = !topic.storeId && !topic.hqOnly;
       if (v === '' && !wasAlreadyShared) {
         openConfirm(`「${topic.name}」を全体共有にする`, 'この項目を全チーム共通に変更します。他のすべてのチームから閲覧できるようになります。共有すべきでない情報が含まれていないか確認してください。', apply, '共有する');
+      } else {
+        apply();
+      }
+    },
+    // Entries have no hq_only concept of their own (only topics do) — v is
+    // either '' (no override, inherit the topic's own scope) or a team id
+    // to restrict this one entry to just that team, on top of whatever the
+    // topic already allows.
+    changeMemoEntryScope: (entry: MemoEntry, v: string) => {
+      const apply = async () => {
+        await supabase.from('memo_entries').update({ team_id: v || null }).eq('id', entry.id);
+        await reloadMemoTopics();
+      };
+      if (v === '' && entry.storeId) {
+        openConfirm(`「${entry.name}」の閲覧制限を解除する`, 'この詳細の店舗限定を解除します。項目を見られる人全員に表示されるようになります。共有すべきでない情報が含まれていないか確認してください。', apply, '解除する');
       } else {
         apply();
       }

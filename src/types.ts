@@ -97,6 +97,7 @@ export interface MemoRecord {
 export interface MemoEntry {
   id: string;
   name: string;
+  storeId?: string | null; // optional per-entry visibility override — null inherits the parent topic's scope
   lastActivityAt?: string; // ISO timestamp — latest of the entry/its records, for recency sorting
   records: MemoRecord[];
   createdBy?: string | null;
