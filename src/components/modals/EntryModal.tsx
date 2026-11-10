@@ -50,6 +50,14 @@ export default function EntryModal() {
 
   const presets = (state.entryPresets[draft.storeId] || []).filter((p) => p.type === draft.type);
   const presetExists = presets.some((p) => p.title === titleLocal.trim() && p.amount === amountNum);
+  // A preset counts as "used this month" if a transaction with the exact
+  // same title+amount already exists in the month being viewed — not a
+  // disable, just a visual nudge, since entering the same item twice in a
+  // month (e.g. two deliveries from the same supplier) is a real case.
+  const monthTx = (state.transactions[draft.storeId] || []).filter(
+    (t) => t.type === draft.type && parseInt(t.date.slice(5, 7), 10) - 1 === mi && parseInt(t.date.slice(0, 4), 10) === state.year,
+  );
+  const isPresetUsedThisMonth = (p: { title: string; amount: number }) => monthTx.some((t) => t.title === p.title && t.amount === p.amount);
 
   // Only fold the in-progress amount into the preview if its date actually
   // falls within the month being displayed — the date field is editable,
@@ -113,23 +121,28 @@ export default function EntryModal() {
             <div>
               <label style={labelStyle}>よく使う項目</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {presets.map((p) => (
-                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 4, border: '1.5px solid #dfe3e8', borderRadius: 9, background: '#fafbfc' }}>
-                    <button
-                      onClick={() => { setTitleLocal(p.title); actions.onEntryAmount(String(p.amount)); }}
-                      style={{ padding: '7px 4px 7px 11px', fontSize: 12.5, fontWeight: 700, color: '#3a4150' }}
-                    >
-                      {p.title} <span style={{ color: '#8a909a', fontWeight: 500 }}>¥{Math.round(p.amount).toLocaleString('ja-JP')}</span>
-                    </button>
-                    <button
-                      onClick={() => actions.deleteEntryPreset(draft.storeId, p.id)}
-                      title="削除"
-                      style={{ padding: '7px 9px 7px 2px', fontSize: 13, color: '#c3c8d0' }}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+                {presets.map((p) => {
+                  const used = isPresetUsedThisMonth(p);
+                  return (
+                    <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 4, border: `1.5px solid ${used ? '#9fd9bf' : '#dfe3e8'}`, borderRadius: 9, background: used ? '#e4f5ee' : '#fafbfc' }}>
+                      <button
+                        onClick={() => { setTitleLocal(p.title); actions.onEntryAmount(String(p.amount)); }}
+                        title={used ? '今月すでに入力済みです（もう一度使えます）' : undefined}
+                        style={{ padding: '7px 4px 7px 11px', fontSize: 12.5, fontWeight: 700, color: used ? '#1f7a4f' : '#3a4150', display: 'flex', alignItems: 'center', gap: 5 }}
+                      >
+                        {used && <span style={{ fontSize: 11 }}>✓</span>}
+                        {p.title} <span style={{ color: used ? '#4a9d78' : '#8a909a', fontWeight: 500 }}>¥{Math.round(p.amount).toLocaleString('ja-JP')}</span>
+                      </button>
+                      <button
+                        onClick={() => actions.deleteEntryPreset(draft.storeId, p.id)}
+                        title="削除"
+                        style={{ padding: '7px 9px 7px 2px', fontSize: 13, color: '#c3c8d0' }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
