@@ -44,7 +44,7 @@ export default function SalesTable({
                 <th style={{ padding: '12px 14px', fontWeight: 700 }}>経費</th>
                 <th style={{ padding: '12px 14px', fontWeight: 700 }}>利益</th>
                 <th style={{ padding: '12px 16px', fontWeight: 700 }}>利益率</th>
-                <th style={{ padding: '12px 18px', fontWeight: 700 }}>貯蓄金額</th>
+                <th style={{ padding: '12px 18px', fontWeight: 700 }}>自由経費</th>
               </tr>
             </thead>
             <tbody>

@@ -16,7 +16,6 @@ export interface RowData {
   sales: number;
   expense: number;
   profit: number;
-  royalty: number;
   savings: number;
   salesFmt: string;
   expenseFmt: string;
@@ -28,7 +27,6 @@ export interface RowData {
   barColor: string;
   achChipBg: string;
   achChipColor: string;
-  royaltyFmt: string;
   savingsFmt: string;
   expRateTxt: string;
 }
@@ -52,7 +50,6 @@ export function buildRow(store: Store, state: AppState): RowData {
     sales: d.sales,
     expense: d.expense,
     profit: d.profit,
-    royalty: d.royalty,
     savings: d.savings,
     salesFmt: yen(d.sales),
     expenseFmt: yen(d.expense),
@@ -64,7 +61,6 @@ export function buildRow(store: Store, state: AppState): RowData {
     barColor: bc,
     achChipBg: d.sales ? chipBg(marginFrac) : '#eef0f3',
     achChipColor: d.sales ? bc : '#9aa0a8',
-    royaltyFmt: yen(d.royalty),
     savingsFmt: d.hasSavings ? yen(d.savings) : '—',
     expRateTxt: d.sales ? ((d.expense / d.sales) * 100).toFixed(0) + '%' : '—',
   };
@@ -162,8 +158,9 @@ export function canDeleteForStore(role: Role, isHq: boolean, viewRole: string, s
 export function canCreateRole(role: Role): boolean {
   return role !== '閲覧者';
 }
-// Team-settings edit gate: owner only — royalty/savings are an HQ-franchise
-// agreement, not something a local team manager should be able to change.
+// Team-settings edit gate: owner only — the 自由経費 (discretionary
+// expense) rate is set by HQ, not something a local team manager should
+// be able to change.
 export function canEditTeamSettings(role: Role): boolean {
   return role === 'オーナー';
 }

@@ -45,7 +45,7 @@ export function createInitialState(): AppState {
     trash: [],
     companyInfo: { name: '', address: '', rep: '', closingDay: 'eom', fiscalStartMonth: 4, dailyClosingEnabled: false, mainFeature: 'sales' },
     confirmedPeriods: {},
-    defaults: { royaltyRate: 5, useSavings: true, savings: 50000 },
+    defaults: { useSavings: true, savings: 50000 },
 
     showAdd: false,
     addStep: 'form',
@@ -110,7 +110,6 @@ export function createInitialState(): AppState {
 
     editingCompanyInfo: false,
     companyNameError: false,
-    editingHqDefaults: false,
 
     confirmDelete: null,
     confirmChecked: false,

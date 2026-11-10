@@ -42,7 +42,6 @@ export default function SalesListPage() {
   // ===== KPI totals =====
   let tSales = 0,
     tProfit = 0,
-    tRoyalty = 0,
     tSavings = 0,
     tSalesPrev = 0;
   visible.forEach((s) => {
@@ -50,7 +49,6 @@ export default function SalesListPage() {
     const p = periodDataPrev(s, state.aggUnit, state.month, state.year || 2026, state.periodDate, state.transactions);
     tSales += d.sales;
     tProfit += d.profit;
-    tRoyalty += d.royalty;
     tSavings += d.savings;
     tSalesPrev += p.sales || 0;
   });
@@ -118,11 +116,11 @@ export default function SalesListPage() {
   };
 
   const doExportCsv = () => {
-    const header = [unitLabel, '売上', '経費', '粗利', 'ロイヤリティ', '貯蓄'];
+    const header = [unitLabel, '売上', '経費', '粗利', '自由経費'];
     const lines = [header.join(',')];
     visible.forEach((s) => {
       const d = periodData(s, state.aggUnit, state.month, state.year || 2026, state.periodDate, state.transactions);
-      lines.push([s.name, d.sales, d.expense, d.profit, d.royalty, d.savings].join(','));
+      lines.push([s.name, d.sales, d.expense, d.profit, d.savings].join(','));
     });
 
     lines.push('');
@@ -384,7 +382,6 @@ export default function SalesListPage() {
             isHq={isHq}
             tSales={tSales}
             tProfit={tProfit}
-            tRoyalty={tRoyalty}
             tSavings={tSavings}
             storeCount={visible.length}
             unitLabel={unitLabel}
@@ -467,7 +464,7 @@ export default function SalesListPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr>
-                  {[unitLabel, '売上', '経費', '利益', 'ロイヤリティ', '貯蓄'].map((h) => (
+                  {[unitLabel, '売上', '経費', '利益', '自由経費'].map((h) => (
                     <th key={h} style={{ textAlign: 'left', borderBottom: '1.5px solid #000', padding: '5px 8px' }}>
                       {h}
                     </th>
@@ -481,7 +478,6 @@ export default function SalesListPage() {
                     <td style={{ borderBottom: '1px solid #ccc', padding: '5px 8px' }}>{r.salesFmt}</td>
                     <td style={{ borderBottom: '1px solid #ccc', padding: '5px 8px' }}>{r.expenseFmt}</td>
                     <td style={{ borderBottom: '1px solid #ccc', padding: '5px 8px' }}>{r.profitFmt}</td>
-                    <td style={{ borderBottom: '1px solid #ccc', padding: '5px 8px' }}>{r.royaltyFmt}</td>
                     <td style={{ borderBottom: '1px solid #ccc', padding: '5px 8px' }}>{r.savingsFmt}</td>
                   </tr>
                 ))}

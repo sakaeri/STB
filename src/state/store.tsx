@@ -568,32 +568,11 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     onCompanyMainFeature: (v: 'sales' | 'memo') => set((s) => ({ companyInfo: { ...s.companyInfo, mainFeature: v } })),
     onCompanyFiscalStartMonth: (v: number) => set((s) => ({ companyInfo: { ...s.companyInfo, fiscalStartMonth: v } })),
 
-    // ===== hq defaults =====
-    openHqDefaultsEdit: () => set({ editingHqDefaults: true }),
-    closeHqDefaultsEdit: async () => {
-      const st = getState();
-      set({ editingHqDefaults: false });
-      if (st.activeOrgId) {
-        const d = st.defaults;
-        await supabase.from('orgs').update({
-          default_use_royalty: d.useRoyalty !== false, default_royalty_mode: d.royaltyMode || 'rate',
-          default_royalty_rate: d.royaltyRate, default_royalty_amount: d.royaltyAmount || 0,
-          default_use_savings: d.useSavings, default_savings_mode: d.savingsMode || 'amount',
-          default_savings: d.savings, default_savings_rate: d.savingsRate || 0,
-        }).eq('id', st.activeOrgId);
-      }
-    },
-    setDefaults: (patch: Partial<AppState['defaults']>) => set((s) => ({ defaults: { ...s.defaults, ...patch } })),
-
     // ===== stores/teams =====
     updateStore: (id: string, patch: Partial<Store>) => {
       set((s) => ({ stores: s.stores.map((st) => (st.id === id ? { ...st, ...patch } : st)) }));
       const dbPatch: Record<string, unknown> = {};
       if (patch.name !== undefined) dbPatch.name = patch.name;
-      if (patch.royaltyRate !== undefined) dbPatch.royalty_rate = patch.royaltyRate;
-      if (patch.useRoyalty !== undefined) dbPatch.use_royalty = patch.useRoyalty;
-      if (patch.royaltyMode !== undefined) dbPatch.royalty_mode = patch.royaltyMode;
-      if (patch.royaltyAmount !== undefined) dbPatch.royalty_amount = patch.royaltyAmount;
       if (patch.useSavings !== undefined) dbPatch.use_savings = patch.useSavings;
       if (patch.savings !== undefined) dbPatch.savings = patch.savings;
       if (patch.savingsMode !== undefined) dbPatch.savings_mode = patch.savingsMode;
@@ -604,7 +583,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     },
     openAdd: () => {
       const d = getState().defaults;
-      set({ showAdd: true, addStep: 'form', copied: false, addForm: { name: '', royaltyRate: d.royaltyRate, useRoyalty: d.useRoyalty, royaltyMode: d.royaltyMode, royaltyAmount: d.royaltyAmount, useSavings: d.useSavings, savings: d.savings, savingsMode: d.savingsMode, savingsRate: d.savingsRate } });
+      set({ showAdd: true, addStep: 'form', copied: false, addForm: { name: '', useSavings: d.useSavings, savings: d.savings, savingsMode: d.savingsMode, savingsRate: d.savingsRate } });
     },
     closeAdd: () => set({ showAdd: false }),
     setAddForm: (patch: Partial<NonNullable<AppState['addForm']>>) => set((s) => ({ addForm: s.addForm ? { ...s.addForm, ...patch } : s.addForm })),
@@ -1126,8 +1105,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
         const members = 'members' in raw ? raw.members : [];
         const { data: newTeam, error } = await supabase.from('teams').insert({
           org_id: getState().activeOrgId!, name: store.name, owner_name: store.owner, bg_color: store.bg,
-          use_royalty: store.useRoyalty !== false, royalty_mode: store.royaltyMode || 'rate', royalty_rate: store.royaltyRate,
-          royalty_amount: store.royaltyAmount || 0, use_savings: !!store.useSavings, savings_mode: store.savingsMode || 'amount',
+          use_savings: !!store.useSavings, savings_mode: store.savingsMode || 'amount',
           savings: store.savings || 0, savings_rate: store.savingsRate || 0,
         }).select('id').single();
         if (error || !newTeam) { alert('店舗の復元に失敗しました'); return; }
@@ -1549,8 +1527,7 @@ function createActions(set: (patch: Patch) => void, getState: () => AppState) {
     if (!f || !f.name.trim() || !st.activeOrgId) return;
     supabase.from('teams').insert({
       org_id: st.activeOrgId, name: f.name.trim(), owner_name: st.ownerProfile.name, bg_color: paletteColor(st.stores.length),
-      use_royalty: f.useRoyalty !== false, royalty_mode: f.royaltyMode || 'rate', royalty_rate: Math.max(0, f.royaltyRate || 0),
-      royalty_amount: f.royaltyAmount || 0, use_savings: f.useSavings, savings_mode: f.savingsMode || 'amount',
+      use_savings: f.useSavings, savings_mode: f.savingsMode || 'amount',
       savings: f.savings, savings_rate: f.savingsRate || 0,
     }).select('id').single().then(async ({ data, error }) => {
       if (error || !data) { set({ authError: 'チームの作成に失敗しました' }); return; }

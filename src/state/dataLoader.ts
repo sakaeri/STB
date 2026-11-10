@@ -263,8 +263,7 @@ export async function fetchOrgData(orgId: string, txFloor?: string): Promise<Loa
 
   const stores: Store[] = teams.map((t) => ({
     id: t.id, name: t.name, owner: t.owner_name, seed: 0, base: 0, expRatio: 0, bg: t.bg_color,
-    royaltyRate: Number(t.royalty_rate), useRoyalty: t.use_royalty, royaltyMode: t.royalty_mode as 'rate' | 'amount',
-    royaltyAmount: Number(t.royalty_amount), useSavings: t.use_savings, savings: Number(t.savings),
+    useSavings: t.use_savings, savings: Number(t.savings),
     savingsMode: t.savings_mode as 'amount' | 'rate', savingsRate: Number(t.savings_rate), createdPeriod: t.created_period,
   }));
 
@@ -312,8 +311,6 @@ export async function fetchOrgData(orgId: string, txFloor?: string): Promise<Loa
       mainFeature: orgRow.main_feature === 'memo' ? 'memo' : 'sales',
     },
     defaults: {
-      royaltyRate: Number(orgRow.default_royalty_rate), useRoyalty: orgRow.default_use_royalty,
-      royaltyMode: orgRow.default_royalty_mode as 'rate' | 'amount', royaltyAmount: Number(orgRow.default_royalty_amount),
       useSavings: orgRow.default_use_savings, savingsMode: orgRow.default_savings_mode as 'amount' | 'rate',
       savings: Number(orgRow.default_savings), savingsRate: Number(orgRow.default_savings_rate),
     },

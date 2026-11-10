@@ -5,7 +5,6 @@ export default function KpiCards({
   isHq,
   tSales,
   tProfit,
-  tRoyalty,
   tSavings,
   storeCount,
   unitLabel,
@@ -15,7 +14,6 @@ export default function KpiCards({
   isHq: boolean;
   tSales: number;
   tProfit: number;
-  tRoyalty: number;
   tSavings: number;
   storeCount: number;
   unitLabel: string;
@@ -91,12 +89,11 @@ export default function KpiCards({
       </div>
       <div style={cardStyle}>
         <div style={{ fontSize: labelSize, color: colors.faint, fontWeight: 500, marginBottom: 7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          ロイヤリティ合計
+          自由経費合計
         </div>
         <div style={{ fontSize: valueSize, fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '-.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {yen(tRoyalty)}
+          {yen(tSavings)}
         </div>
-        {!isMobile && <div style={{ fontSize: subSize, color: colors.faint, marginTop: 5 }}>貯蓄合計 {yen(tSavings)}</div>}
       </div>
     </div>
   );

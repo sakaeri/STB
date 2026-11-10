@@ -46,11 +46,7 @@ export default function SalesCards({ rows, onOpen }: { rows: RowData[]; onOpen: 
               <div style={{ fontWeight: 700, fontSize: 13.5, fontVariantNumeric: 'tabular-nums', color: r.profitColor }}>{r.profitFmt}</div>
             </div>
             <div style={{ background: '#fafbfc', padding: '9px 11px' }}>
-              <div style={{ fontSize: 10.5, color: colors.faint }}>ロイヤリティ</div>
-              <div style={{ fontWeight: 700, fontSize: 13.5, fontVariantNumeric: 'tabular-nums', color: colors.muted }}>{r.royaltyFmt}</div>
-            </div>
-            <div style={{ background: '#fafbfc', padding: '9px 11px' }}>
-              <div style={{ fontSize: 10.5, color: colors.faint }}>貯蓄</div>
+              <div style={{ fontSize: 10.5, color: colors.faint }}>自由経費</div>
               <div style={{ fontWeight: 700, fontSize: 13.5, fontVariantNumeric: 'tabular-nums', color: colors.muted }}>{r.savingsFmt}</div>
             </div>
           </div>

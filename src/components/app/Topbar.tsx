@@ -12,7 +12,7 @@ export default function Topbar() {
   const titles: Record<typeof state.page, string> = { list: '売上一覧', memo: '情報メモ', settings: '本部情報' };
   const subs: Record<typeof state.page, string> = {
     list: isHq
-      ? `${visibleCount}${unitLabel}の売上・経費・利益・貯蓄を管理`
+      ? `${visibleCount}${unitLabel}の売上・経費・利益・自由経費を管理`
       : `${viewStore ? viewStore.name : ''} の売上・経費・利益を管理`,
     memo: '店舗・本部間の連絡とメモ',
     settings: isHq ? 'デフォルト・権限・表示の設定' : '自社の店舗設定',

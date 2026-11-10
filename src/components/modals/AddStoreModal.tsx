@@ -85,56 +85,11 @@ export default function AddStoreModal() {
                 />
               </div>
 
-              {/* royalty */}
+              {/* savings */}
               <div style={{ borderTop: '1px solid #f0f2f5', paddingTop: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <label style={labelStyle}>ロイヤリティを使う</label>
-                    <Switch
-                      on={af.useRoyalty !== false}
-                      onToggle={() => actions.setAddForm({ useRoyalty: af.useRoyalty === false })}
-                      accent={accent}
-                    />
-                  </div>
-                  <div style={{ display: 'flex', background: '#eceef1', borderRadius: 9, padding: 3, width: 140, opacity: af.useRoyalty !== false ? 1 : 0.4 }}>
-                    <button onClick={() => actions.setAddForm({ royaltyMode: 'rate' })} style={modeSegStyle((af.royaltyMode || 'rate') === 'rate', accent)}>率</button>
-                    <button onClick={() => actions.setAddForm({ royaltyMode: 'amount' })} style={modeSegStyle(af.royaltyMode === 'amount', accent)}>金額</button>
-                  </div>
-                </div>
-                <div style={{ opacity: af.useRoyalty !== false ? 1 : 0.4 }}>
-                  {(af.royaltyMode || 'rate') === 'rate' ? (
-                    <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #dfe3e8', borderRadius: 10, padding: '0 14px', maxWidth: 160 }}>
-                      <input
-                        type="number"
-                        min={0}
-                        step={0.5}
-                        value={af.royaltyRate || ''}
-                        onChange={(e) => actions.setAddForm({ royaltyRate: Math.max(0, parseFloat(e.target.value) || 0) })}
-                        style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, padding: '11px 0', fontVariantNumeric: 'tabular-nums', background: 'transparent' }}
-                      />
-                      <span style={{ fontSize: 15, color: '#8a909a', fontWeight: 700 }}>%</span>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #dfe3e8', borderRadius: 10, padding: '0 14px', maxWidth: 230 }}>
-                      <span style={{ fontSize: 15, color: '#8a909a', fontWeight: 700 }}>¥</span>
-                      <input
-                        type="number"
-                        step={1000}
-                        value={af.royaltyAmount || ''}
-                        onChange={(e) => actions.setAddForm({ royaltyAmount: Math.max(0, parseInt(e.target.value || '0', 10)) })}
-                        style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, fontWeight: 700, padding: '11px 0 11px 7px', fontVariantNumeric: 'tabular-nums', background: 'transparent' }}
-                      />
-                      <span style={{ fontSize: 11, color: '#aab0b8' }}>/月</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* savings */}
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <label style={labelStyle}>貯蓄設定を使う</label>
+                    <label style={labelStyle}>自由経費を使う</label>
                     <Switch on={!!af.useSavings} onToggle={() => actions.setAddForm({ useSavings: !af.useSavings })} accent={accent} />
                   </div>
                   <div style={{ display: 'flex', background: '#eceef1', borderRadius: 9, padding: 3, width: 140, opacity: af.useSavings ? 1 : 0.4 }}>

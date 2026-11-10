@@ -18,16 +18,10 @@ export function chipBg(a: number): string {
   return a >= 0 ? '#e4f5ee' : '#fbe7e5';
 }
 
-export function computeRoyalty(store: Store, sales: number): number {
-  if (store.useRoyalty === false) return 0;
-  if ((store.royaltyMode || 'rate') === 'amount') return Math.max(0, Math.round(store.royaltyAmount || 0));
-  return Math.round((sales * (store.royaltyRate || 0)) / 100 / 1000) * 1000;
-}
-
-// Rate mode is a % of profit *before* savings (sales minus expense minus
-// royalty) — savings is treated as a bonus set-aside on top of the normal
-// profit figure, not another cost baked into how "profit" itself is
-// derived from sales.
+// Rate mode is a % of profit (sales minus expense) — this is the
+// manager's own discretionary spending allowance, set aside on top of
+// the normal profit figure rather than baked into how "profit" itself
+// is derived from sales.
 export function computeSavings(store: Store, preSavingsProfit: number): number {
   if (!store.useSavings) return 0;
   if ((store.savingsMode || 'amount') === 'rate') return Math.round((preSavingsProfit * (store.savingsRate || 0)) / 100 / 1000) * 1000;
@@ -38,7 +32,6 @@ export interface PeriodResult {
   sales: number;
   expense: number;
   profit: number;
-  royalty: number;
   savings: number;
   hasSavings: boolean;
   isManual: boolean;
@@ -56,11 +49,10 @@ export function monthData(store: Store, year: number, m: number, transactions: R
   const expTx = tx.filter((t) => t.type === 'expense');
   const sales = salesTx.reduce((a, t) => a + t.amount, 0);
   const expense = expTx.reduce((a, t) => a + t.amount, 0);
-  const royalty = computeRoyalty(store, sales);
-  const preSavingsProfit = sales - expense - royalty;
+  const preSavingsProfit = sales - expense;
   const savings = computeSavings(store, preSavingsProfit);
   const profit = preSavingsProfit - savings;
-  return { sales, expense, profit, royalty, savings, hasSavings: !!store.useSavings, isManual: true };
+  return { sales, expense, profit, savings, hasSavings: !!store.useSavings, isManual: true };
 }
 
 export function addDays(dateStr: string, n: number): string {
@@ -80,21 +72,20 @@ export function txAgg(store: Store, fromStr: string, toStr: string, transactions
   const tx = (transactions[store.id] || []).filter((t) => t.date >= fromStr && t.date <= toStr);
   const sales = tx.filter((t) => t.type === 'sales').reduce((a, t) => a + t.amount, 0);
   const expense = tx.filter((t) => t.type === 'expense').reduce((a, t) => a + t.amount, 0);
-  const royalty = computeRoyalty(store, sales);
-  const profit = sales - expense - royalty;
-  return { sales, expense, profit, royalty, savings: 0, hasSavings: false, isManual: true, hasTx: tx.length > 0 };
+  const profit = sales - expense;
+  return { sales, expense, profit, savings: 0, hasSavings: false, isManual: true, hasTx: tx.length > 0 };
 }
 
 export function yearAgg(store: Store, year: number, transactions: Record<string, Transaction[]>): PeriodResult {
-  let sales = 0, expense = 0, royalty = 0, savings = 0;
+  let sales = 0, expense = 0, savings = 0;
   let anyManual = false;
   for (let m = 0; m < 12; m++) {
     const d = monthData(store, year, m, transactions);
-    sales += d.sales; expense += d.expense; royalty += d.royalty; savings += d.savings;
+    sales += d.sales; expense += d.expense; savings += d.savings;
     if (d.isManual) anyManual = true;
   }
-  const profit = sales - expense - royalty - savings;
-  return { sales, expense, profit, royalty, savings, hasSavings: !!store.useSavings, isManual: anyManual };
+  const profit = sales - expense - savings;
+  return { sales, expense, profit, savings, hasSavings: !!store.useSavings, isManual: anyManual };
 }
 
 export function periodData(

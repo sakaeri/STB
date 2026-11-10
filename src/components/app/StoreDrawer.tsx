@@ -100,7 +100,6 @@ export default function StoreDrawer() {
   const canEditSettings = canEditTeamSettings(role);
   const canManagePerms = canManagePermissions(role);
 
-  const royaltyMode = store.royaltyMode || 'rate';
   const savingsMode = store.savingsMode || 'amount';
   const up = (patch: Partial<typeof store>) => actions.updateStore(store.id, patch);
 
@@ -146,7 +145,6 @@ export default function StoreDrawer() {
     actions.setMemberRole(cur, v as Role);
   };
 
-  const roySwitch = switchStyles(store.useRoyalty !== false, state.accent);
   const savSwitch = switchStyles(!!store.useSavings, state.accent);
 
   return (
@@ -215,11 +213,7 @@ export default function StoreDrawer() {
               <div style={{ fontSize: 10.5, color: colors.faint3 }}>利益率 {marginTxt}</div>
             </div>
             <div style={{ background: '#f7f8fa', borderRadius: 11, padding: '13px 15px' }}>
-              <div style={{ fontSize: 11.5, color: colors.faint, marginBottom: 3 }}>ロイヤリティ（{store.royaltyRate}%）</div>
-              <div style={{ fontWeight: 700, fontSize: 18, fontVariantNumeric: 'tabular-nums', color: colors.muted }}>{row.royaltyFmt}</div>
-            </div>
-            <div style={{ background: '#f7f8fa', borderRadius: 11, padding: '13px 15px' }}>
-              <div style={{ fontSize: 11.5, color: colors.faint, marginBottom: 3 }}>貯蓄金額</div>
+              <div style={{ fontSize: 11.5, color: colors.faint, marginBottom: 3 }}>自由経費</div>
               <div style={{ fontWeight: 700, fontSize: 18, fontVariantNumeric: 'tabular-nums', color: colors.muted }}>{row.savingsFmt}</div>
             </div>
           </div>
@@ -346,54 +340,8 @@ export default function StoreDrawer() {
                 </div>
 
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <label style={{ fontSize: 11.5, fontWeight: 700, color: colors.faint }}>ロイヤリティを使う</label>
-                      <button onClick={() => up({ useRoyalty: store.useRoyalty === false })} style={roySwitch.track}>
-                        <span style={roySwitch.knob} />
-                      </button>
-                    </div>
-                    <div style={{ display: 'flex', background: colors.bg, borderRadius: 8, padding: 2, width: 110, opacity: store.useRoyalty !== false ? 1 : 0.4 }}>
-                      <button onClick={() => up({ royaltyMode: 'rate' })} style={modeSegStyle(royaltyMode === 'rate', state.accent)}>
-                        率
-                      </button>
-                      <button onClick={() => up({ royaltyMode: 'amount' })} style={modeSegStyle(royaltyMode === 'amount', state.accent)}>
-                        金額
-                      </button>
-                    </div>
-                  </div>
-                  <div style={{ opacity: store.useRoyalty !== false ? 1 : 0.4 }}>
-                    {royaltyMode === 'rate' ? (
-                      <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #dfe3e8', borderRadius: 10, padding: '0 12px', width: 120 }}>
-                        <input
-                          type="number"
-                          min={0}
-                          step={0.5}
-                          value={store.royaltyRate || ''}
-                          onChange={(e) => up({ royaltyRate: Math.max(0, parseFloat(e.target.value) || 0) })}
-                          style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14.5, fontWeight: 700, padding: '10px 0', fontVariantNumeric: 'tabular-nums', width: '100%', background: 'transparent' }}
-                        />
-                        <span style={{ fontSize: 13, color: colors.faint, fontWeight: 700 }}>%</span>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #dfe3e8', borderRadius: 10, padding: '0 12px', maxWidth: 200 }}>
-                        <span style={{ fontSize: 14, color: colors.faint, fontWeight: 700 }}>¥</span>
-                        <input
-                          type="number"
-                          step={1000}
-                          value={store.royaltyAmount || ''}
-                          onChange={(e) => up({ royaltyAmount: Math.max(0, parseInt(e.target.value || '0', 10)) })}
-                          style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14.5, fontWeight: 700, padding: '10px 0 10px 6px', fontVariantNumeric: 'tabular-nums', background: 'transparent' }}
-                        />
-                        <span style={{ fontSize: 11, color: colors.faint3 }}>/月</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                    <label style={{ fontSize: 11.5, fontWeight: 700, color: colors.faint }}>貯蓄設定を使う</label>
+                    <label style={{ fontSize: 11.5, fontWeight: 700, color: colors.faint }}>自由経費を使う</label>
                     <button onClick={() => up({ useSavings: !store.useSavings })} style={savSwitch.track}>
                       <span style={savSwitch.knob} />
                     </button>
@@ -452,13 +400,7 @@ export default function StoreDrawer() {
                 </div>
                 <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
                   <div>
-                    <div style={{ fontSize: 11, color: colors.faint2, marginBottom: 3 }}>ロイヤリティ</div>
-                    <div style={{ fontSize: 13.5, fontWeight: 700 }}>
-                      {store.useRoyalty === false ? '未使用' : royaltyMode === 'rate' ? `${store.royaltyRate || 0}%` : `¥${Math.round(store.royaltyAmount || 0).toLocaleString('ja-JP')}/月`}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: colors.faint2, marginBottom: 3 }}>貯蓄設定</div>
+                    <div style={{ fontSize: 11, color: colors.faint2, marginBottom: 3 }}>自由経費</div>
                     <div style={{ fontSize: 13.5, fontWeight: 700 }}>
                       {!store.useSavings ? '未使用' : savingsMode === 'rate' ? `${store.savingsRate || 0}%` : `¥${Math.round(store.savings || 0).toLocaleString('ja-JP')}/月`}
                     </div>

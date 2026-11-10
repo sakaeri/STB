@@ -11,10 +11,6 @@ export interface Store {
   base: number;
   expRatio: number;
   bg: string;
-  royaltyRate: number;
-  useRoyalty?: boolean;
-  royaltyMode?: 'rate' | 'amount';
-  royaltyAmount?: number;
   useSavings?: boolean;
   savings?: number;
   savingsMode?: 'amount' | 'rate';
@@ -133,10 +129,6 @@ export interface CompanyInfo {
 }
 
 export interface Defaults {
-  royaltyRate: number;
-  useRoyalty?: boolean;
-  royaltyMode?: 'rate' | 'amount';
-  royaltyAmount?: number;
   useSavings: boolean;
   savings: number;
   savingsMode?: 'amount' | 'rate';
@@ -214,10 +206,6 @@ export interface HqSetupForm {
 
 export interface AddStoreForm {
   name: string;
-  royaltyRate: number;
-  useRoyalty?: boolean;
-  royaltyMode?: 'rate' | 'amount';
-  royaltyAmount?: number;
   useSavings: boolean;
   savings: number;
   savingsMode?: 'amount' | 'rate';
@@ -415,7 +403,6 @@ export interface AppState {
   // company/hq settings editing flags
   editingCompanyInfo: boolean;
   companyNameError: boolean;
-  editingHqDefaults: boolean;
 
   // trash / confirm
   confirmDelete: ConfirmDialogState | null;
